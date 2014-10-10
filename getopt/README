@@ -1,0 +1,9 @@
+1. Functions for simplify control of complex parameters
+cmdlnopts.c - example of use
+parceargs.c - main functions
+parceargs.h - their header
+
+2. Functions for regular getopt_long
+getopt.c  - snippet file
+getopt.h  - its header
+

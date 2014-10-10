@@ -1,0 +1,3 @@
+Simple CLI interface for motorized linear translator Standa 8MT175-150 moving by SMSD-1.5 driver
+
+Run ./client & press h for help.

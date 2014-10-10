@@ -1,0 +1,13 @@
+This is a set of small usefull utilites & macros
+
+
+bidirectional_list - simple list with operation of searching, inserting, deleting
+B-trees - simple but slowly binary search trees with all main operations
+fifo_lifo - simple stack-like queues
+simple_list - 1-directional list with functions: add element; delete list
+usefull_macros - a lot of different macros & functions
+	* safe memory allocation & freeing
+	* coloured output on tty & monochromeous on non-tty
+	* error/warning/debug macros
+	* MMAP files into memory
+

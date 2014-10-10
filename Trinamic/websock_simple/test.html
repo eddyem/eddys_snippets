@@ -1,0 +1,106 @@
+<html>
+<head>
+	<meta charset=koi8-r http-equiv="Content-Language" content="ru"/>
+	<title>A test</title>
+	<style type="text/css">
+	.content { vertical-align:top; text-align:center; background:#fffff0; padding:12px; border-radius:10px; }
+	button { display: block; width: 70px; text-align: center; }
+	.container {border: solid 1px;  border-radius:10px; padding:12px; }
+</style>
+</head>
+<body onload="Global.init()">
+	<div class="container" id="cont">
+	<table class="content" id="tab">
+		<tr><td></td>
+			<td align='center'><button id='Y+'>Y+</button></td>
+		<td></td></tr>
+		<tr>
+			<td align='center'><button id='X-'>X-</button></td>
+			<td></td>
+			<td align='center'><button id='X+'>X+</button></td>
+		</tr>
+		<tr><td></td>
+			<td align='center'><button id='Y-'>Y-</button></td>
+		<td></td></tr>
+	</table>
+	<p></p>
+	<div id = "connected">No connection</div>
+	<div id = "answer"></div>
+	</div>
+<script>
+Global = function(){
+	var socket = null;
+	var connected = 0;
+	function get_appropriate_ws_url(){
+		var pcol;
+		var u = document.URL;
+		if (u.substring(0, 5) == "https") {
+			pcol = "wss://";
+			u = u.substr(8);
+		} else {
+			pcol = "ws://";
+			if (u.substring(0, 4) == "http")
+				u = u.substr(7);
+		}
+		u = u.split('/');
+		return pcol + u[0] + ":9999";
+	}
+	function TryConnect(){
+		if(connected) return;
+		if(socket) delete socket;
+		if (typeof MozWebSocket != "undefined") {
+			socket = new MozWebSocket(get_appropriate_ws_url(),
+						"XY-protocol");
+		} else {
+			socket = new WebSocket(get_appropriate_ws_url(),
+						"XY-protocol");
+		}
+		try {
+			socket.onopen = function(){
+				document.getElementById("connected").style.backgroundColor = "#40ff40";
+				document.getElementById("connected").textContent = "Connection opened";
+				connected = 1;
+			}
+			socket.onmessage = function got_packet(msg) {
+				document.getElementById("answer").textContent = msg.data + "\n";
+			}
+			socket.onclose = function(){
+				document.getElementById("connected").style.backgroundColor = "#ff4040";
+				document.getElementById("connected").textContent = "Connection closed";
+				document.getElementById("answer").textContent = "";
+				connected = 0;
+				setTimeout(TryConnect, 1000);
+			}
+		} catch(exception) {
+			alert('Error' + exception);
+		}
+	}
+	function init(){
+		console.log("init");
+		document.getElementById("cont").style.width = document.getElementById("tab").clientWidth;
+		var Buttons = document.getElementsByTagName("button");
+		for(var i = 0; i < Buttons.length; i++){
+			//Buttons[i].addEventListener("click", btnclick);
+			Buttons[i].addEventListener("mousedown", btnmousedown);
+			Buttons[i].addEventListener("mouseup", btnmouseup);
+		}
+		TryConnect();
+	}
+	/*function btnclick(){
+		console.log("Click: " + this.id);
+	}*/
+	function btnmouseup(){
+		console.log("Mouse up: " + this.id);
+		if(connected) socket.send("U"+this.id);
+	}
+	function btnmousedown(){
+		console.log("Mouse down: " + this.id);
+		if(connected) socket.send("D"+this.id);
+	}
+	return{
+		init: init
+	}
+}();
+</script>
+</body>
+</html>

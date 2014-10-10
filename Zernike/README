@@ -1,0 +1,26 @@
+Here is my realisation of wavefront decomposition and restoration based on
+Zernike polynomials (up to 100th order).
+
+The base functions are:
+
+double *zernfunR(int n, int m, int W, int H, double *norm);
+	calculates Zernike polynomial of order n and angular order m on 
+	equidistance rectangular grid WxH (norm is NULL or value to store
+	sum(Z_i^2) for normalisation on decomposition.
+
+double *zernfunNR(int p, int W, int H, double *norm);
+	the same but in Noll notation
+
+double *Zdecompose(int Nmax, int W, int H, double *image, int *Zsz, int *lastIdx);
+	decompose image by Zernike polynomials with order <= Nmax,
+	Zsz is size of returned array (in Noll notation)
+	lastidx is last non-zero coefficient
+
+double *Zcompose(int Zsz, double *Zidxs, int W, int H);
+	build image based on Zernike coeffs Zidxs
+	Zsz - size of array in Noll notation
+	W, H - size of future image
+
+void set_prec(double val);
+	set precision of Zernike transforms
+

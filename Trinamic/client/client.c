@@ -38,7 +38,7 @@ double t0; // start time
 uint32_t motor_speed = 10; // motor speed
 
 FILE *fout = NULL; // file for messages duplicating
-char *comdev = "/dev/ttyUSB0";
+char *comdev = "/dev/ttyUSB1";
 int BAUD_RATE = B115200;
 struct termio oldtty, tty; // TTY flags
 struct termios oldt, newt; // terminal flags
@@ -209,11 +209,12 @@ void help(){
 		"R/L\tRotate motor 1 right/left\n"
 		"r/l\tRotate motor 2 right/left\n"
 		"S/s\tStop 1st or 2nd motor\n"
-		"W/w\tSet ustepping to 1/16\n"
+		"D/d\tSet ustepping to 1/16\n"
 		"E/e\tSet ustepping to 1/4\n"
 		"Z/z\tSet to zero current position\n"
 		"G/g\tGet current position\n"
 		"A/a\tGet ALL information about\n"
+		"W/w\tWait until position reached\n"
 		"q\tQuit\n"
 	);
 }
@@ -351,7 +352,7 @@ void con_sig(int rb){
 		case 's': // stop motor
 			*cmd = 3; // STP
 		break;
-		case 'w': // 1/16
+		case 'd': // 1/16
 			*cmd = 5; // SAP
 			command[2] = 140; // ustep resolution
 			value = 4;
@@ -385,6 +386,12 @@ void con_sig(int rb){
 				//else value =
 			}
 			tcsetattr(STDIN_FILENO, TCSANOW, &newt); // omit echo
+		break;
+		case 'w': // wait till reached
+			*cmd = 138; // WAIT DIRECT
+			// set motor bit mask:
+			value = 5; // both motors
+			//value = 1 << command[3];
 		break;
 	}
 	if(*cmd){
@@ -447,6 +454,16 @@ void copy_buf_to_file(uint8_t *buffer, int *cmd){
 	free(buff);
 }
 
+static inline uint32_t log_2(const uint32_t x) {
+	uint32_t y;
+	asm ( "\tbsr %1, %0\n"
+		: "=r"(y)
+		: "r" (x)
+	);
+	return y;
+}
+
+#define log2(x) ((int)log_2((uint32_t)x))
 
 int main(int argc, char *argv[]){
 	int rb, oldcmd = -1;
@@ -478,14 +495,19 @@ int main(int argc, char *argv[]){
 				uint8_t *ptr = buff;
 				int ii;
 				int32_t val = get_integer(buff);
-				printf("value = %d (full answer: ", val);
-				for(ii = L - 1; ii > 0; ii--){
-					uint8_t C = *ptr++;
-					printf("%u", C);
-					//if(C > 31) printf("(%c)", C);
-					printf(",");
+				const uint8_t pattern[] = {2,1,128,138,0,0,0};
+				if(memcmp((void*)buff, (void*)pattern, sizeof(pattern)) == 0){ // motor has reached position
+					printf("Motor %d has reached position!\n", log2(val));
+				}else{
+					printf("value = %d (full answer: ", val);
+					for(ii = L - 1; ii > 0; ii--){
+						uint8_t C = *ptr++;
+						printf("%u", C);
+						//if(C > 31) printf("(%c)", C);
+						printf(",");
+					}
+					printf("%u\n", *ptr);
 				}
-				printf("%u)\n", *ptr);
 				if(fout){
 					copy_buf_to_file(buff, &oldcmd);
 				}

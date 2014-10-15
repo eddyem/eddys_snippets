@@ -16,13 +16,17 @@
 		<td></td></tr>
 		<tr>
 			<td align='center'><button id='X-'>X-</button></td>
-			<td></td>
+			<td><button id='0'>0</button></td>
 			<td align='center'><button id='X+'>X+</button></td>
 		</tr>
 		<tr><td></td>
 			<td align='center'><button id='Y-'>Y-</button></td>
 		<td></td></tr>
 	</table>
+	<div class="content">
+		Speed: <input type="range" min="10" max="200" step="1" id="speed">
+		<span id="curspeed">50</span>
+	</div>
 	<p></p>
 	<div id = "connected">No connection</div>
 	<div id = "answer"></div>
@@ -31,6 +35,8 @@
 Global = function(){
 	var socket = null;
 	var connected = 0;
+	var globSpeed = 50;
+	function $(nm){return document.getElementById(nm);}
 	function get_appropriate_ws_url(){
 		var pcol;
 		var u = document.URL;
@@ -55,19 +61,23 @@ Global = function(){
 			socket = new WebSocket(get_appropriate_ws_url(),
 						"XY-protocol");
 		}
+		if(!socket){
+			alert("Error: can't create websocket!\nMake sure that your browser supports websockets");
+			return;
+		}
 		try {
 			socket.onopen = function(){
-				document.getElementById("connected").style.backgroundColor = "#40ff40";
-				document.getElementById("connected").textContent = "Connection opened";
+				$("connected").style.backgroundColor = "#40ff40";
+				$("connected").textContent = "Connection opened";
 				connected = 1;
 			}
 			socket.onmessage = function got_packet(msg) {
-				document.getElementById("answer").textContent = msg.data + "\n";
+				$("answer").textContent = msg.data;
 			}
 			socket.onclose = function(){
-				document.getElementById("connected").style.backgroundColor = "#ff4040";
-				document.getElementById("connected").textContent = "Connection closed";
-				document.getElementById("answer").textContent = "";
+				$("connected").style.backgroundColor = "#ff4040";
+				$("connected").textContent = "Connection closed";
+				$("answer").textContent = "";
 				connected = 0;
 				setTimeout(TryConnect, 1000);
 			}
@@ -83,19 +93,35 @@ Global = function(){
 			//Buttons[i].addEventListener("click", btnclick);
 			Buttons[i].addEventListener("mousedown", btnmousedown);
 			Buttons[i].addEventListener("mouseup", btnmouseup);
+			Buttons[i].addEventListener("mouseout", btnmouseup);
+			Buttons[i].pressed = 0;
 		}
+		$("speed").value = globSpeed
+		$("speed").addEventListener("input", ChSpd);
+		$("speed").addEventListener("mouseup", SetSpd);
 		TryConnect();
 	}
 	/*function btnclick(){
 		console.log("Click: " + this.id);
 	}*/
 	function btnmouseup(){
+		if(this.pressed == 0) return; // this function calls also from "mouseout", so we must prevent stopping twice
+		this.pressed = 0;
 		console.log("Mouse up: " + this.id);
 		if(connected) socket.send("U"+this.id);
 	}
 	function btnmousedown(){
+		this.pressed = 1;
 		console.log("Mouse down: " + this.id);
 		if(connected) socket.send("D"+this.id);
+	}
+	function ChSpd(){
+		if(globSpeed == this.value) return;
+		globSpeed = this.value;
+		$("curspeed").textContent = globSpeed;
+	}
+	function SetSpd(){
+		if(connected) socket.send("S"+globSpeed);
 	}
 	return{
 		init: init

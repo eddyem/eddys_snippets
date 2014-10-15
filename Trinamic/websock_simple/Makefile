@@ -1,5 +1,5 @@
 PROGRAM = websocktest
-LDFLAGS = $(shell pkg-config --libs libwebsockets)
+LDFLAGS = $(shell pkg-config --libs libwebsockets) -lpthread
 SRCS = test.c
 CC = gcc
 DEFINES = -D_XOPEN_SOURCE=501 -DCUR_PATH=\"$(shell pwd)\"

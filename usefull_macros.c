@@ -21,6 +21,20 @@
 
 #include "usefull_macros.h"
 
+
+#include <sys/time.h>
+/**
+ * function for different purposes that need to know time intervals
+ * @return double value: time in seconds
+ */
+double dtime(){
+	double t;
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	t = tv.tv_sec + ((double)tv.tv_usec)/1e6;
+	return t;
+}
+
 /******************************************************************************\
  *                          Coloured terminal
 \******************************************************************************/

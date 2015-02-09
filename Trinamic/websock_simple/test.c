@@ -117,12 +117,8 @@ size_t read_tty(){
 }
 
 static inline uint32_t log_2(const uint32_t x){
-	uint32_t y;
-	asm ( "\tbsr %1, %0\n"
-		: "=r"(y)
-		: "r" (x)
-	);
-	return y;
+    if(x == 0) return 0;
+    return (31 - __builtin_clz (x));
 }
 
 int send_command(uint8_t *ninebytes);

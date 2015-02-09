@@ -19,15 +19,15 @@
  * MA 02110-1301, USA.
  */
 
-#include <stdio.h>
 #include <math.h>
+#include <stdio.h>
 #include "binmorph.h"
 
 // these includes are for randini
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <limits.h>
+#include <unistd.h>
 /*
  * Generate a quasy-random number to initialize PRNG
  * name: throw_random_seed

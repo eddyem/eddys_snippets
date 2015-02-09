@@ -56,12 +56,8 @@ void *my_alloc(size_t N, size_t S){
 #endif
 
 static inline uint32_t log_2(const uint32_t x) {
-	uint32_t y;
-	asm ( "\tbsr %1, %0\n"
-		: "=r"(y)
-		: "r" (x)
-	);
-	return y;
+    if(x == 0) return 0;
+    return (31 - __builtin_clz (x));
 }
 
 // later this function maybe mode difficult

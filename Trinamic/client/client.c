@@ -455,12 +455,8 @@ void copy_buf_to_file(uint8_t *buffer, int *cmd){
 }
 
 static inline uint32_t log_2(const uint32_t x) {
-	uint32_t y;
-	asm ( "\tbsr %1, %0\n"
-		: "=r"(y)
-		: "r" (x)
-	);
-	return y;
+    if(x == 0) return 0;
+    return (31 - __builtin_clz (x));
 }
 
 #define log2(x) ((int)log_2((uint32_t)x))

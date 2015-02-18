@@ -3,3 +3,4 @@
 *.bck
 *.o
 .hg*
+.dropbox.attr

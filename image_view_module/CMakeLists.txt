@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 2.8)
-set(PROJ tvguide)
-set(MINOR_VERSION "0")
+
+# cmake -DEBUG=1 -> debugging
+if(DEFINED EBUG)
+	add_definitions(-DEBUG)
+	set(CMAKE_VERBOSE_MAKEFILE ON)
+endif()
+
+set(PROJ openglview)
+set(MINOR_VERSION "1")
 set(MID_VERSION "0")
 set(MAJOR_VERSION "0")
 set(VERSION "${MAJOR_VERSION}.${MID_VERSION}.${MINOR_VERSION}")
@@ -22,12 +29,7 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SOURCES)
 #	add_definitions(-DSOME_DEFS)
 #endif()
 
-# cmake -DEBUG=1 -> debugging
-if(DEFINED EBUG)
-	add_definitions(-DEBUG)
-endif()
-
-set(MODULES libavformat libavcodec libswscale libavutil libavdevice)
+set(MODULES)
 # additional modules on condition
 #if(DEFINED SOMETHING)
 #	set(MODULES ${MODULES} more_modules>=version)
@@ -36,36 +38,37 @@ set(MODULES libavformat libavcodec libswscale libavutil libavdevice)
 
 project(${PROJ})
 # change wrong behaviour with install prefix
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT AND CMAKE_INSTALL_PREFIX MATCHES "/usr/local")
+if(CMAKE_INSTALL_PREFIX MATCHES "/usr/local")
 	message("Change default install path to /usr")
 	set(CMAKE_INSTALL_PREFIX "/usr")
 endif()
 message("Install dir prefix: ${CMAKE_INSTALL_PREFIX}")
 
+if(NOT DEFINED NOGETTEXT)
 # directory should contain dir locale/ru for gettext translations
-set(LCPATH ${CMAKE_SOURCE_DIR}/locale/ru)
-
-if(NOT DEFINED LOCALEDIR)
-	if(DEFINED DEBUG)
-		set(LOCALEDIR ${CMAKE_CURRENT_SOURCE_DIR}/locale)
-	else()
-		set(LOCALEDIR ${CMAKE_INSTALL_PREFIX}/share/locale)
+	set(LCPATH ${CMAKE_SOURCE_DIR}/locale/ru)
+	if(NOT DEFINED LOCALEDIR)
+		if(DEFINED DEBUG)
+			set(LOCALEDIR ${CMAKE_CURRENT_SOURCE_DIR}/locale)
+		else()
+			set(LOCALEDIR ${CMAKE_INSTALL_PREFIX}/share/locale)
+		endif()
 	endif()
+	# gettext files
+	set(PO_FILE ${LCPATH}/messages.po)
+	set(MO_FILE ${LCPATH}/LC_MESSAGES/${PROJ}.mo)
+	set(RU_FILE ${LCPATH}/ru.po)
+else()
+	add_definitions(-DNOGETTEXT)
+	set(PO_FILE)
+	set(MO_FILE)
 endif()
-
-# gettext files
-set(PO_FILE ${LCPATH}/messages.po)
-set(MO_FILE ${LCPATH}/LC_MESSAGES/${PROJ}.mo)
-set(RU_FILE ${LCPATH}/ru.po)
 
 # pkgconfig
 find_package(PkgConfig REQUIRED)
-#find_package(OpenGL REQUIRED)
-#find_package(GTK2 REQUIRED)
-# etc
-# set(${${PROJ}_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR} ${JPEG_INCLUDE_DIR} )
-# set(${${PROJ}_LIBRARY_DIRS} ...)
-
+find_package(OpenGL REQUIRED)
+find_package(GLUT REQUIRED)
+find_package(JPEG REQUIRED)
 if(MODULES)
 	pkg_check_modules(${PROJ} REQUIRED ${MODULES})
 endif()
@@ -80,13 +83,14 @@ endif()
 
 # exe file
 add_executable(${PROJ} ${SOURCES} ${PO_FILE} ${MO_FILE})
-target_link_libraries(${PROJ} ${${PROJ}_LIBRARIES} ${OPENGL_LIBRARIES} ...)
-include_directories(${${PROJ}_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR} ...)
-link_directories(${${PROJ}_LIBRARY_DIRS} )
+target_link_libraries(${PROJ} ${${PROJ}_LIBRARIES} ${OPENGL_LIBRARIES} ${JPEG_LIBRARIES}
+		${GLUT_LIBRARIES} -lm -lpthread)
+include_directories(${${PROJ}_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR} ${JPEG_INCLUDE_DIR} ${GLUT_INCLUDE_DIR})
+link_directories(${${PROJ}_LIBRARY_DIRS})
 add_definitions(${CFLAGS} -DLOCALEDIR=\"${LOCALEDIR}\"
 		-DPACKAGE_VERSION=\"${VERSION}\" -DGETTEXT_PACKAGE=\"${PROJ}\"
 		-DMINOR_VERSION=\"${MINOR_VERSION}\" -DMID_VERSION=\"${MID_VERSION}\"
-		-DMAJOR_VERSION=\"${MAJOR_VESION}\")
+		-DMAJOR_VERSION=\"${MAJOR_VESION}\" -DPROJNAME=\"${PROJ}\")
 
 # Installation of the program
 if(NOT DEFINED DEBUG)
@@ -101,6 +105,7 @@ else()
 	install(CODE "MESSAGE(\"Don't install in DEBUG mode! First run cmake without -DEBUG defined.\")")
 endif(NOT DEFINED DEBUG)
 
+if(NOT DEFINED NOGETTEXT)
 find_package(Gettext REQUIRED)
 find_program(GETTEXT_XGETTEXT_EXECUTABLE xgettext)
 if(NOT GETTEXT_XGETTEXT_EXECUTABLE OR NOT GETTEXT_MSGFMT_EXECUTABLE)
@@ -128,3 +133,4 @@ add_custom_command(
 	COMMAND make RU_FILE && ${GETTEXT_MSGFMT_EXECUTABLE} ${RU_FILE} -o ${MO_FILE}
 	DEPENDS ${PO_FILE}
 )
+endif(NOT DEFINED NOGETTEXT)

@@ -1,0 +1,56 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid   ""
+msgstr  "Project-Id-Version: PACKAGE VERSION\n"
+        "Report-Msgid-Bugs-To: \n"
+        "POT-Creation-Date: 2015-02-18 18:46+0300\n"
+        "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+        "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+        "Language-Team: LANGUAGE <LL@li.org>\n"
+        "Language: \n"
+        "MIME-Version: 1.0\n"
+        "Content-Type: text/plain; charset=koi8-r\n"
+        "Content-Transfer-Encoding: 8bit\n"
+
+#: /home/eddy/tmp/wavelets-hough-and-so-on/image_view_module/macros.c:183
+msgid   "Can't close mmap'ed file"
+msgstr  "Не могу закрыть mmap'нутый файл"
+
+#: /home/eddy/tmp/wavelets-hough-and-so-on/image_view_module/main.c:106
+msgid   "Can't init mutex!"
+msgstr  "Не могу инициировать взаимное исключение!"
+
+#: /home/eddy/tmp/wavelets-hough-and-so-on/image_view_module/macros.c:192
+msgid   "Can't munmap"
+msgstr  "Не могу вызывать munmap"
+
+#: /home/eddy/tmp/wavelets-hough-and-so-on/image_view_module/macros.c:177
+#, c-format
+msgid   "Can't open %s for reading"
+msgstr  "Не могу открыть %s для чтения"
+
+#: /home/eddy/tmp/wavelets-hough-and-so-on/image_view_module/macros.c:179
+#, c-format
+msgid   "Can't stat %s"
+msgstr  "Не могу выполнить stat для %s"
+
+#: /home/eddy/tmp/wavelets-hough-and-so-on/image_view_module/bmpview.c:105
+msgid   "Error removing from list"
+msgstr  "Ошибка удаления из списка"
+
+#: /home/eddy/tmp/wavelets-hough-and-so-on/image_view_module/macros.c:182
+msgid   "Mmap error for input"
+msgstr  "Ошибка mmap для входных данных"
+
+#: /home/eddy/tmp/wavelets-hough-and-so-on/image_view_module/macros.c:175
+msgid   "No filename given!"
+msgstr  "Не указано имя файла!"
+
+#. cancel thread changing data
+#: /home/eddy/tmp/wavelets-hough-and-so-on/image_view_module/bmpview.c:102
+msgid   "can't cancel a thread!"
+msgstr  "Не могу отменить выполнение потока!"

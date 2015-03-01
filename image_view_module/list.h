@@ -30,13 +30,24 @@
 #include "events.h"
 
 typedef struct{
+	GLubyte *rawdata;  // raw image data
+	int protected;     // don't delete this memory with window
+	int w;             // size of image
+	int h;
+	int changed;       // == 1 if data was changed outside (to redraw)
+} rawimage;
+
+typedef struct{
 	int ID;            // identificator
 	char *title;       // title of window
 	GLuint Tex;        // texture for image inside window
 	int GL_ID;         // identificator of OpenGL window
-	GLubyte *rawdata;  // raw image data
-	int w; int h;      // image size
-	float z;           // z-coordinate (zoom)
+	rawimage *image;   // raw image data
+	int w; int h;      // window size
+	float x; float y;  // image offset coordinates
+	float x0; float y0;// center of window for coords conversion
+	float zoom;        // zoom aspect
+	float Daspect;     // aspect ratio between image & window sizes
 	pthread_t thread;  // identificator of thread that changes window data
 	pthread_mutex_t mutex;// mutex for operations with image
 } windowData;

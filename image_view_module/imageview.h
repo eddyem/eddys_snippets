@@ -1,5 +1,5 @@
 /*
- * bmpview.h
+ * imageview.h
  *
  * Copyright 2015 Edward V. Emelianov <eddy@sao.ru, edward.emelianoff@gmail.com>
  *
@@ -33,11 +33,16 @@ typedef enum{
 	OPENGL
 } winIdType;
 
-void createWindow(windowData *win);
+void imageview_init();
+windowData *createGLwin(char *title, int w, int h, rawimage *rawdata);
+//void window_redraw(windowData *win);
 int  destroyWindow(int window, winIdType type);
 void renderBitmapString(float x, float y, void *font, char *string, GLubyte *color);
-void Redraw();
-void RedrawWindow();
-void Resize(int width, int height);
+void clear_GL_context();
+
+void calc_win_props(windowData *win, GLfloat *Wortho, GLfloat *Hortho);
+
+void conv_mouse_to_image_coords(int x, int y, float *X, float *Y, windowData *window);
+void conv_image_to_mouse_coords(float X, float Y, int *x, int *y, windowData *window);
 
 #endif // __BMPVIEW_H__

@@ -119,7 +119,7 @@ windowData *searchWindow_byGLID(int GL_ID){
 
 /**
  * free() all data for node of list
- * !!! data for raw pixels (rawdata) doesn't removed as it should be used
+ * !!! data for raw pixels (win->image) will be removed only if image->protected == 0
  * 			only for initialisation and free() by user !!!
  */
 void WinList_freeNode(WinList **node){
@@ -128,7 +128,10 @@ void WinList_freeNode(WinList **node){
 	windowData *win = cur->data;
 	if(root == cur) root = next;
 	FREE(win->title);
-	FREE(win->rawdata);
+	if(win->image->protected == 0){
+		FREE(win->image->rawdata);
+		FREE(win->image);
+	}
 	pthread_mutex_destroy(&win->mutex);
 	FREE(*node);
 	if(prev)
@@ -154,7 +157,6 @@ int removeWindow(int winID){
 
 /**
  * remove all nodes in list
- * @param root - pointer to root node
  */
 void freeWinList(){
 	WinList *node = root, *next;

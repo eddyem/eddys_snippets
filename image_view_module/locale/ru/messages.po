@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-02-28 19:36+0300\n"
+"POT-Creation-Date: 2015-03-02 13:58+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,20 +43,15 @@ msgstr ""
 msgid "Can't munmap"
 msgstr ""
 
-#. cancel thread changing data
-#: /home/eddy/tmp/image_view_module/imageview.c:124
-msgid "can't cancel a thread!"
-msgstr ""
-
-#: /home/eddy/tmp/image_view_module/imageview.c:127
+#: /home/eddy/tmp/image_view_module/imageview.c:132
 msgid "Error removing from list"
 msgstr ""
 
-#: /home/eddy/tmp/image_view_module/imageview.c:318
+#: /home/eddy/tmp/image_view_module/imageview.c:362
 msgid "Can't init mutex!"
 msgstr ""
 
 #. "Уже инициализировано!"
-#: /home/eddy/tmp/image_view_module/imageview.c:345
+#: /home/eddy/tmp/image_view_module/imageview.c:389
 msgid "Already initialized!"
 msgstr ""

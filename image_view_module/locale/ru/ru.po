@@ -7,7 +7,7 @@
 msgid   ""
 msgstr  "Project-Id-Version: PACKAGE VERSION\n"
         "Report-Msgid-Bugs-To: \n"
-        "POT-Creation-Date: 2015-02-28 19:32+0300\n"
+        "POT-Creation-Date: 2015-03-02 12:05+0300\n"
         "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
         "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
         "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,15 +17,15 @@ msgstr  "Project-Id-Version: PACKAGE VERSION\n"
         "Content-Transfer-Encoding: 8bit\n"
 
 #. "Уже инициализировано!"
-#: /home/eddy/tmp/image_view_module/imageview.c:345
+#: /home/eddy/tmp/image_view_module/imageview.c:389
 msgid   "Already initialized!"
-msgstr  ""
+msgstr  "Уже инициализировано!"
 
 #: /home/eddy/tmp/image_view_module/macros.c:183
 msgid   "Can't close mmap'ed file"
 msgstr  "Не могу закрыть mmap'нутый файл"
 
-#: /home/eddy/tmp/image_view_module/imageview.c:318
+#: /home/eddy/tmp/image_view_module/imageview.c:362
 msgid   "Can't init mutex!"
 msgstr  "Не могу инициировать взаимное исключение!"
 
@@ -43,7 +43,7 @@ msgstr  "Не могу открыть %s для чтения"
 msgid   "Can't stat %s"
 msgstr  "Не могу выполнить stat для %s"
 
-#: /home/eddy/tmp/image_view_module/imageview.c:127
+#: /home/eddy/tmp/image_view_module/imageview.c:132
 msgid   "Error removing from list"
 msgstr  "Ошибка удаления из списка"
 
@@ -55,11 +55,9 @@ msgstr  "Ошибка mmap для входных данных"
 msgid   "No filename given!"
 msgstr  "Не указано имя файла!"
 
-#. cancel thread changing data
-#: /home/eddy/tmp/image_view_module/imageview.c:124
-msgid   "can't cancel a thread!"
-msgstr  "Не могу отменить выполнение потока!"
-
 #, fuzzy
 #~ msgid        "Can't init main GLUT mutex!"
 #~ msgstr       "Не могу инициировать взаимное исключение!"
+
+#~ msgid        "can't cancel a thread!"
+#~ msgstr       "Не могу отменить выполнение потока!"

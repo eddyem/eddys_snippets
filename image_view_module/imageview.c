@@ -30,6 +30,7 @@ volatile int wannacreate = 0; // flag: ==1 if someone wants to create window
 windowData *wininiptr = NULL;
 
 int initialized = 0; // ==1 if GLUT is initialized; ==0 after clear_GL_context
+int wannakill_GL_ID = 0; // GL_ID of window for asynchroneous killing
 
 void createWindow(windowData *win);
 void RedrawWindow();
@@ -88,19 +89,22 @@ void createWindow(windowData *win){
 	glGenTextures(1, &(win->Tex));
 	calc_win_props(win, NULL, NULL);
 	win->zoom = 1. / win->Daspect;
-//	createMenu(win->ID);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, win->Tex);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+   	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, win->image->w, win->image->h, 0,
 			GL_RGB, GL_UNSIGNED_BYTE, win->image->rawdata);
 	glDisable(GL_TEXTURE_2D);
 	totWindows++;
+	createMenu(win->GL_ID);
 	DBG("OK, total opened windows: %d", totWindows);
 }
 
@@ -108,22 +112,23 @@ void createWindow(windowData *win){
 int killwindow(int GL_ID){
 	DBG("try to kill win GL_ID=%d", GL_ID);
 	windowData *win;
-	int canceled = 1;
 	win = searchWindow_byGLID(GL_ID);
 	if(!win) return 0;
-	if(!pthread_cancel(win->thread)){ // cancel thread changing data
-		canceled = 0;
+	glutSetWindow(GL_ID); // obviously set window (for closing from menu)
+	if(!win->killthread){
+		pthread_mutex_lock(&win->mutex);
+		// say changed thread to die
+		win->killthread = 1;
+		pthread_mutex_unlock(&win->mutex);
+		DBG("wait for changed thread");
+		pthread_join(win->thread, NULL); // wait while thread dies
 	}
-//	pthread_join(win->thread, NULL);
-	glDeleteTextures(1, &win->Tex);
-	glFinish();
+	if(win->menu) glutDestroyMenu(win->menu);
 	glutDestroyWindow(win->GL_ID);
 	win->GL_ID = 0; // reset for forEachWindow()
-	pthread_mutex_unlock(&win->mutex);
-	if(!canceled && !pthread_cancel(win->thread)){ // cancel thread changing data
-		WARN(_("can't cancel a thread!"));
-	}
-	pthread_join(win->thread, NULL);
+	DBG("destroy texture %d", win->Tex);
+	glDeleteTextures(1, &(win->Tex));
+	glFinish();
 	if(!removeWindow(win->ID)) WARNX(_("Error removing from list"));
 	totWindows--;
 	return 1;
@@ -138,14 +143,26 @@ int killwindow(int GL_ID){
 int destroyWindow(int window, winIdType type){
 	if(!initialized) return 0;
 	int r = 0;
+	DBG("lock");
 	pthread_mutex_lock(&winini_mutex);
+	DBG("locked");
 	if(type == INNER){
 		windowData *win = searchWindow(window);
 		if(win) r = killwindow(win->GL_ID);
 	}else
 		r = killwindow(window);
 	pthread_mutex_unlock(&winini_mutex);
+	DBG("window killed");
 	return r;
+}
+
+/**
+ * asynchroneous destroying - for using from menu
+ */
+void destroyWindow_async(int window_GL_ID){
+	pthread_mutex_lock(&winini_mutex);
+	wannakill_GL_ID = window_GL_ID;
+	pthread_mutex_unlock(&winini_mutex);
 }
 
 void renderBitmapString(float x, float y, void *font, char *string, GLubyte *color){
@@ -235,9 +252,17 @@ void RedrawWindow(){
  * waits for global signals to create windows & make other actions
  */
 void *Redraw(_U_ void *arg){
+//	pthread_cond_t fakeCond = PTHREAD_COND_INITIALIZER;
+//	struct timeval tv;
+//	struct timespec timeToWait;
+//	struct timeval now;
 	while(1){
 		pthread_mutex_lock(&winini_mutex);
-		if(!initialized) return NULL;
+		if(!initialized){
+			DBG("!initialized");
+			pthread_mutex_unlock(&winini_mutex);
+			pthread_exit(NULL);
+		}
 		if(wannacreate){ // someone asks to create window
 			DBG("call for window creating, id: %d", wininiptr->ID);
 			createWindow(wininiptr);
@@ -245,9 +270,28 @@ void *Redraw(_U_ void *arg){
 			wininiptr = NULL;
 			wannacreate = 0;
 		}
+		if(wannakill_GL_ID){
+			usleep(10000); // wait a little to be sure that caller is closed
+			killwindow(wannakill_GL_ID);
+			wannakill_GL_ID = 0;
+		}
 		forEachWindow(redisplay);
+/*		gettimeofday(&now,NULL);
+		timeToWait.tv_sec = now.tv_sec;
+		timeToWait.tv_nsec = now.tv_usec * 1000UL + 10000000UL;
+		pthread_cond_timedwait(&fakeCond, &winini_mutex, &timeToWait);*/
 		pthread_mutex_unlock(&winini_mutex);
+		//pthread_testcancel();
 		if(totWindows) glutMainLoopEvent(); // process actions if there are windows
+/*		gettimeofday(&now,NULL);
+		timeToWait.tv_sec = now.tv_sec;
+		timeToWait.tv_nsec = now.tv_usec * 1000UL + 10000000UL;
+		pthread_mutex_lock(&fakeMutex);
+		pthread_cond_timedwait(&fakeCond, &fakeMutex, &timeToWait);
+		pthread_mutex_unlock(&fakeMutex);*/
+/*		tv.tv_sec = 0;
+		tv.tv_usec = 10000;
+		select(0, NULL, NULL, NULL, &tv);*/
 		usleep(10000);
 	}
 	return NULL;
@@ -366,12 +410,18 @@ void killwindow_v(int GL_ID){
 void clear_GL_context(){
 	FNAME();
 	if(!initialized) return;
+	DBG("lock");
 	pthread_mutex_lock(&winini_mutex);
-	forEachWindow(killwindow_v);
-	pthread_cancel(GLUTthread); // kill main GLUT thread
-	pthread_join(GLUTthread, NULL);
 	initialized = 0;
+	DBG("locked");
+	 // kill main GLUT thread
+//	pthread_cancel(GLUTthread);
 	pthread_mutex_unlock(&winini_mutex);
+	forEachWindow(killwindow_v);
+	DBG("join");
+	pthread_join(GLUTthread, NULL); // wait while main thread exits
+//	pthread_mutex_unlock(&winini_mutex);
+	DBG("main GL thread cancelled");
 }
 
 

@@ -45,4 +45,6 @@ void calc_win_props(windowData *win, GLfloat *Wortho, GLfloat *Hortho);
 void conv_mouse_to_image_coords(int x, int y, float *X, float *Y, windowData *window);
 void conv_image_to_mouse_coords(float X, float Y, int *x, int *y, windowData *window);
 
+void destroyWindow_async(int window_GL_ID);
+
 #endif // __BMPVIEW_H__

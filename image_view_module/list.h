@@ -48,8 +48,10 @@ typedef struct{
 	float x0; float y0;// center of window for coords conversion
 	float zoom;        // zoom aspect
 	float Daspect;     // aspect ratio between image & window sizes
+	int menu;          // window menu identifier
 	pthread_t thread;  // identificator of thread that changes window data
 	pthread_mutex_t mutex;// mutex for operations with image
+	int killthread;    // flag for killing data changing thread & also signal that there's no threads
 } windowData;
 
 

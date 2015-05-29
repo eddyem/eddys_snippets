@@ -28,16 +28,17 @@ static __inline__ unsigned long long rdtsc(void){
 }
 int arra[5][3] = {{3,2,1}, {3,6,4}, {7,5,8}, {1024,5543,9875}, {1001,-1001,1002}};
 int arrb[5][3] = {{3,2,1}, {3,6,4}, {7,5,8}, {1024,5543,9875}, {1001,-1001,1002}};
+int arrc[5][3] = {{3,2,1}, {3,6,4}, {7,5,8}, {1024,5543,9875}, {1001,-1001,1002}};
 
 /*
- * It seems that this manner of sorting would be less productive than sort3b
- * but even on -O1 it gives better results (median by 1000 seq);
- * sort3c works best until -O3:
+ * It seems that this manner of sorting would be less productive than sort3b or sort3c
+ * but even on -O1 it gives better results (median by 1000 seq):
+ *
  * -Ox  timing a    timing b   timing c
- *   0   444        396        243
- *   1   108        144        93
- *   2   126        141        93
- *   3   105        138        159
+ *   0   453        402        366
+ *   1   111        174        147
+ *   2   126        165        144
+ *   3   117        171        141
  */
 static inline void sort3a(int *d){
 #define min(x, y) (x<y?x:y)
@@ -83,7 +84,7 @@ int main(){
 	time2 = rdtsc() - time2;
 	time3 = rdtsc();
 	for(i = 0; i < 5 ; i++){
-		sort3c(arrb[i]);
+		sort3c(arrc[i]);
 	}
 	time3 = rdtsc() - time3;
 	printf("%llu, %llu, %llu; ", time1, time2, time3);

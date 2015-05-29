@@ -55,6 +55,7 @@ enum{
 FILE *fout = NULL; // file for messages duplicating
 char *comdev = "/dev/ttyUSB0";
 int BAUD_RATE = B9600;
+uint16_t step_spd = 900;  // stepper speed: 225 steps per second in 1/1 mode
 struct termio oldtty, tty; // TTY flags
 struct termios oldt, newt; // terminal flags
 int comfd = -1; // TTY fd
@@ -210,11 +211,13 @@ void help(){
 		"1\tMove to end-switch 1\n"
 		"-xxx\tMake xxx steps toward zero's end-switch (0 main infinity)\n"
 		"+xxx\tMake xxx steps toward end-switch 1      (0 main infinity)\n"
-		"S\tStop/start motor when program is running\n"
-		"A\tRun previous command again or stop when running\n"
+		"S\tPause motor when program is running\n"
+		"A\tStop motor when programm is running\n"
 		"E\tErase previous program from controller's memory\n"
 		"R\tTurn relay ON\n"
 		"r\tTurn relay OFF\n"
+		">\tincrease speed for 25pulses per second\n"
+		"<\tdecrease speed for 25pulses per second\n"
 		"\n"
 	);
 }
@@ -329,11 +332,14 @@ int erase_ctrlr(){
 	#define safely_send(x) do{ if(bus_error != NO_ERROR){				\
 		fprintf(stderr, errmsg); return 0;} send_command(x); }while(0)
 	if(!send_command("LD1*")){ // start writing a program
+	//if(!send_command("LB*")){ // start writing a program into op-buffer
 		if(bus_error == COMMAND_ERR){ // motor is moving
 			printf("Found running program, stop it\n");
 			if(!send_command("ST1*"))
+			//if(!send_command("ST*"))
 				send_command("SP*");
 			send_command("LD1*");
+			//send_command("LB*");
 		}else{
 			fprintf(stderr, "Controller doesn't answer: try to press S or E\n");
 			return 1;
@@ -352,6 +358,7 @@ int erase_ctrlr(){
 void con_sig(int rb){
 	int stepsN = 0, got_command = 0;
 	char command[256];
+	char buf[13];
 	if(rb < 1) return;
 	if(rb == 'q') quit(0); // q == exit
 	if(rb == '-' || rb == '+'){
@@ -359,9 +366,9 @@ void con_sig(int rb){
 			fprintf(stderr, "You should give amount of steps after commands 'L' and 'R'\n");
 			return;
 		}
-		stepsN = atoi(command) * 16; // microstepping
+		stepsN = atoi(command); // in ticks
 		if(stepsN < 0 || stepsN > 10000000){
-			fprintf(stderr, "\n\nSteps amount should be > -1 and < 625000 (0 means infinity)!\n\n");
+			fprintf(stderr, "\n\nSteps amount should be > -1 and < 10000000 (0 means infinity)!\n\n");
 			return;
 		}
 	}
@@ -369,13 +376,16 @@ void con_sig(int rb){
 	if(strchr("-+01Rr", rb)){ // command to execute
 		got_command = 1;
 		if(!send_command("LD1*")){        // start writing a program
+		//if(!send_command("LB*")){        // start writing a program into op-buffer
 			fprintf(stderr, "Error: previous program is running!\n");
 			return;
 		}
 		Die_on_error("BG*");              // move address pointer to beginning
 		if(strchr("-+01", rb)){
 			Die_on_error("EN*");              // enable power
-			Die_on_error("SD10000*");         // set speed to max (625 steps per second with 1/16)
+			//Die_on_error("SD10000*");         // set speed to max (156.25 steps per second with 1/16)
+			snprintf(buf, 12, "SD%u*", step_spd);
+			Die_on_error(buf);
 		}
 	}
 	switch(rb){
@@ -411,6 +421,7 @@ void con_sig(int rb){
 		break;
 		case 'A':
 			Die_on_error("ST1*");
+			//Die_on_error("ST*");
 		break;
 		case 'E':
 			erase_ctrlr();
@@ -421,6 +432,22 @@ void con_sig(int rb){
 		case 'r':
 			Die_on_error("CF*");
 		break;
+		case '>': // increase speed for 25 pulses
+			step_spd += 25;
+			printf("\nCurrent speed: %u pulses per sec\n", step_spd);
+			//snprintf(buf, 12, "SD%u*", step_spd);
+			//Die_on_error(buf);
+		break;
+		case '<': // decrease speed for 25 pulses
+			if(step_spd > 25){
+				step_spd -= 25;
+				printf("\nCurrent speed: %u pulses per sec\n", step_spd);
+				//snprintf(buf, 12, "SD%u*", step_spd);
+				//Die_on_error(buf);
+			}else
+				printf("\nSpeed is too low\n");
+		break;
+
 /*		default:
 			cmd = (uint8_t) rb;
 			write(comfd, &cmd, 1);*/

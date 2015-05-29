@@ -1,0 +1,175 @@
+<html>
+<head>
+	<meta charset=koi8-r http-equiv="Content-Language" content="ru"/>
+	<title>A test</title>
+	<style type="text/css">
+	.content { vertical-align:top; text-align:center; background:#fffff0; padding:12px; border-radius:10px; }
+	button { display: block; width: 70px; text-align: center; }
+	.container {border: solid 1px;  border-radius:10px; padding:12px; }
+</style>
+</head>
+<body onload="Global.init()">
+	<div class="container" id="cont">
+	<table class="content" id="tab">
+		<tr><td></td>
+			<td align='center'><button id='Y+'>Y+</button></td>
+		<td></td></tr>
+		<tr>
+			<td align='center'><button id='X-'>X-</button></td>
+			<td><button id='0'>0</button></td>
+			<td align='center'><button id='X+'>X+</button></td>
+		</tr>
+		<tr><td></td>
+			<td align='center'><button id='Y-'>Y-</button></td>
+		<td></td></tr>
+	</table>
+	<div class="content">
+		Speed: <input type="range" min="10" max="200" step="1" id="speed">
+		<span id="curspeed">50</span>
+	</div>
+	<p></p>
+	<div id = "connected">No connection</div>
+	<div id = "answer"></div>
+	</div>
+	<div id="cntr"></div>
+	<img id="ws_image">
+<script>
+Global = function(){
+	var socket = null;
+	var imsocket = null;
+	var connected = 0;
+	var globSpeed = 50;
+	function $(nm){return document.getElementById(nm);}
+	function get_appropriate_ws_url(){
+		var pcol;
+		var u = document.URL;
+		if (u.substring(0, 5) == "https") {
+			pcol = "wss://";
+			u = u.substr(8);
+		} else {
+			pcol = "ws://";
+			if (u.substring(0, 4) == "http")
+				u = u.substr(7);
+		}
+		u = u.split('/');
+		return pcol + u[0] + ":9999";
+	}
+var frames = 0, time = 0;
+function getcntr(){
+	time++;
+	$("cntr").innerHTML = frames/time;
+	setTimeout(getcntr, 1000);
+}
+//	function hexToBase64(str) {
+//		return btoa(String.fromCharCode.apply(null, str.replace(/\r|\n/g, "").replace(/([\da-fA-F]{2}) ?/g, "0x$1 ").replace(/ +$/, "").split(" ")));
+//	}
+//	function base64encode(binary) {
+//		return btoa(unescape(encodeURIComponent(binary)));
+//	}
+	function TryConnect(){
+		if(connected) return;
+		if(socket) delete socket;
+		if(imsocket) delete imsocket;
+		apprURL = get_appropriate_ws_url();
+		if (typeof MozWebSocket != "undefined") {
+			console.log("MOZ");
+			socket = new MozWebSocket(apprURL,
+						"XY-protocol");
+			imsocket = new MozWebSocket(apprURL,
+						"image-protocol");
+		} else {
+			console.log("non-MOZ");
+			socket = new WebSocket(apprURL,
+						"XY-protocol");
+			imsocket = new WebSocket(apprURL,
+						"image-protocol");
+		}
+		if(!socket || !imsocket){
+			alert("Error: can't create websocket!\nMake sure that your browser supports websockets");
+			return;
+		}
+		function send(){
+			imsocket.send("get");
+		}
+		try {
+			socket.onopen = function(){
+				$("connected").style.backgroundColor = "#40ff40";
+				$("connected").textContent = "Connection opened";
+				connected = 1;
+				setTimeout(getcntr, 1000);
+			}
+			socket.onmessage = function got_packet(msg){
+				$("answer").textContent = msg.data;
+			}
+			imsocket.onmessage = function got_packet(msg){
+				//var bytes = new Uint8Array(msg.data);
+			//	console.log("got image " + " len64: " + msg.length);
+				var img = $("ws_image");
+				img.src = "data:image/jpeg;base64," + msg.data;
+				frames++;
+				send();
+				//setTimeout(send, 100);
+			//	img.src = "data:image/jpeg;base64," + base64encode(msg.data);
+				//var image = document.createElement('img');
+				// encode binary data to base64
+				//image.src = "data:image/jpeg;base64," + window.btoa(msg.data);
+				//image.src = "data:image/jpeg;" + msg.data;
+				//document.body.appendChild(image);
+			}
+			socket.onclose = function(){
+				$("connected").style.backgroundColor = "#ff4040";
+				$("connected").textContent = "Connection closed";
+				$("answer").textContent = "";
+				connected = 0;
+				setTimeout(TryConnect, 1000);
+				clearTimeout(getcntr);
+			}
+		} catch(exception) {
+			alert('Error' + exception);
+		}
+	}
+	function init(){
+		console.log("init");
+		document.getElementById("cont").style.width = document.getElementById("tab").clientWidth;
+		var Buttons = document.getElementsByTagName("button");
+		for(var i = 0; i < Buttons.length; i++){
+			//Buttons[i].addEventListener("click", btnclick);
+			Buttons[i].addEventListener("mousedown", btnmousedown);
+			Buttons[i].addEventListener("mouseup", btnmouseup);
+			Buttons[i].addEventListener("mouseout", btnmouseup);
+			Buttons[i].pressed = 0;
+		}
+		$("speed").value = globSpeed
+		$("speed").addEventListener("input", ChSpd);
+		$("speed").addEventListener("mouseup", SetSpd);
+		TryConnect();
+	}
+	/*function btnclick(){
+		console.log("Click: " + this.id);
+	}*/
+	function btnmouseup(){
+		if(this.pressed == 0) return; // this function calls also from "mouseout", so we must prevent stopping twice
+		this.pressed = 0;
+		console.log("Mouse up: " + this.id);
+		if(connected) socket.send("U"+this.id);
+	}
+	function btnmousedown(){
+		this.pressed = 1;
+		console.log("Mouse down: " + this.id);
+		if(connected) socket.send("D"+this.id);
+	}
+	function ChSpd(){
+		if(globSpeed == this.value) return;
+		globSpeed = this.value;
+		$("curspeed").textContent = globSpeed;
+	}
+	function SetSpd(){
+		if(connected) socket.send("S"+globSpeed);
+	}
+	return{
+		init: init
+	}
+}();
+</script>
+</body>
+</html>

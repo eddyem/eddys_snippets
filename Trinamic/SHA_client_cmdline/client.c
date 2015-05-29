@@ -36,8 +36,10 @@
 #include <signal.h>			// signal
 #include <time.h>			// time
 #include <string.h>			// memcpy, strcmp etc
+#include <strings.h>		// strcasecmp
 #include <stdint.h>			// int types
 #include <sys/time.h>		// gettimeofday
+#include "cmdlnopts.h"
 
 #define DBG(...) do{fprintf(stderr, __VA_ARGS__); }while(0)
 
@@ -52,39 +54,23 @@ enum{
 	UNDEFINED_ERR  // something else wrong
 };
 
-FILE *fout = NULL; // file for messages duplicating
-char *comdev = "/dev/ttyUSB0";
 int BAUD_RATE = B9600;
+uint16_t step_spd = 900;  // stepper speed: 225 steps per second in 1/1 mode
 struct termio oldtty, tty; // TTY flags
-struct termios oldt, newt; // terminal flags
 int comfd = -1; // TTY fd
 
 int erase_ctrlr();
-
-/**
- * function for different purposes that need to know time intervals
- * @return double value: time in seconds
- *
-double dtime(){
-	double t;
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	t = tv.tv_sec + ((double)tv.tv_usec)/1e6;
-	return t;
-}*/
 
 /**
  * Exit & return terminal to old state
  * @param ex_stat - status (return code)
  */
 void quit(int ex_stat){
-	tcsetattr(STDIN_FILENO, TCSANOW, &oldt); // return terminal to previous state
 	if(comfd > 0){
 		erase_ctrlr();
 		ioctl(comfd, TCSANOW, &oldtty ); // return TTY to previous state
 		close(comfd);
 	}
-	if(fout) fclose(fout);
 	printf("Exit! (%d)\n", ex_stat);
 	exit(ex_stat);
 }
@@ -93,15 +79,9 @@ void quit(int ex_stat){
  * Open & setup TTY, terminal
  */
 void tty_init(){
-	// terminal without echo
-	tcgetattr(STDIN_FILENO, &oldt);
-	newt = oldt;
-	//newt.c_lflag &= ~(ICANON | ECHO);
-	newt.c_lflag &= ~(ICANON);
-	if(tcsetattr(STDIN_FILENO, TCSANOW, &newt) < 0) quit(-2);
 	printf("\nOpen port...\n");
-	if ((comfd = open(comdev,O_RDWR|O_NOCTTY|O_NONBLOCK)) < 0){
-		fprintf(stderr,"Can't use port %s\n",comdev);
+	if ((comfd = open(G.comdev,O_RDWR|O_NOCTTY|O_NONBLOCK)) < 0){
+		fprintf(stderr,"Can't use port %s\n", G.comdev);
 		quit(1);
 	}
 	printf(" OK\nGet current settings...\n");
@@ -114,46 +94,6 @@ void tty_init(){
 	tty.c_cc[VTIME] = 5;
 	if(ioctl(comfd,TCSETA,&tty) < 0) quit(-1); // set new mode
 	printf(" OK\n");
-}
-
-/**
- * Read characters from console without echo
- * @return char readed
- */
-int read_console(char *buf, size_t len){
-	int rb = 0;
-	ssize_t L = 0;
-	struct timeval tv;
-	int retval;
-	fd_set rfds;
-	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-	FD_ZERO(&rfds);
-	FD_SET(STDIN_FILENO, &rfds);
-	tv.tv_sec = 0; tv.tv_usec = 1000;
-	retval = select(1, &rfds, NULL, NULL, &tv);
-	if(retval){
-		if(FD_ISSET(STDIN_FILENO, &rfds)){
-			if(len < 2 || !buf) // command works as simple getchar
-				rb = getchar();
-			else{ // read all data from console buffer
-				if((L = read(STDIN_FILENO, buf, len)) > 0) rb = (int)L;
-			}
-		}
-	}
-	//tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-	return rb;
-}
-
-/**
- * getchar() without echo
- * wait until at least one character pressed
- * @return character readed
- */
-int mygetchar(){ // аналог getchar() без необходимости жать Enter
-	int ret;
-	do ret = read_console(NULL, 1);
-	while(ret == 0);
-	return ret;
 }
 
 /**
@@ -181,44 +121,6 @@ size_t read_tty(char *buff, size_t length){
 	return (size_t)L;
 }
 
-/**
- * wait for answer from server
- * @param sock - socket fd
- * @return 0 in case of error or timeout, 1 in case of socket ready
- *
-int waittoread(int sock){
-	fd_set fds;
-	struct timeval timeout;
-	int rc;
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 1000;
-	FD_ZERO(&fds);
-	FD_SET(sock, &fds);
-	rc = select(sock+1, &fds, NULL, NULL, &timeout);
-	if(rc < 0){
-		perror("select failed");
-		return 0;
-	}
-	if(rc > 0 && FD_ISSET(sock, &fds)) return 1;
-	return 0;
-}
-*/
-
-void help(){
-	printf("\n\nUse this commands:\n"
-		"0\tMove to end-switch 0\n"
-		"1\tMove to end-switch 1\n"
-		"-xxx\tMake xxx steps toward zero's end-switch (0 main infinity)\n"
-		"+xxx\tMake xxx steps toward end-switch 1      (0 main infinity)\n"
-		"S\tStop/start motor when program is running\n"
-		"A\tRun previous command again or stop when running\n"
-		"E\tErase previous program from controller's memory\n"
-		"R\tTurn relay ON\n"
-		"r\tTurn relay OFF\n"
-		"\n"
-	);
-}
-
 void write_tty(char *str, int L){
 	ssize_t D = write(comfd, str, L);
 	if(D != L){
@@ -226,8 +128,6 @@ void write_tty(char *str, int L){
 		quit(-3);
 	}
 }
-
-//#define dup_pr(...) do{printf(__VA_ARGS__); if(fout) fprintf(fout, __VA_ARGS__);}while(0)
 
 size_t read_ctrl_command(char *buf, size_t L){ // read data from controller to buffer buf
 	int i, j;
@@ -314,28 +214,22 @@ int send_command(char *cmd){
 	return parse_ctrlr_ans(ans);
 }
 
-/*
-int send5times(char *cmd){ // sends command 'cmd' up to 5 times (if errors), return 0 in case of false
-	int N, R = 0;
-	for(N = 0; N < 5 && !R; N++){
-		R = send_command(cmd);
-	}
-	return R;
-}*/
-
-
 int erase_ctrlr(){
 	char *errmsg = "\n\nCan't erase controller's memory: some errors occured!\n\n";
+	printf("Erasing old program\n");
 	#define safely_send(x) do{ if(bus_error != NO_ERROR){				\
 		fprintf(stderr, errmsg); return 0;} send_command(x); }while(0)
 	if(!send_command("LD1*")){ // start writing a program
+	//if(!send_command("LB*")){ // start writing a program into op-buffer
 		if(bus_error == COMMAND_ERR){ // motor is moving
 			printf("Found running program, stop it\n");
 			if(!send_command("ST1*"))
+			//if(!send_command("ST*"))
 				send_command("SP*");
 			send_command("LD1*");
+			//send_command("LB*");
 		}else{
-			fprintf(stderr, "Controller doesn't answer: try to press S or E\n");
+			fprintf(stderr, "Controller doesn't answer: maybe no power?\n");
 			return 1;
 		}
 	}
@@ -349,39 +243,27 @@ int erase_ctrlr(){
 	return 1;
 }
 
-void con_sig(int rb){
-	int stepsN = 0, got_command = 0;
+int con_sig(int rb, int stepsN){
+	int got_command = 0;
 	char command[256];
-	if(rb < 1) return;
-	if(rb == 'q') quit(0); // q == exit
-	if(rb == '-' || rb == '+'){
-		if(!fgets(command, 255, stdin)){
-			fprintf(stderr, "You should give amount of steps after commands 'L' and 'R'\n");
-			return;
-		}
-		stepsN = atoi(command) * 16; // microstepping
-		if(stepsN < 0 || stepsN > 10000000){
-			fprintf(stderr, "\n\nSteps amount should be > -1 and < 625000 (0 means infinity)!\n\n");
-			return;
-		}
-	}
+	char buf[13];
 	#define Die_on_error(arg) do{if(!send_command(arg)) goto erase_;}while(0)
 	if(strchr("-+01Rr", rb)){ // command to execute
 		got_command = 1;
 		if(!send_command("LD1*")){        // start writing a program
+		//if(!send_command("LB*")){        // start writing a program into op-buffer
 			fprintf(stderr, "Error: previous program is running!\n");
-			return;
+			return 0;
 		}
 		Die_on_error("BG*");              // move address pointer to beginning
 		if(strchr("-+01", rb)){
 			Die_on_error("EN*");              // enable power
-			Die_on_error("SD10000*");         // set speed to max (625 steps per second with 1/16)
+			//Die_on_error("SD10000*");         // set speed to max (156.25 steps per second with 1/16)
+			snprintf(buf, 12, "SD%u*", step_spd);
+			Die_on_error(buf);
 		}
 	}
 	switch(rb){
-		case 'h':
-			help();
-		break;
 		case '0':
 			Die_on_error("DL*");
 			Die_on_error("HM*");
@@ -411,6 +293,7 @@ void con_sig(int rb){
 		break;
 		case 'A':
 			Die_on_error("ST1*");
+			//Die_on_error("ST*");
 		break;
 		case 'E':
 			erase_ctrlr();
@@ -421,65 +304,39 @@ void con_sig(int rb){
 		case 'r':
 			Die_on_error("CF*");
 		break;
-/*		default:
-			cmd = (uint8_t) rb;
-			write(comfd, &cmd, 1);*/
+		case '>': // increase speed for 25 pulses
+			step_spd += 25;
+			printf("\nCurrent speed: %u pulses per sec\n", step_spd);
+			//snprintf(buf, 12, "SD%u*", step_spd);
+			//Die_on_error(buf);
+		break;
+		case '<': // decrease speed for 25 pulses
+			if(step_spd > 25){
+				step_spd -= 25;
+				printf("\nCurrent speed: %u pulses per sec\n", step_spd);
+				//snprintf(buf, 12, "SD%u*", step_spd);
+				//Die_on_error(buf);
+			}else
+				printf("\nSpeed is too low\n");
+		break;
+
 	}
 	if(got_command){ // there was some command: write ending words
 		Die_on_error("DS*"); // turn off power from motor at end
 		Die_on_error("ED*"); // signal about command end
 		Die_on_error("ST1*");// start program
+		return 1;
 	}
-	return;
+	return 0;
 erase_:
 	erase_ctrlr();
+	return 0;
 }
 
-/**
- * Get integer value from buffer
- * @param buff (i) - buffer with int
- * @param len      - length of data in buffer (could be 2 or 4)
- * @return
- *
-uint32_t get_int(uint8_t *buff, size_t len){
-	int i;
-	printf("read %zd bytes: ", len);
-	for(i = 0; i < len; i++) printf("0x%x ", buff[i]);
-	printf("\n");
-	if(len != 2 && len != 4){
-		fprintf(stdout, "Bad data length!\n");
-		return 0xffffffff;
-	}
-	uint32_t data = 0;
-	uint8_t *i8 = (uint8_t*) &data;
-	if(len == 2) memcpy(i8, buff, 2);
-	else memcpy(i8, buff, 4);
-	return data;
-}*/
-
-int main(int argc, char *argv[]){
-	int rb;
+void wait_for_answer(){
 	char buff[128], *bufptr = buff;
 	size_t L;
-	if(argc == 2){
-		fout = fopen(argv[1], "a");
-		if(!fout){
-			perror("Can't open output file");
-			return (-1);
-		}
-		setbuf(fout, NULL);
-	}
-	tty_init();
-	signal(SIGTERM, quit);		// kill (-15)
-	signal(SIGINT, quit);		// ctrl+C
-	signal(SIGQUIT, SIG_IGN);	// ctrl+\   .
-	signal(SIGTSTP, SIG_IGN);	// ctrl+Z
-	setbuf(stdout, NULL);
-	erase_ctrlr();
-	//t0 = dtime();
 	while(1){
-		rb = read_console(NULL, 1);
-		if(rb > 0) con_sig(rb);
 		L = read_tty(bufptr, 127);
 		if(L){
 			bufptr += L;
@@ -490,10 +347,59 @@ int main(int argc, char *argv[]){
 			if(bufptr[-1] == '*'){ // end of input command
 				*bufptr = 0;
 				parse_ctrlr_ans(buff);
-				//printf("%s", buff);
-				if(fout) fprintf(fout, "%zd\t%s\n", time(NULL), buff);
-				bufptr = buff;
+				return;
 			}
 		}
 	}
+}
+
+int main(int argc, char *argv[]){
+	parce_args(argc, argv);
+	tty_init();
+	signal(SIGTERM, quit);		// kill (-15)
+	signal(SIGINT,  quit);		// ctrl+C
+	signal(SIGQUIT, SIG_IGN);	// ctrl+\   .
+	signal(SIGTSTP, SIG_IGN);	// ctrl+Z
+	setbuf(stdout, NULL);
+	erase_ctrlr();
+	if(G.erasecmd) return 0;
+	if(G.relaycmd == -1 && G.gotopos == NULL){
+		printf("No commands given!\n");
+		return -1;
+	}
+	if(G.relaycmd != -1){
+		int ans;
+		if(G.relaycmd) // turn on
+			ans = con_sig('R',0);
+		else // turn off
+			ans = con_sig('r',0);
+		if(ans)
+			wait_for_answer();
+		else
+			return -1;
+	}
+	if(G.gotopos){
+		if(strcasecmp(G.gotopos, "refmir") == 0){
+			if(!con_sig('1',0)) return -1;
+			printf("Go to last end-switch\n");
+			wait_for_answer();
+			if(!con_sig('-',500)) return -1;
+		}else if(strcasecmp(G.gotopos, "diagmir") == 0){
+			if(!con_sig('0',0)) return -1;
+			printf("Go to zero's end-switch\n");
+			wait_for_answer();
+			if(!con_sig('+',2500)) return -1;
+		}else if(strcasecmp(G.gotopos, "shack") == 0){
+			if(!con_sig('1',0)) return -1;
+			printf("Go to last end-switch\n");
+			wait_for_answer();
+			if(!con_sig('-',30000)) return -1;
+		}else{
+			printf("Wrong goto command, should be one of refmir/diagmir/shack\n");
+			return -1;
+		}
+		printf("Go to position\n");
+		wait_for_answer();
+	}
+	return 0;
 }

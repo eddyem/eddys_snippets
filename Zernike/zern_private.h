@@ -18,6 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301, USA.
  */
+
 #pragma once
 #ifndef __ZERN_PRIVATE_H__
 #define __ZERN_PRIVATE_H__
@@ -43,8 +44,6 @@ void build_factorial();
 void free_rpow(double ***Rpow, int n);
 void build_rpow(int W, int H, int n, double **Rad, double ***Rad_pow);
 double **build_rpowR(int n, int Sz, polar *P);
-
-
 
 // zernike_annular.c
 polar *conv_r(polar *r0, int Sz);

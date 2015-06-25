@@ -91,22 +91,3 @@ void list_free(List **root){
 	*root = NULL;
 }
 
-#ifdef STANDALONE
-int main(void) {
-	List *tp = NULL, *root_p = NULL;
-	int i, ins[] = {4,2,6,1,3,4,7};
-	for(i = 0; i < 7; i++){
-		if(!(tp = list_add(&tp, ins[i])))
-			err(1, "Malloc error"); // can't insert
-		if(!root_p) root_p = tp;
-	}
-	tp = root_p;
-	i = 0;
-	do{
-		printf("element %d = %d\n", i++, tp->data);
-		tp = tp->next;
-	}while(tp);
-	list_free(&root_p);
-	return 0;
-}
-#endif

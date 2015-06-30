@@ -47,6 +47,7 @@ typedef struct{
 	int block_msg[GPMAXMSG];     // array of messages: 1-show, 0-block
 	double polltmout;            // polling timeout (program ends after this interval)
 	int stationary;              // configure as stationary
+	int gettimediff;             // calculate mean time difference
 }glob_pars;
 
 glob_pars *parce_args(int argc, char **argv);

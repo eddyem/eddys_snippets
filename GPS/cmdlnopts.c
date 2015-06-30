@@ -34,6 +34,7 @@ glob_pars Gdefault = {
 	,.block_msg      = {0,1,0,0,0,0}   // all exept RMC are blocked by default
 	,.polltmout      = 10.
 	,.stationary     = 0
+	,.gettimediff    = 0
 };
 
 /*
@@ -55,6 +56,7 @@ myoption cmdlnopts[] = {
 	{"vtg",	0,	&G.block_msg[GPVTG],	1,	arg_none,	NULL,	N_("process VTG message")},
 	{"timeout", 1,	NULL,	't',	arg_double,	APTR(&G.polltmout), N_("polling timeout")},
 	{"stationary",0, NULL,	's',	arg_int,	APTR(&G.stationary),N_("configure as stationary")},
+	{"timediff",0,	NULL,	'T',	arg_int,	APTR(&G.gettimediff),N_("calculate mean time difference")},
 	// ...
 	end_option
 };

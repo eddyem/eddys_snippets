@@ -25,6 +25,8 @@
 
 #include <assert.h>
 #include <signal.h>
+#include <time.h>
+
 
 #ifndef PIDFILE
 #define PIDFILE  "/tmp/GPStest.pid"
@@ -89,8 +91,11 @@ int checksum(uint8_t *buf){
 	}
 	while(++buf != eol)
 		checksum ^= *buf;
-	snprintf(chs, 3, "%X", checksum);
-	if(strncmp(chs, (char*)++buf, 2)) return 0;
+	snprintf(chs, 3, "%02X", checksum);
+	if(strncmp(chs, (char*)++buf, 2)){
+		DBG("Wrong checksum: %s", chs);
+		return 0;
+	}
 	return 1;
 }
 
@@ -106,6 +111,27 @@ uint8_t *nextpos(uint8_t **buf, int pos){
 }
 #define NEXT()      do{if(!nextpos(&buf, 1)) goto ret;}while(0)
 #define SKIP(NPOS)  do{if(!nextpos(&buf, NPOS)) goto ret;}while(0)
+
+
+double timediff_aver = 0.;
+int timediff_N = 0;
+/**
+ * difference (in seconds) in system & GPS clock
+ * @return system_time - GPS_time
+ */
+double timediff(int h, int m, float s){
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	time_t tm0 = time(NULL);
+	struct tm *gmt = gmtime(&tm0);
+	double td = (gmt->tm_hour - h) * 3600.;
+	td += (gmt->tm_min - m) * 60.;
+	td += ((double)tv.tv_usec)/1e6 + (gmt->tm_sec - s);
+	timediff_aver += td;
+	++timediff_N;
+	return td;
+}
+
 
 /*
  * Satellites in View
@@ -230,7 +256,7 @@ printf("\n");
 	uint8_t prec[48] = {0xb5, 0x62, // header
 		0x06, 0x23, // CFG-NAVX5
 		40, 0, // 40 bytes, little-endian
-		0, 0, 0x20}; // mask for PPP
+		0, 0, 0, 0x20}; // mask for PPP
 	prec[32] = 1; // usePPP = TRUE (field 26)
 	for(i = 2; i < 46; ++i){
 		prec[46] += prec[i];
@@ -245,7 +271,7 @@ printf("\n");
 
 /*
  * Recommended minimum specific GPS/Transit data
- * $GPRMC,hhmmss.ss,A,llll.ll,a,yyyyy.yy,a,x.x,x.x,ddmmyy,x.x,a*hh
+ * $GPRMC,hhmmss,status,latitude,N,longitude,E,spd,cog,ddmmyy,mv,mvE,mode*cs
  * 1    = UTC of position fix
  * 2    = Data status (V=navigation receiver warning)
  * 3    = Latitude of fix
@@ -253,11 +279,11 @@ printf("\n");
  * 5    = Longitude of fix
  * 6    = E or W
  * 7    = Speed over ground in knots
- * 8    = Track made good in degrees True
+ * 8    = Cource over ground in degrees
  * 9    = UT date
  * 10   = Magnetic variation degrees (Easterly var. subtracts from true course)
  * 11   = E or W
- * 12   = Checksum
+ * 12   = Mode: N(bad), E(approx), A(auto), D(diff)
  * 213457.00,A,4340.59415,N,04127.47560,E,2.494,,290615,,,A*7B
  */
 void rmc(uint8_t *buf){
@@ -265,7 +291,7 @@ void rmc(uint8_t *buf){
 	int H, M, LO, LA, d, m, y;
 	float S;
 	float longitude, lattitude, speed, track, mag;
-	char varn = 'V', north = '0', east = '0', mageast = '0';
+	char varn = 'V', north = '0', east = '0', mageast = '0', mode = 'N';
 	sscanf((char*)buf, "%2d%2d%f", &H, &M, &S);
 	NEXT();
 	if(*buf != ',') varn = *buf;
@@ -274,6 +300,7 @@ void rmc(uint8_t *buf){
 	else
 		printf("(data valid)");
 	printf(" time: %02d:%02d:%05.2f", H, M, S);
+	printf(" timediff: %g", timediff(H, M, S));
 	NEXT();
 	sscanf((char*)buf, "%2d%f", &LA, &lattitude);
 	NEXT();
@@ -306,10 +333,15 @@ void rmc(uint8_t *buf){
 	if(sscanf((char*)buf, "%2d%2d%2d", &d, &m, &y) == 3)
 		printf(" date(dd/mm/yy): %02d/%02d/%02d", d, m, y);
 	NEXT();
-	sscanf((char*)buf, "%f,%c*", &mag, &mageast);
+	sscanf((char*)buf, "%f,%c", &mag, &mageast);
 	if(mageast == 'E' || mageast == 'W'){
 		if(mageast == 'W') mag = -mag;
 		printf(" magnetic var: %f", mag);
+	}
+	SKIP(2);
+	if(*buf != ','){
+		mode = *buf;
+		printf(" mode: %c", mode);
 	}
 ret:
 	printf("\n");
@@ -420,6 +452,7 @@ void pubx(uint8_t *buf){
 	char north = '0', east = '0';
 	sscanf((char*)buf, "%2d%2d%f", &H, &M, &S);
 	printf("time: %02d:%02d:%05.2f", H, M, S);
+	printf(" timediff: %g", timediff(H, M, S));
 	NEXT();
 	sscanf((char*)buf, "%2d%f", &LA, &lattitude);
 	NEXT();
@@ -593,6 +626,8 @@ int main(int argc, char **argv){
 			parce_data(str);
 		}
 	}
+	if(GP->gettimediff)
+		printf("\nAverage time difference (local-GPS) = %g seconds\n", timediff_aver/timediff_N);
 	signals(0);
 	return 0;
 }

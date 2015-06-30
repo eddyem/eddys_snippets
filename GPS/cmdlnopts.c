@@ -28,7 +28,12 @@ glob_pars G;  // internal global parameters structure
 int help = 0; // whether to show help string
 
 glob_pars Gdefault = {
-	.devpath        = "/dev/ttyUSB0",
+	 .devpath        = "/dev/ttyUSB0"
+	,.pollubx        = 0
+	,.pollinterval   = 1.
+	,.block_msg      = {0,1,0,0,0,0}   // all exept RMC are blocked by default
+	,.polltmout      = 10.
+	,.stationary     = 0
 };
 
 /*
@@ -40,10 +45,19 @@ myoption cmdlnopts[] = {
 	{"help",	0,	NULL,	'h',	arg_int,	APTR(&help),		N_("show this help")},
 	/// "путь к устройству"
 	{"device",1,	NULL,	'd',	arg_string,	APTR(&G.devpath),	N_("device path")},
+	{"poll-udx", 0,	NULL,	'p',	arg_none,	APTR(&G.pollubx),	N_("poll UDX,00")},
+	{"pollinterval",1,NULL,	'i',	arg_double,	APTR(&G.pollinterval),N_("polling interval")},
+	{"no-rmc",0,&G.block_msg[GPRMC],	0,	arg_none,	NULL,	N_("block RMC message")},
+	{"gsv",	0,	&G.block_msg[GPGSV],	1,	arg_none,	NULL,	N_("process GSV message")},
+	{"gsa",	0,	&G.block_msg[GPGSA],	1,	arg_none,	NULL,	N_("process GSA message")},
+	{"gga",	0,	&G.block_msg[GPGGA],	1,	arg_none,	NULL,	N_("process GGA message")},
+	{"gll",	0,	&G.block_msg[GPGLL],	1,	arg_none,	NULL,	N_("process GLL message")},
+	{"vtg",	0,	&G.block_msg[GPVTG],	1,	arg_none,	NULL,	N_("process VTG message")},
+	{"timeout", 1,	NULL,	't',	arg_double,	APTR(&G.polltmout), N_("polling timeout")},
+	{"stationary",0, NULL,	's',	arg_int,	APTR(&G.stationary),N_("configure as stationary")},
 	// ...
 	end_option
 };
-
 
 /**
  * Parce command line options and return dynamically allocated structure

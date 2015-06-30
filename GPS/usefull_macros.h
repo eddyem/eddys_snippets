@@ -117,6 +117,7 @@ int mygetchar();
 
 void restore_tty();
 void tty_init(char *comdev);
-size_t read_tty(char *buff, size_t length);
+size_t read_tty(uint8_t *buff, size_t length);
+int write_tty(uint8_t *buff, size_t length);
 
 #endif // __USEFULL_MACROS_H__

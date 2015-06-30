@@ -294,7 +294,7 @@ void tty_init(char *comdev){
  * @param length   - buffer len
  * @return amount of readed bytes
  */
-size_t read_tty(char *buff, size_t length){
+size_t read_tty(uint8_t *buff, size_t length){
 	ssize_t L = 0;
 	fd_set rfds;
 	struct timeval tv;
@@ -308,4 +308,13 @@ size_t read_tty(char *buff, size_t length){
 		if((L = read(comfd, buff, length)) < 1) return 0;
 	}
 	return (size_t)L;
+}
+
+int write_tty(uint8_t *buff, size_t length){
+	ssize_t L = write(comfd, buff, length);
+	if((size_t)L != length){
+		WARN("Write error!");
+		return 1;
+	}
+	return 0;
 }

@@ -25,12 +25,28 @@
 
 #include "parceargs.h"
 
+// GSV, RMC, GSA, GGA, GLL, VTG, TXT
+extern char *GPmsgs[];
+typedef enum{
+	GPGSV = 0,
+	GPRMC,
+	GPGSA,
+	GPGGA,
+	GPGLL,
+	GPVTG,
+	GPMAXMSG
+}GPmsg_type;
+
 /*
  * here are some typedef's for global data
  */
-
 typedef struct{
-	char *devpath;         // device path
+	char *devpath;               // device path
+	int pollubx;                 // flag of polling ubx00
+	double pollinterval;         // ubx00 polling interval (in seconds)
+	int block_msg[GPMAXMSG];     // array of messages: 1-show, 0-block
+	double polltmout;            // polling timeout (program ends after this interval)
+	int stationary;              // configure as stationary
 }glob_pars;
 
 glob_pars *parce_args(int argc, char **argv);

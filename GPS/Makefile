@@ -1,5 +1,5 @@
 PROGRAM = gpstest
-LDFLAGS =
+LDFLAGS = -lm
 SRCS = $(wildcard *.c)
 OBJDIR = mk
 CC = gcc

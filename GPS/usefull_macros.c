@@ -270,14 +270,14 @@ void restore_tty(){
 #endif
 // init:
 void tty_init(char *comdev){
-	printf("\nOpen port...\n");
+	DBG("\nOpen port...\n");
 	if ((comfd = open(comdev,O_RDWR|O_NOCTTY|O_NONBLOCK)) < 0){
 		WARN("Can't use port %s\n",comdev);
 		ioctl(comfd, TCSANOW, &oldtty); // return TTY to previous state
 		close(comfd);
 		exit(1); // quit?
 	}
-	printf(" OK\nGet current settings... ");
+	DBG(" OK\nGet current settings... ");
 	if(ioctl(comfd,TCGETA,&oldtty) < 0) exit(-1); // Get settings
 	tty = oldtty;
 	tty.c_lflag     = 0; // ~(ICANON | ECHO | ECHOE | ISIG)
@@ -286,7 +286,7 @@ void tty_init(char *comdev){
 	tty.c_cc[VMIN]  = 0;  // non-canonical mode
 	tty.c_cc[VTIME] = 5;
 	if(ioctl(comfd,TCSETA,&tty) < 0) exit(-1); // set new mode
-	printf(" OK\n");
+	DBG(" OK\n");
 }
 /**
  * Read data from TTY

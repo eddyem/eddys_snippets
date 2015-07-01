@@ -49,6 +49,8 @@ typedef struct{
 	int stationary;              // configure as stationary
 	int gettimediff;             // calculate mean time difference
 	int meancoords;              // calculate mean coordinates
+	int silent;                  // don't write intermediate messages
+	int date;                    // print date for initial time setup
 }glob_pars;
 
 glob_pars *parce_args(int argc, char **argv);

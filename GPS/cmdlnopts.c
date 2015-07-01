@@ -36,6 +36,8 @@ glob_pars Gdefault = {
 	,.stationary     = 0
 	,.gettimediff    = 0
 	,.meancoords     = 0
+	,.silent         = 0
+	,.date           = 0
 };
 
 /*
@@ -49,16 +51,18 @@ myoption cmdlnopts[] = {
 	{"device",1,	NULL,	'd',	arg_string,	APTR(&G.devpath),	N_("device path")},
 	{"poll-udx", 0,	NULL,	'p',	arg_none,	APTR(&G.pollubx),	N_("poll UDX,00")},
 	{"pollinterval",1,NULL,	'i',	arg_double,	APTR(&G.pollinterval),N_("polling interval")},
-	{"no-rmc",0,&G.block_msg[GPRMC],	0,	arg_none,	NULL,	N_("block RMC message")},
-	{"gsv",	0,	&G.block_msg[GPGSV],	1,	arg_none,	NULL,	N_("process GSV message")},
-	{"gsa",	0,	&G.block_msg[GPGSA],	1,	arg_none,	NULL,	N_("process GSA message")},
-	{"gga",	0,	&G.block_msg[GPGGA],	1,	arg_none,	NULL,	N_("process GGA message")},
-	{"gll",	0,	&G.block_msg[GPGLL],	1,	arg_none,	NULL,	N_("process GLL message")},
-	{"vtg",	0,	&G.block_msg[GPVTG],	1,	arg_none,	NULL,	N_("process VTG message")},
+	{"no-rmc",0,&G.block_msg[GPRMC],	0,	arg_none,	NULL,		N_("block RMC message")},
+	{"gsv",	0,	&G.block_msg[GPGSV],	1,	arg_none,	NULL,		N_("process GSV message")},
+	{"gsa",	0,	&G.block_msg[GPGSA],	1,	arg_none,	NULL,		N_("process GSA message")},
+	{"gga",	0,	&G.block_msg[GPGGA],	1,	arg_none,	NULL,		N_("process GGA message")},
+	{"gll",	0,	&G.block_msg[GPGLL],	1,	arg_none,	NULL,		N_("process GLL message")},
+	{"vtg",	0,	&G.block_msg[GPVTG],	1,	arg_none,	NULL,		N_("process VTG message")},
 	{"timeout", 1,	NULL,	't',	arg_double,	APTR(&G.polltmout), N_("polling timeout")},
 	{"stationary",0, NULL,	's',	arg_int,	APTR(&G.stationary),N_("configure as stationary")},
 	{"timediff",0,	NULL,	'T',	arg_int,	APTR(&G.gettimediff),N_("calculate mean time difference")},
-	{"coords",0,	NULL,	'C',	arg_int,	APTR(&G.meancoords), N_("calculate mean coordinates")},
+	{"coords",0,	NULL,	'C',	arg_int,	APTR(&G.meancoords),N_("calculate mean coordinates")},
+	{"silent",0,	NULL,	'S',	arg_int,	APTR(&G.silent),	N_("don't write intermediate messages")},
+	{"print-date",0,NULL,	'D',	arg_int,	APTR(&G.date),		N_("print date in format MMDDhhmmCCYY.ss")},
 	// ...
 	end_option
 };

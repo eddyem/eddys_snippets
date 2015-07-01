@@ -26,6 +26,7 @@
 #include <assert.h>
 #include <signal.h>
 #include <time.h>
+#include <math.h>  // sqrt
 
 
 #ifndef PIDFILE
@@ -39,6 +40,7 @@ char *GPmsgs[] = {"GSV", "RMC", "GSA", "GGA", "GLL", "VTG"};
 
 static void signals(int sig){
 	DBG("Get signal %d, quit.\n", sig);
+	unlink(PIDFILE);
 	restore_tty();
 	exit(sig);
 }
@@ -119,7 +121,7 @@ int timediff_N = 0;
  * difference (in seconds) in system & GPS clock
  * @return system_time - GPS_time
  */
-double timediff(int h, int m, float s){
+double timediff(int h, int m, double s){
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 	time_t tm0 = time(NULL);
@@ -132,48 +134,8 @@ double timediff(int h, int m, float s){
 	return td;
 }
 
-
-/*
- * Satellites in View
- * $GPGSV,NoMsg,MsgNo,NoSv,{,sv,elv,az,cno}*cs
- * 1    = total number of GPGSV messages being output
- * 2    = Number of this message
- * 3    = Satellites in View
- *    4-7 will be repeated 1..4 times
- * sv   = Satellite ID
- * elv  = Elevation, range 0..90deg
- * az   = Azimuth, range 0..359deg
- * cno  = SNR, range 0.99dB
- * cs   = control sum
- * 3,1,11,01,68,278,,03,39,292,08,04,66,190,30,11,55,231,34*79
- * 3,2,11,14,30,050,10,17,11,322,,19,09,202,,22,14,096,*74
- * 3,3,11,23,20,232,30,31,43,118,33,32,76,352,*43
-*/
-void gsv(uint8_t *buf){
-	//DBG("gsv: %s\n", buf);
-	int Nrec = -1, Ncur, inview = 0;
-	static int sat_scanned = 0;
-	if(sscanf((char*)buf, "%d,%d,", &Nrec, &Ncur) != 2) goto ret;
-	SKIP(2);
-	if(sscanf((char*)buf, "%d,", &inview) != 1) goto ret;
-	if(inview < 1) goto ret;
-	NEXT();
-	if(Ncur == 1)
-		printf("%d satellites in view field: (No: ID, elevation, azimuth, SNR)\n", inview);
-	do{
-		int id, el, az, snr;
-		// there could be no "SNR" field if we can't find this satellite on sky
-		if(sscanf((char*)buf, "%d,%d,%d,%d,", &id, &el, &az, &snr) < 3) break;
-		printf(" (%d: %d, %d, %d, %d)", ++sat_scanned, id, el, az, snr);
-		SKIP(4);
-	}while(1);
-ret:
-	if(inview < 1) printf("There's no GPS satellites in viewfield\n");
-	if(Nrec > 0 && Nrec == Ncur){
-		sat_scanned = 0;
-		printf("\n");
-	}
-}
+double Latt_mean = 0., Long_mean = 0., Latt_sq = 0., Long_sq = 0.;
+int Latt_N = 0, Long_N = 0;
 
 /**
  * acquire last command
@@ -270,6 +232,48 @@ printf("\n");
 }
 
 /*
+ * Satellites in View
+ * $GPGSV,NoMsg,MsgNo,NoSv,{,sv,elv,az,cno}*cs
+ * 1    = total number of GPGSV messages being output
+ * 2    = Number of this message
+ * 3    = Satellites in View
+ *    4-7 will be repeated 1..4 times
+ * sv   = Satellite ID
+ * elv  = Elevation, range 0..90deg
+ * az   = Azimuth, range 0..359deg
+ * cno  = SNR, range 0.99dB
+ * cs   = control sum
+ * 3,1,11,01,68,278,,03,39,292,08,04,66,190,30,11,55,231,34*79
+ * 3,2,11,14,30,050,10,17,11,322,,19,09,202,,22,14,096,*74
+ * 3,3,11,23,20,232,30,31,43,118,33,32,76,352,*43
+*/
+void gsv(uint8_t *buf){
+	//DBG("gsv: %s\n", buf);
+	int Nrec = -1, Ncur, inview = 0;
+	static int sat_scanned = 0;
+	if(sscanf((char*)buf, "%d,%d,", &Nrec, &Ncur) != 2) goto ret;
+	SKIP(2);
+	if(sscanf((char*)buf, "%d,", &inview) != 1) goto ret;
+	if(inview < 1) goto ret;
+	NEXT();
+	if(Ncur == 1)
+		printf("%d satellites in view field: (No: ID, elevation, azimuth, SNR)\n", inview);
+	do{
+		int id, el, az, snr;
+		// there could be no "SNR" field if we can't find this satellite on sky
+		if(sscanf((char*)buf, "%d,%d,%d,%d,", &id, &el, &az, &snr) < 3) break;
+		printf(" (%d: %d, %d, %d, %d)", ++sat_scanned, id, el, az, snr);
+		SKIP(4);
+	}while(1);
+ret:
+	if(inview < 1) printf("There's no GPS satellites in viewfield\n");
+	if(Nrec > 0 && Nrec == Ncur){
+		sat_scanned = 0;
+		printf("\n");
+	}
+}
+
+/*
  * Recommended minimum specific GPS/Transit data
  * $GPRMC,hhmmss,status,latitude,N,longitude,E,spd,cog,ddmmyy,mv,mvE,mode*cs
  * 1    = UTC of position fix
@@ -289,10 +293,9 @@ printf("\n");
 void rmc(uint8_t *buf){
 	//DBG("rmc: %s\n", buf);
 	int H, M, LO, LA, d, m, y;
-	float S;
-	float longitude, lattitude, speed, track, mag;
+	double S, longitude, lattitude, speed, track, mag;
 	char varn = 'V', north = '0', east = '0', mageast = '0', mode = 'N';
-	sscanf((char*)buf, "%2d%2d%f", &H, &M, &S);
+	sscanf((char*)buf, "%2d%2d%lf", &H, &M, &S);
 	NEXT();
 	if(*buf != ',') varn = *buf;
 	if(varn != 'A')
@@ -302,41 +305,47 @@ void rmc(uint8_t *buf){
 	printf(" time: %02d:%02d:%05.2f", H, M, S);
 	printf(" timediff: %g", timediff(H, M, S));
 	NEXT();
-	sscanf((char*)buf, "%2d%f", &LA, &lattitude);
+	sscanf((char*)buf, "%2d%lf", &LA, &lattitude);
 	NEXT();
 	if(*buf != ','){
 		north = *buf;
-		lattitude = (float)LA + lattitude / 60.;
+		lattitude = (double)LA + lattitude / 60.;
 		if(north == 'S') lattitude = -lattitude;
-		printf(" latt: %f", lattitude);
+		printf(" latt: %g", lattitude);
+		Latt_mean += lattitude;
+		Latt_sq += lattitude*lattitude;
+		++Latt_N;
 	}
 	NEXT();
-	sscanf((char*)buf, "%3d%f", &LO, &longitude);
+	sscanf((char*)buf, "%3d%lf", &LO, &longitude);
 	NEXT();
 	if(*buf != ','){
 		east = *buf;
-		longitude = (float)LO + longitude / 60.;
+		longitude = (double)LO + longitude / 60.;
 		if(east == 'W') longitude = -longitude;
-		printf(" long: %f", longitude);
+		printf(" long: %g", longitude);
+		Long_mean += longitude;
+		Long_sq += longitude*longitude;
+		++Long_N;
 	}
 	NEXT();
 	if(*buf != ','){
-		sscanf((char*)buf, "%f", &speed);
-		printf(" speed: %fknots", speed);
+		sscanf((char*)buf, "%lf", &speed);
+		printf(" speed: %gknots", speed);
 	}
 	NEXT();
 	if(*buf != ','){
-		sscanf((char*)buf, "%f", &track);
-		printf(" track: %fdeg,True", track);
+		sscanf((char*)buf, "%lf", &track);
+		printf(" track: %gdeg,True", track);
 	}
 	NEXT();
 	if(sscanf((char*)buf, "%2d%2d%2d", &d, &m, &y) == 3)
 		printf(" date(dd/mm/yy): %02d/%02d/%02d", d, m, y);
 	NEXT();
-	sscanf((char*)buf, "%f,%c", &mag, &mageast);
+	sscanf((char*)buf, "%lf,%c", &mag, &mageast);
 	if(mageast == 'E' || mageast == 'W'){
 		if(mageast == 'W') mag = -mag;
-		printf(" magnetic var: %f", mag);
+		printf(" magnetic var: %g", mag);
 	}
 	SKIP(2);
 	if(*buf != ','){
@@ -391,8 +400,8 @@ void gsa(uint8_t *buf){
 		for(i = 0; i < Nused; ++i)
 			printf("%d, ", used[i]);
 	}
-	float pos, hor, vert;
-	if(sscanf((char*)buf, "%f,%f,%f", &pos, &hor, &vert) == 3){
+	double pos, hor, vert;
+	if(sscanf((char*)buf, "%lf,%lf,%lf", &pos, &hor, &vert) == 3){
 		printf("DILUTION: pos=%.2f, hor=%.2f, vert=%.2f", pos, hor, vert);
 	}
 ret:
@@ -447,33 +456,39 @@ void txt(_U_ uint8_t *buf){
 void pubx(uint8_t *buf){
 	//DBG("pubx_00: %s\n", buf);
 	int H, M, LO, LA, gps, glo, dr;
-	float S, longitude, lattitude, altitude, hacc, vacc, speed, track, vertspd,
+	double S, longitude, lattitude, altitude, hacc, vacc, speed, track, vertspd,
 		age, hdop, vdop, tdop;
 	char north = '0', east = '0';
-	sscanf((char*)buf, "%2d%2d%f", &H, &M, &S);
+	sscanf((char*)buf, "%2d%2d%lf", &H, &M, &S);
 	printf("time: %02d:%02d:%05.2f", H, M, S);
 	printf(" timediff: %g", timediff(H, M, S));
 	NEXT();
-	sscanf((char*)buf, "%2d%f", &LA, &lattitude);
+	sscanf((char*)buf, "%2d%lf", &LA, &lattitude);
 	NEXT();
 	if(*buf != ','){
 		north = *buf;
-		lattitude = (float)LA + lattitude / 60.;
+		lattitude = (double)LA + lattitude / 60.;
 		if(north == 'S') lattitude = -lattitude;
-		printf(" latt: %f", lattitude);
+		printf(" latt: %g", lattitude);
+		Latt_mean += lattitude;
+		Latt_sq += lattitude*lattitude;
+		++Latt_N;
 	}
 	NEXT();
-	sscanf((char*)buf, "%3d%f", &LO, &longitude);
+	sscanf((char*)buf, "%3d%lf", &LO, &longitude);
 	NEXT();
 	if(*buf != ','){
 		east = *buf;
-		longitude = (float)LO + longitude / 60.;
+		longitude = (double)LO + longitude / 60.;
 		if(east == 'W') longitude = -longitude;
-		printf(" long: %f", longitude);
+		printf(" long: %g", longitude);
+		Long_mean += longitude;
+		Long_sq += longitude*longitude;
+		++Long_N;
 	}
 	NEXT();
-#define FSCAN(par, nam) do{if(*buf != ','){sscanf((char*)buf, "%f", &par); \
-		printf(" " nam ": %f", par);} NEXT();}while(0)
+#define FSCAN(par, nam) do{if(*buf != ','){sscanf((char*)buf, "%lf", &par); \
+		printf(" " nam ": %g", par);} NEXT();}while(0)
 	FSCAN(altitude, "altitude");
 	if(*buf != ','){
 		printf(" nav. status: %c%c", buf[0], buf[1]);
@@ -628,6 +643,26 @@ int main(int argc, char **argv){
 	}
 	if(GP->gettimediff)
 		printf("\nAverage time difference (local-GPS) = %g seconds\n", timediff_aver/timediff_N);
+	if(GP->meancoords){
+		printf("\nAverage coordinates:\n\tLattitude");
+		double mean, std, s;
+		int d, m;
+		if(Latt_N){
+			mean = Latt_mean / Latt_N;
+			std  = sqrt(Latt_sq/Latt_N - mean*mean);
+			d = (int)mean; m = (int)(60.*(mean-d)); s = 3600*fabs(mean-d-m/60.);
+			if(m < 0) m = -m;
+			printf(" = %.6f (%d %d' %.2f''), std = %g (%.2f'')\n", mean, d, m, s, std, std*3600.);
+		}else printf(": no data\n");
+		printf("\tLongitude");
+		if(Long_N){
+			mean = Long_mean / Long_N;
+			std  = sqrt(Long_sq/Long_N - mean*mean);
+			d = (int)mean; m = (int)(60.*(mean-d)); s = 3600*fabs(mean-d-m/60.);
+			if(m < 0) m = -m;
+			printf(" = %.6f (%d %d' %.2f''), std = %g (%.2f'')\n", mean, d, m, s, std, std*3600.);
+		}else printf(": no data\n");
+	}
 	signals(0);
 	return 0;
 }

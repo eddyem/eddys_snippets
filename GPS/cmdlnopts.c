@@ -35,6 +35,7 @@ glob_pars Gdefault = {
 	,.polltmout      = 10.
 	,.stationary     = 0
 	,.gettimediff    = 0
+	,.meancoords     = 0
 };
 
 /*
@@ -57,6 +58,7 @@ myoption cmdlnopts[] = {
 	{"timeout", 1,	NULL,	't',	arg_double,	APTR(&G.polltmout), N_("polling timeout")},
 	{"stationary",0, NULL,	's',	arg_int,	APTR(&G.stationary),N_("configure as stationary")},
 	{"timediff",0,	NULL,	'T',	arg_int,	APTR(&G.gettimediff),N_("calculate mean time difference")},
+	{"coords",0,	NULL,	'C',	arg_int,	APTR(&G.meancoords), N_("calculate mean coordinates")},
 	// ...
 	end_option
 };

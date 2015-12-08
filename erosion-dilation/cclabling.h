@@ -24,6 +24,7 @@ double t0 = dtime();
 	size_t N _U_ = 0, Ncur = 0;
 	size_t *labels = char2st(I, W, H, W_0);
 	int y;
+/*
 #ifdef EBUG
 for(y = 0; y < H; y++){
 	size_t *ptr = &labels[y*W];
@@ -35,8 +36,9 @@ for(y = 0; y < H; y++){
 }
 FREE(labels); return ret;
 #endif
-printf("time for char2st: %gs\n", dtime()-t0);
-t0 = dtime();
+*/
+//printf("time for char2st: %gs\n", dtime()-t0);
+//t0 = dtime();
 	// Step 1: mark neighbours by strings
 	size_t *ptr = labels;
 	for(y = 0; y < H; y++){
@@ -50,8 +52,8 @@ t0 = dtime();
 			*ptr = Ncur;
 		}
 	}
-printf("\n\ntime for step1: %gs (Ncur=%zd)\n", dtime()-t0, Ncur);
-t0 = dtime();
+//printf("\n\ntime for step1: %gs (Ncur=%zd)\n", dtime()-t0, Ncur);
+//t0 = dtime();
 	DBG("Initial mark\n");
 	#ifdef EBUG
 for(y = 0; y < H; y++){
@@ -72,11 +74,7 @@ for(y = 0; y < H; y++){
 	// now we should scan image again to rebuild enumeration
 	// THIS PROCESS AVOID PARALLELISATION???
 	Ncur = 0;
-	size_t h = H-1
-	#ifdef LABEL_8
-		,w = W-1;
-	#endif
-	;
+	size_t h = H-1, w = W-1;
 	inline void remark(size_t old, size_t *newv){
 		size_t new = *newv;
 		if(assoc[old] == new){
@@ -153,6 +151,13 @@ for(y = 0; y < H; y++){
 					*ptr = 0; // erase this hermit!
 					continue;
 				}
+				#else
+				// no neighbour down & neighbour to the right -> hermit
+				if((y < h && ptr[W] == 0) && (x < w && ptr[1] == 0)){
+					*ptr = 0; // erase this hermit!
+					DBG("hermit!\n");
+					continue;
+				}
 				#endif
 				upmark = ++Ncur;
 			}
@@ -174,8 +179,8 @@ for(y = 0; y < H; y++){
 			remark(curval, &upmark);
 		}
 	}
-printf("time for step 2: %gs, found %zd objects\n", dtime()-t0, Ncur);
-t0 = dtime();
+//printf("time for step 2: %gs, found %zd objects\n", dtime()-t0, Ncur);
+//t0 = dtime();
 	// Step 3: rename markers
 	DBG("rename markers\n");
 	// first correct complex assotiations in assoc
@@ -188,7 +193,7 @@ t0 = dtime();
 			*ptr = assoc[p];
 		}
 	}
-printf("time for step 3: %gs\n", dtime()-t0);
+//printf("time for step 3: %gs\n", dtime()-t0);
 #ifdef EBUG
 printf("\n\n");
 for(y = 0; y < H; y++){
@@ -202,3 +207,4 @@ for(y = 0; y < H; y++){
 #endif
 	FREE(assoc);
 	FREE(labels);
+printf("%6.4f\t%zd\n", dtime()-t0, Ncur);

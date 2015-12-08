@@ -27,9 +27,9 @@
 #include <stdlib.h>
 
 #ifdef EBUG
-#ifndef DBG
-	#define DBG(...) do{fprintf(stderr, __VA_ARGS__);}while(0)
-#endif
+#define DBG(...) do{fprintf(stderr, __VA_ARGS__);}while(0)
+#else
+#define DBG(...)
 #endif
 
 #define _U_    __attribute__((__unused__))
@@ -80,6 +80,7 @@ typedef struct {
 CCbox *cclabel4(unsigned char *I, int W, int H, int W_0, size_t *Nobj);
 CCbox *cclabel8(unsigned char *I, int W, int H, int W_0, size_t *Nobj);
 
+CCbox *cclabel4_1(unsigned char *I, int W, int H, int W_0, size_t *Nobj);
 CCbox *cclabel8_1(unsigned char *I, int W, int H, int W_0, size_t *Nobj);
 #endif // __EROSION_DILATION_H__
 

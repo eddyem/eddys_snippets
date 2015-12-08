@@ -57,117 +57,58 @@ long throw_random_seed(){
 
 
 int main(int ac, char **v){
-	int i,j, W = 28, H = 28, W_0;
+	int i,j, W = 500, H = 500, W_0;
 	//double midX =  (W - 1.0)/ 4. - 1., midY = (H - 1.) / 4. - 1.;
 	//double ro = sqrt(midX*midY), ri = ro / 1.5;
 	bool *inp = Malloc(W * H, sizeof(bool));
-	printf("\n");
 	srand48(throw_random_seed());
 	for(i = 0; i < H; i++)
 		for(j = 0; j < W; j++)
-			inp[i*W+j] = (drand48() > 0.5);
-	/*
-	for(i = 0; i < H/2; i++){
-		for(j = 0; j < W/2; j++){
-			double x = j - midX, y = i - midY;
-			double r = sqrt(x*x + y*y);
-			if((r < ro && r > ri) || fabs(x) == fabs(y))
-				inp[i*W+j] = inp[i*W+j+W/2] = inp[(i+H/2)*W+j] = inp[(i+H/2)*W+j+W/2] = true;
-		}
-	}*/
-	unsigned char *b2ch = bool2char(inp, W, H, &W_0);
-	FREE(inp);
-	printf("inpt: (%dx%d)\n", W_0, H);
-	printC(b2ch, W_0, H);
-	unsigned char *eros = erosion(b2ch, W_0, H);
-	printf("erosion: (%dx%d)\n", W_0, H);
-	printC(eros, W_0, H);
-	unsigned char *dilat = dilation(b2ch, W_0, H);
-	printf("dilation: (%dx%d)\n", W_0, H);
-	printC(dilat, W_0, H);
-	unsigned char *erdilat = dilation(eros, W_0, H);
-	printf("\n\ndilation of erosion (openinfg: (%dx%d)\n", W_0, H);
-	printC(erdilat, W_0, H);
-	unsigned char *dileros = erosion(dilat, W_0, H);
-	printf("erosion of dilation (closing): (%dx%d)\n", W_0, H);
-	printC(dileros, W_0, H);
-	printf("\n\n\n image - opening of original minus original:\n");
-	unsigned char *immer = substim(b2ch, erdilat, W_0, H);
-	printC(immer, W_0, H);
-	FREE(eros); FREE(dilat); FREE(erdilat); FREE(dileros);
-	inp = char2bool(immer, W, H, W_0);
-	printf("\n\nAnd boolean for previous image (%dx%d):\n    ",W,H);
-	printB(inp, W, H);
-	FREE(immer);
-	immer = FC_filter(b2ch, W_0, H);
-	printf("\n\n\nFilter for 4-connected areas searching:\n");
-	printC(immer, W_0, H);
-	FREE(immer);
+			inp[i*W+j] = (drand48() > 0.7);
+	unsigned char *b2ch = bool2char(inp, W, H, &W_0);//, *immer;
+	/*printf("image:\n");
+	printC(b2ch, W_0, H);*/
+//	immer = FC_filter(b2ch, W_0, H);
+//	printf("\n\n\nFilter for 4-connected areas searching:\n");
+//	printC(immer, W_0, H);
+//	FREE(immer);
 	size_t NL;
-	printf("\nmark 8-connected components:\n");
+//	printf("\nmark 4-connected components:\n");
+printf("4new\t");
+	cclabel4_1(b2ch, W, H, W_0, &NL);
+//	printf("\nmark 4-connected components (old):\n");
+printf("4old\t");
+	cclabel4(b2ch, W, H, W_0, &NL);
+//	printf("\nmark 8-connected components:\n");
+printf("8new\t");
 	cclabel8_1(b2ch, W, H, W_0, &NL);
-	printf("\nmark 8-connected components (old):\n");
+//	printf("\nmark 8-connected components (old):\n");
+printf("8old\t");
 	cclabel8(b2ch, W, H, W_0, &NL);
 	FREE(b2ch);
-
-	return 0;
-	W = H = 1000;
-	FREE(inp);
-	inp = Malloc(W * H, sizeof(bool));
-	for(i = 0; i < H; i++)
-		for(j = 0; j < W; j++)
-			inp[i*W+j] = (drand48() > 0.5);
-	b2ch = bool2char(inp, W, H, &W_0);
-	FREE(inp);
-	printf("\n\n\n1) 1 cc4 for 2000x2000 .. ");
-	fflush(stdout);
-	double t0 = dtime();
-	for(i = 0; i < 1; i++){
-		CCbox *b = cclabel4(b2ch, W, H, W_0, &NL);
-		FREE(b);
-	}
-	printf("%.3f s\n", dtime() - t0);
-	printf("\n2) 1 cc8 for 2000x2000 .. ");
-	fflush(stdout);
-	t0 = dtime();
-	for(i = 0; i < 1; i++){
-		CCbox *b  = cclabel8(b2ch, W, H, W_0, &NL);
-		FREE(b);
-	}
-	printf("%.3f s\n", dtime() - t0);
-	printf("\n3) 1 cc8_1 for 2000x2000 .. ");
-	fflush(stdout);
-	t0 = dtime();
-	for(i = 0; i < 1; i++){
-		CCbox *b  = cclabel8_1(b2ch, W, H, W_0, &NL);
-		FREE(b);
-	}
-	printf("%.3f s\n", dtime() - t0);
-
-	/* printf("\n\n\n\nSome tests:\n1) 10000 dilations for 2000x2000 .. ");
-	fflush(stdout);
-	double t0 = dtime();
-	for(i = 0; i < 10000; i++){
-		unsigned char *dilat = dilation(b2ch, W, H);
-		free(dilat);
-	}
-	printf("%.3f s\n", dtime() - t0);
-	printf("2) 10000 erosions for 2000x2000 .. ");
-	fflush(stdout);
-	t0 = dtime();
-	for(i = 0; i < 10000; i++){
-		unsigned char *dilat = erosion(b2ch, W, H);
-		free(dilat);
-	}
-	printf("%.3f s\n", dtime() - t0);
-	printf("3) 10000 image substitutions for 2000x2000 .. ");
-	fflush(stdout);
-	unsigned char *dilat = dilation(b2ch, W, H);
-	t0 = dtime();
-	for(i = 0; i < 10000; i++){
-		unsigned char *res = substim(b2ch, dilat, W, H);
-		free(res);
-	}
-	printf("%.3f s\n", dtime() - t0);*/
 	return 0;
 }
+/*
+ * bench
+ * names = ["4new"; "4old"; "8new"; "8old"]; for i = 1:4; nm = names(i,:);  time = []; sz = []; for i = 1:52; if(name{i} == nm) time = [time speed(i)]; sz = [sz num(i)]; endif;endfor; ts = time./sz; printf("%s: time/object = %.1f +- %.1f us\n", nm, mean(ts)*1e6, std(ts)*1e6);endfor;
+ *
+ * 0.25 megapixels
+ * 4new: time/object = 1.9 +- 0.4 us
+ * 4old: time/object = 1.7 +- 0.1 us
+ * 8new: time/object = 3.9 +- 0.1 us
+ * 8old: time/object = 13.5 +- 2.1 us
+ *
+ * 1 megapixels ---> [name speed num] = textread("1megapixel", "%s %f %f");
+ * 4new: time/object = 5.5 +- 0.5 us
+ * 4old: time/object = 5.3 +- 0.0 us
+ * 8new: time/object = 13.3 +- 0.1 us
+ * 8old: time/object = 47.6 +- 2.2 us
+ *
+ * 4 megapixels ---> [name speed num] = textread("4megapixels", "%s %f %f");
+ * 4new: time/object = 21.3 +- 1.5 us
+ * 4old: time/object = 22.3 +- 2.2 us
+ * 8new: time/object = 57.6 +- 1.3 us
+ * 8old: time/object = 195.5 +- 11.7 us
+ *
+ *
+ */

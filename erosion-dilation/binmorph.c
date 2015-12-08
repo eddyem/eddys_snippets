@@ -249,7 +249,7 @@ size_t *char2st(unsigned char *image, int W, int H, int W_0){
  * @return allocated memory area with converted input image
  */
 unsigned char *FC_filter(unsigned char *image, int W, int H){
-	if(W < 2 || H < 2) errx(1, "4-connect: image size too small");
+	if(W < 1 || H < 2) errx(1, "4-connect: image size too small");
 	unsigned char *ret = Malloc(W*H, 1);
 	int y = 0, w = W-1, h = H-1;
 	// top of image, y = 0
@@ -381,15 +381,6 @@ unsigned char *substim(unsigned char *im1, unsigned char *im2, int W, int H){
 
 
 
-/*
- * <=================== CONNECTED COMPONENTS LABELING ===================
- */
-/*
-#undef DBG
-#undef EBUG
-#define DBG(...)
-*/
-
 /**
  * label 4-connected components on image
  * (slow algorythm, but easy to parallel)
@@ -400,6 +391,13 @@ unsigned char *substim(unsigned char *im1, unsigned char *im2, int W, int H){
  * @return an array of labeled components
  */
 CCbox *cclabel4(unsigned char *Img, int W, int H, int W_0, size_t *Nobj){
+	unsigned char *I = FC_filter(Img, W_0, H);
+	#include "cclabling.h"
+	FREE(I);
+	return ret;
+}
+
+CCbox *cclabel4_1(unsigned char *Img, int W, int H, int W_0, size_t *Nobj){
 	unsigned char *I = FC_filter(Img, W_0, H);
 	#include "cclabling.h"
 	FREE(I);
@@ -422,6 +420,11 @@ CCbox *cclabel8_1(unsigned char *I, int W, int H, int W_0, size_t *Nobj){
 	#undef LABEL_8
 	return ret;
 }
+
+/*
+ * <=================== CONNECTED COMPONENTS LABELING ===================
+ */
+
 
 /*
  * <=================== template ===================>

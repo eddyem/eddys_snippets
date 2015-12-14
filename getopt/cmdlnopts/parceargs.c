@@ -29,11 +29,7 @@
 #include <libintl.h>// gettext
 #include <ctype.h>	// isalpha
 #include "parceargs.h"
-
-// macro to print help messages
-#ifndef PRNT
-	#define PRNT(x) gettext(x)
-#endif
+#include "usefull_macros.h"
 
 char *helpstring = "%s\n";
 
@@ -56,8 +52,8 @@ void change_helpstring(char *s){
 		if(str[1] == 's') scount++; // increment "%s" counter
 	};
 	if(pcount > 1 || pcount != scount){ // amount of pcount and/or scount wrong
-		fprintf(stderr, "Wrong helpstring!\n");
-		exit(-1);
+		/// "Неправильный формат строки помощи"
+		ERRX(_("Wrong helpstring!"));
 	}
 	helpstring = s;
 }
@@ -86,7 +82,8 @@ static bool myatoll(void *num, char *str, argtype t){
 		case arg_int:
 		default:
 			if(tmp < INT_MIN || tmp > INT_MAX){
-				fprintf(stderr, "Integer out of range\n");
+				/// "Целое вне допустимого диапазона"
+				WARNX(_("Integer out of range"));
 				return FALSE;
 			}
 			iptr = (int*)num;
@@ -148,12 +145,12 @@ void *get_aptr(void *paptr, argtype type){
 		void **p = aptr;
 		while(*p++) ++i;
 	}
-	size_t sz;
+	size_t sz = 0;
 	switch(type){
 		default:
 		case arg_none:
-			fprintf(stderr, "Can't use multiple args with arg_none!\n");
-			exit(-1);
+			/// "Не могу использовать несколько параметров без аргументов!"
+			ERRX("Can't use multiple args with arg_none!");
 		break;
 		case arg_int:
 			sz = sizeof(int);
@@ -297,6 +294,26 @@ void parceargs(int *argc, char ***argv, myoption *options){
 }
 
 /**
+ * compare function for qsort
+ * first - sort by short options; second - sort arguments without sort opts (by long options)
+ */
+static int argsort(const void *a1, const void *a2){
+	const myoption *o1 = (myoption*)a1, *o2 = (myoption*)a2;
+	const char *l1 = o1->name, *l2 = o2->name;
+	int s1 = o1->val, s2 = o2->val;
+	int *f1 = o1->flag, *f2 = o2->flag;
+	// check if both options has short arg
+	if(f1 == NULL && f2 == NULL){ // both have short arg
+		return (s1 - s2);
+	}else if(f1 != NULL && f2 != NULL){ // both don't have short arg - sort by long
+		return strcmp(l1, l2);
+	}else{ // only one have short arg -- return it
+		if(f2) return -1; // a1 have short - it is 'lesser'
+		else return 1;
+	}
+}
+
+/**
  * Show help information based on myoption->help values
  * @param oindex (i)  - if non-negative, show only help by myoption[oindex].help
  * @param options (i) - array of `myoption`
@@ -304,13 +321,12 @@ void parceargs(int *argc, char ***argv, myoption *options){
  * @exit:  run `exit(-1)` !!!
  */
 void showhelp(int oindex, myoption *options){
-	// ATTENTION: string `help` prints through macro PRNT(), bu default it is gettext,
-	// but you can redefine it before `#include "parceargs.h"`
 	int max_opt_len = 0; // max len of options substring - for right indentation
 	const int bufsz = 255;
 	char buf[bufsz+1];
 	myoption *opts = options;
 	assert(opts);
+	DBG("hre");
 	assert(opts[0].name); // check whether there is at least one options
 	if(oindex > -1){ // print only one message
 		opts = &options[oindex];
@@ -319,7 +335,7 @@ void showhelp(int oindex, myoption *options){
 		printf("--%s", opts->name);
 		if(opts->has_arg == 1) printf("=arg");
 		else if(opts->has_arg == 2) printf("[=arg]");
-		printf("  %s\n", PRNT(opts->help));
+		printf("  %s\n", _(opts->help));
 		exit(-1);
 	}
 	// header, by default is just "progname\n"
@@ -336,7 +352,12 @@ void showhelp(int oindex, myoption *options){
 	}while((++opts)->name);
 	max_opt_len += 14; // format: '-S , --long[=arg]' - get addition 13 symbols
 	opts = options;
-	// Now print all help
+	// count amount of options
+	int N; for(N = 0; opts->name; ++N, ++opts);
+	if(N == 0) exit(-2);
+	// Now print all help (sorted)
+	opts = options;
+	qsort(opts, N, sizeof(myoption), argsort);
 	do{
 		int p = sprintf(buf, "  "); // a little indent
 		if(!opts->flag && isalpha(opts->val)) // .val is short argument
@@ -347,8 +368,9 @@ void showhelp(int oindex, myoption *options){
 		else if(opts->has_arg == 2) // optional argument
 			p += snprintf(buf+p, bufsz-p, "[=arg]");
 		assert(p < max_opt_len); // there would be magic if p >= max_opt_len
-		printf("%-*s%s\n", max_opt_len+1, buf, PRNT(opts->help)); // write options & at least 2 spaces after
-	}while((++opts)->name);
+		printf("%-*s%s\n", max_opt_len+1, buf, _(opts->help)); // write options & at least 2 spaces after
+		++opts;
+	}while(--N);
 	printf("\n\n");
 	exit(-1);
 }
@@ -376,6 +398,7 @@ bool get_suboption(char *str, mysuboption *opt){
 			default:
 			case arg_none:
 				if(soptr->argptr) *((int*)aptr) += 1; // increment value
+				result = TRUE;
 			break;
 			case arg_int:
 				result = myatoll(aptr, val, arg_int);
@@ -416,15 +439,18 @@ bool get_suboption(char *str, mysuboption *opt){
 		}
 		int idx = findsubopt(tok, opt);
 		if(idx < 0){
-			printf("Wrong parameter: %s", tok);
+			/// "Неправильный параметр: %s"
+			WARNX(_("Wrong parameter: %s"), tok);
 			goto returning;
 		}
 		if(noarg && opt[idx].has_arg == NEED_ARG){
-			printf("%s: argument needed!\n", tok);
+			/// "%s: необходим аргумент!"
+			WARNX(_("%s: argument needed!"), tok);
 			goto returning;
 		}
 		if(!opt_setarg(opt, idx, val)){
-			printf("Wrong argument \"%s\" of parameter \"%s\"\n", val, tok);
+			/// "Неправильный аргумент \"%s\" параметра \"%s\""
+			WARNX(_("Wrong argument \"%s\" of parameter \"%s\""), val, tok);
 			goto returning;
 		}
 	}while((tok = strtok_r(NULL, ":,", &tmpbuf)));

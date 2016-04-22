@@ -1,0 +1,86 @@
+<html>
+<head>
+	<title>Testing websockets</title>
+	<style type="text/css">
+	.content { vertical-align:top; text-align:center; background:#fffff0; padding:12px; border-radius:10px; }
+	button { display: block; width: 70px; text-align: center; }
+	.container {border: solid 1px;  border-radius:10px; padding:12px; }
+</style>
+<script>
+(function () { 'use strict';
+	var socket;
+	var connected = 0;
+	var wdTmout, faulttmout;
+	function $(nm){return document.getElementById(nm);}
+	function get_ws_url(){
+		var pcol;
+		var u = document.URL;
+		if (u.substring(0, 5) == "https") {
+			pcol = "wss://";
+			u = u.substr(8);
+		} else {
+			pcol = "ws://";
+			if (u.substring(0, 4) == "http")
+				u = u.substr(7);
+		}
+		u = u.split('/');
+		return pcol + u[0] + ":9999";
+	}
+	function TryConnect(){
+		if(connected) return;
+		//if(socket) delete socket;
+		var apprURL = get_ws_url();
+		var sockfn = null;
+		if(typeof MozWebSocket != "undefined")
+			sockfn = MozWebSocket;
+		else
+			sockfn = WebSocket;
+		socket = new sockfn(apprURL, "IRBIS_control");
+		if(!socket){
+			alert("Error: can't create websocket!\nMake sure that your browser supports websockets");
+			return;
+		}
+		try {
+			socket.onopen = function(){
+				$("connected").style.backgroundColor = "#40ff40";
+				$("connected").textContent = "Connection opened";
+				connected = 1;
+				socket.send("hello");
+			}
+			socket.onmessage = function(msg){
+				var answ =  msg.data
+				$("lastmsg").textContent = answ;
+			}
+			socket.onclose = function(){
+				$("connected").style.backgroundColor = "#ff4040";
+				$("connected").textContent = "Connection closed";
+				$("lastmsg").textContent = "";
+				connected = 0;
+				setTimeout(TryConnect, 1000);
+			}
+		} catch(exception) {
+			alert('Error' + exception);
+		}
+	}
+	function init(){
+		$("sendmsg").onclick = sendmsg;
+		TryConnect();
+	}
+	function sendmsg(){
+		if(connected) socket.send($("msgtosend").value);
+	}
+	var WStest = {};
+	WStest.init = init;
+	WStest.send = sendmsg;
+	window.WStest = WStest;
+}());
+</script>
+</head>
+<body onload="WStest.init()">
+	<div class="container" id="cont">
+	<div><input type="text" id="msgtosend" size="15"><button id="sendmsg">Send</button></div>
+	<div id="connected">No connection</div>
+	<div id="lastmsg"></div>
+	</div>
+</body>
+</html>

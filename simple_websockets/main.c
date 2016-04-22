@@ -85,11 +85,13 @@ static int control_callback(struct lws *wsi,
 			pthread_mutex_lock(&ip_mutex);
 			lws_get_peer_addresses(wsi, lws_get_socket_fd(wsi),
 						client_name, 128, client_ip, 128);
-			if(!client_IP)
+			DBG("client %s connected from IP %s", client_name, client_ip);
+			if(!client_IP){
 				client_IP = strdup(client_ip);
-			else if(strcmp(client_IP, client_ip)){
+				DBG("new connection");
+			}else{
 				char buf[256];
-				snprintf(buf, 255, "Already connected from %s.<br>Please, disconnect.", client_IP);
+				snprintf(buf, 255, "Already connected from %s. Please, disconnect.", client_IP);
 				DBG("Already connected\n");
 				put_message_to_que(buf, dat);
 				snprintf(buf, 255, "Try of connection from %s", client_ip);

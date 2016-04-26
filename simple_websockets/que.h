@@ -26,12 +26,19 @@
 #define MESSAGE_QUE_SIZE   (16)
 
 
+typedef enum{
+	UNDEFINED = 0,
+	SALT_SENT,
+	VERIFIED,
+}client_state;
+
 typedef struct {
 	int num;
 	int idxwr;
 	int idxrd;
 	char message[MESSAGE_QUE_SIZE][MESSAGE_LEN];
 	int already_connected;
+	client_state state;
 } control_data;
 
 extern char que[];

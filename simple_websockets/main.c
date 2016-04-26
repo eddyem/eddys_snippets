@@ -27,6 +27,7 @@
 #include <pthread.h>
 #include <sys/prctl.h>
 #include <time.h>
+#include <openssl/md5.h>
 
 #include "dbg.h"
 #include "que.h"
@@ -37,6 +38,9 @@
 
 char *client_IP = NULL; // IP of first connected client
 volatile int stop = 0;
+const char *passhash = "1a1dc91c907325c69271ddf0c944bc72"; // "pass"
+char *pwencrypted;
+
 pthread_mutex_t command_mutex, ip_mutex;
 
 static void interrupt(_U_ int signo) {
@@ -53,17 +57,62 @@ int ws_write(struct lws *wsi_in, char *str){
 	if(len > MESSAGE_LEN) len = MESSAGE_LEN;
 	memcpy(buf + LWS_SEND_BUFFER_PRE_PADDING, str, len);
 	n = lws_write(wsi_in, buf + LWS_SEND_BUFFER_PRE_PADDING, len, LWS_WRITE_TEXT);
-	DBG("write %s\n", str);
+	//DBG("write %s\n", str);
 	return n;
 }
 
-void websig(char *command){
+void websig(char *command, control_data *dat){
 	/*while(data_in_buf);
 	pthread_mutex_lock(&command_mutex);
 	strncpy(cmd_buf, command, CMDBUFLEN);
 	data_in_buf = 1;
 	pthread_mutex_unlock(&command_mutex);*/
-	DBG("get message: %s\n", command);
+	DBG("got message: %s\n", command);
+	if(dat->state == SALT_SENT){
+		if(strcmp(command, pwencrypted) == 0){ // pass OK
+			dat->state = VERIFIED;
+			put_message_to_que("authOK", dat);
+		}else{ // wrong password
+			put_message_to_que("badpass", dat);
+		}
+	}
+}
+
+char *str2md5(const char *str) {
+	int n;
+	MD5_CTX c;
+	unsigned char digest[16];
+	static char out[33] = {0};
+	size_t length = strlen(str);
+	if(length > 512) length = 512;
+	MD5_Init(&c);
+	MD5_Update(&c, str, length);
+	MD5_Final(digest, &c);
+	for (n = 0; n < 16; ++n) {
+		snprintf(&(out[n*2]), 3, "%02x", (unsigned int)digest[n]);
+	}
+	return out;
+}
+
+
+char *gensalt(){
+	static char buf[38] = "pwhash";
+	char salt_and_pass[64];
+	int i;
+	for(i = 6; i < 38; ++i){
+		char r = rand() % 26;
+		if(rand() & 1)
+			r += 'a';
+		else
+			r += 'A';
+		buf[i] = r;
+	}
+	DBG("gen: %s", buf);
+	strcpy(salt_and_pass, &buf[6]);
+	strcat(salt_and_pass, passhash);
+	pwencrypted = str2md5(salt_and_pass);
+	DBG("salt + pass: %s", pwencrypted);
+	return buf;
 }
 
 static int control_callback(struct lws *wsi,
@@ -89,6 +138,8 @@ static int control_callback(struct lws *wsi,
 			if(!client_IP){
 				client_IP = strdup(client_ip);
 				DBG("new connection");
+				dat->state = SALT_SENT;
+				put_message_to_que(gensalt(), dat); // send "pwhash" + salt
 			}else{
 				char buf[256];
 				snprintf(buf, 255, "Already connected from %s. Please, disconnect.", client_IP);
@@ -104,15 +155,15 @@ static int control_callback(struct lws *wsi,
 		case LWS_CALLBACK_SERVER_WRITEABLE:
 			if(dat->num)
 				parse_que_msg(dat);
-			if(!dat->already_connected && global_que.num)
-				parse_que_msg(&global_que);
+			if(dat->state == VERIFIED && !dat->already_connected && global_que.num)
+					parse_que_msg(&global_que);
 			usleep(500);
 			lws_callback_on_writable(wsi);
 			return 0;
 		break;
 		case LWS_CALLBACK_RECEIVE:
 			if(!dat->already_connected)
-				websig(msg);
+				websig(msg, dat);
 		break;
 		case LWS_CALLBACK_CLOSED:
 			DBG("closed\n");
@@ -209,6 +260,7 @@ int main(void) {
 	signal(SIGTERM, interrupt);
 	signal(SIGQUIT, SIG_IGN);
 	signal(SIGTSTP, SIG_IGN);
+	srand(time(NULL));
 	while(1){
 		if(stop) return 0;
 		pid_t childpid = fork();

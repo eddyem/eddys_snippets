@@ -5,11 +5,15 @@
 	.content { vertical-align:top; text-align:center; background:#fffff0; padding:12px; border-radius:10px; }
 	button { display: block; width: 70px; text-align: center; }
 	.container {border: solid 1px;  border-radius:10px; padding:12px; }
-</style>
-<script>
+	</style>
+	<script type="text/javascript" src="./md5.js" language="javascript"></script>
+	<script type="text/javascript" src="./localstore.js" language="javascript"></script>
+	<script type="text/javascript" src="./getpass.js" language="javascript"></script>
+<script type="text/javascript">
 (function () { 'use strict';
 	var socket;
-	var connected = 0;
+	var pwhash = "", salt = "";
+	var connected = 0, verified = 0;
 	var wdTmout, faulttmout;
 	function $(nm){return document.getElementById(nm);}
 	function get_ws_url(){
@@ -40,34 +44,69 @@
 			alert("Error: can't create websocket!\nMake sure that your browser supports websockets");
 			return;
 		}
+		function chkdata(msg){
+			if(msg.substr(0,6) == "pwhash"){
+				salt = msg.substr(6);
+				console.log("salt="+salt);
+				console.log("md5="+md5(salt+pwhash));
+				if(pwhash != "") socket.send(md5(salt+pwhash));
+				else{
+					console.log("empty password!");
+					GetPass.get();
+					return;
+				}
+			}
+			else if(msg == "authOK") verified = 1;
+			else if(msg == "badpass"){
+				verified = 0;
+				alert("Wrong password!");
+				pwhash == "";
+				GetPass.get();
+			}
+		}
 		try {
 			socket.onopen = function(){
 				$("connected").style.backgroundColor = "#40ff40";
 				$("connected").textContent = "Connection opened";
 				connected = 1;
-				socket.send("hello");
+				verified = 0;
+				salt = "";
 			}
 			socket.onmessage = function(msg){
-				var answ =  msg.data
-				$("lastmsg").textContent = answ;
+				var answ =  msg.data;
+				console.log("got: "+answ);
+				if(!verified) chkdata(answ);
+				else $("lastmsg").textContent = answ;
 			}
 			socket.onclose = function(){
 				$("connected").style.backgroundColor = "#ff4040";
 				$("connected").textContent = "Connection closed";
 				$("lastmsg").textContent = "";
 				connected = 0;
+				verified = 0;
 				setTimeout(TryConnect, 1000);
+				socket = null;
 			}
 		} catch(exception) {
 			alert('Error' + exception);
 		}
 	}
+	function calcHash(pass){
+		pwhash = md5(pass)
+		console.log("MD5: " + pwhash);
+		Storage.save("pwhash", pwhash);
+		if(salt != "" && socket)
+			socket.send(md5(salt+pwhash));
+	}
 	function init(){
 		$("sendmsg").onclick = sendmsg;
+		pwhash = Storage.load("pwhash", "");
+		GetPass.onenter = calcHash;
 		TryConnect();
 	}
 	function sendmsg(){
 		if(connected) socket.send($("msgtosend").value);
+		$("md5").textContent = md5($("msgtosend").value);
 	}
 	var WStest = {};
 	WStest.init = init;
@@ -81,6 +120,7 @@
 	<div><input type="text" id="msgtosend" size="15"><button id="sendmsg">Send</button></div>
 	<div id="connected">No connection</div>
 	<div id="lastmsg"></div>
+	<div>Message MD5 sum: <span id="md5"></span></div>
 	</div>
 </body>
 </html>

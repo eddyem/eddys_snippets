@@ -1,5 +1,5 @@
 PROGRAM = websocktest
-LDFLAGS = $(shell pkg-config --libs libwebsockets) -lpthread
+LDFLAGS = $(shell pkg-config --libs libwebsockets) -lpthread -lcrypto
 SRCS = main.c que.c
 CC = gcc
 DEFINES += -DEBUG

@@ -1,0 +1,265 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-05-13 20:47+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=koi8-r\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. amount of pcount and/or scount wrong
+#. / "Неправильный формат строки помощи"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/parseargs.c:56
+msgid "Wrong helpstring!"
+msgstr ""
+
+#. / "Целое вне допустимого диапазона"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/parseargs.c:86
+msgid "Integer out of range"
+msgstr ""
+
+#. / "Неправильный параметр: %s"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/parseargs.c:480
+#, c-format
+msgid "Wrong parameter: %s"
+msgstr ""
+
+#. / "%s: необходим аргумент!"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/parseargs.c:485
+#, c-format
+msgid "%s: argument needed!"
+msgstr ""
+
+#. / "Неправильный аргумент \"%s\" параметра \"%s\""
+#: /Big/Data/SAO/edmund_opt/HSFW_management/parseargs.c:490
+#, c-format
+msgid "Wrong argument \"%s\" of parameter \"%s\""
+msgstr ""
+
+#: /Big/Data/SAO/edmund_opt/HSFW_management/usefull_macros.c:173
+msgid "No filename given!"
+msgstr ""
+
+#: /Big/Data/SAO/edmund_opt/HSFW_management/usefull_macros.c:175
+#, c-format
+msgid "Can't open %s for reading"
+msgstr ""
+
+#: /Big/Data/SAO/edmund_opt/HSFW_management/usefull_macros.c:177
+#, c-format
+msgid "Can't stat %s"
+msgstr ""
+
+#: /Big/Data/SAO/edmund_opt/HSFW_management/usefull_macros.c:180
+msgid "Mmap error for input"
+msgstr ""
+
+#: /Big/Data/SAO/edmund_opt/HSFW_management/usefull_macros.c:181
+msgid "Can't close mmap'ed file"
+msgstr ""
+
+#: /Big/Data/SAO/edmund_opt/HSFW_management/usefull_macros.c:190
+msgid "Can't munmap"
+msgstr ""
+
+#: /Big/Data/SAO/edmund_opt/HSFW_management/usefull_macros.c:214
+msgid "Can't setup console"
+msgstr ""
+
+#. Get settings
+#: /Big/Data/SAO/edmund_opt/HSFW_management/usefull_macros.c:283
+msgid "Can't get settings"
+msgstr ""
+
+#: /Big/Data/SAO/edmund_opt/HSFW_management/usefull_macros.c:293
+msgid "Can't set settings"
+msgstr ""
+
+#. / "Не могу открыть %s"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hidmanage.c:80
+#, c-format
+msgid "Can't open %s"
+msgstr ""
+
+#. / "отобразить эту справку"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/cmdlnopts.c:61
+msgid "show this help"
+msgstr ""
+
+#. / "буквенный идентификатор колеса"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/cmdlnopts.c:63
+msgid "letter wheel identificator"
+msgstr ""
+
+#. / "название колеса"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/cmdlnopts.c:65
+msgid "wheel name"
+msgstr ""
+
+#. / "номер позиции фильтра"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/cmdlnopts.c:67
+msgid "filter position number"
+msgstr ""
+
+#. / "название фильтра"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/cmdlnopts.c:69
+msgid "filter name"
+msgstr ""
+
+#. / "идентификатор фильтра, например, \"A3\""
+#: /Big/Data/SAO/edmund_opt/HSFW_management/cmdlnopts.c:71
+msgid "filter identificator like \"A3\""
+msgstr ""
+
+#. / "список всех сохраненных имен"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/cmdlnopts.c:73
+msgid "list all stored names"
+msgstr ""
+
+#. / "список имен только присутствующих устройств"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/cmdlnopts.c:75
+msgid "list only present devices' names"
+msgstr ""
+
+#. / "переместиться в стартовую позицию"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/cmdlnopts.c:77
+msgid "move to home position"
+msgstr ""
+
+#. / "переименовать сохраненные имена колес/фильтров"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/cmdlnopts.c:79
+msgid "rename stored wheels/filters names"
+msgstr ""
+
+#. / "Неправильный формат числа double!"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/cmdlnopts.c:97
+msgid "Wrong double number format!"
+msgstr ""
+
+#. / "Игнорируются параметры: "
+#: /Big/Data/SAO/edmund_opt/HSFW_management/cmdlnopts.c:122
+msgid "Ignore parameters:"
+msgstr ""
+
+#. / "Не передано никаких аргументов, вывожу список подключенных устройств!"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/cmdlnopts.c:130
+msgid "No arguments given, list all devices connected!"
+msgstr ""
+
+#. / "Идентификатор колеса должен быть буквой от \"A\" до \"H\"!"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:77
+msgid "Wheel ID should be a letter from \"A\" to \"H\"!"
+msgstr ""
+
+#. / "Заданы и идентификатор, и имя колеса; попробуйте что-то одно!"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:89
+msgid "You give both wheel ID and wheel name, try something one!"
+msgstr ""
+
+#. / "Заданное колесо не обнаружено!"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:104
+msgid "Given wheel not found!"
+msgstr ""
+
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:111
+msgid "Filter ID is letter (wheel) and number (position)"
+msgstr ""
+
+#. / "Фильтр %s не обнаружен"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:125
+#, c-format
+msgid "Filter %s not found!"
+msgstr ""
+
+#. / "Позиция фильтра должна быть числом от 1 до %d!"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:133
+#, c-format
+msgid "Filter position should be a number from 1 to %d!"
+msgstr ""
+
+#. / "Ошибка отправки данных"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:153
+msgid "Error sending data"
+msgstr ""
+
+#. / "Ошибка чтения данных"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:168
+msgid "Error reading data"
+msgstr ""
+
+#. / "Ошибка, количество попыток истекло"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:192
+msgid "Error, tries amount exceed"
+msgstr ""
+
+#. / "Турель не инициализирована, движение в \"дом\""
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:210
+msgid "Turret isn't initialized, move home..."
+msgstr ""
+
+#. / "Ожидание окончания движения"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:225
+#, c-format
+msgid "Wait for end of moving "
+msgstr ""
+
+#. / "Произошла ошибка, повторите запуск"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:234
+msgid "Error ocured, repeat again"
+msgstr ""
+
+#. / "Заданная позиция вне диапазона 1..%d"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:254
+#, c-format
+msgid "Given position out of range 1..%d"
+msgstr ""
+
+#. / "Не могу открыть устройство"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:281
+msgid "Can't open device"
+msgstr ""
+
+#. / "\nСвойства подключенного колеса\n"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:307
+msgid ""
+"\n"
+"Connected wheel properties\n"
+msgstr ""
+
+#. / "\nВсе записи EEPROM\n"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:329
+msgid ""
+"\n"
+"All records from EEPROM\n"
+msgstr ""
+
+#. / "Турели не обнаружены"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:366
+msgid "No turrets found"
+msgstr ""
+
+#. / "Обнаружено %d турелей, но ни к одной нет прав доступа"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:372
+#, c-format
+msgid "Found %d turrets but have no access rights to any"
+msgstr ""
+
+#. / "Зацикливание, попробуйте еще раз"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:391
+msgid "Cycling detected, try again"
+msgstr ""
+
+#. / "Уже в заданной позиции"
+#: /Big/Data/SAO/edmund_opt/HSFW_management/hsfw.c:420
+msgid "Already at position"
+msgstr ""

@@ -1,5 +1,5 @@
 /*
- * cmdlnopts.c - the only function that parce cmdln args and returns glob parameters
+ * cmdlnopts.c - the only function that parse cmdln args and returns glob parameters
  *
  * Copyright 2013 Edward V. Emelianoff <eddy@sao.ru>
  *
@@ -85,7 +85,7 @@ myoption cmdlnopts[] = {
 	{"int-size",NEED_ARG,	NULL,	'i',	arg_int,	APTR(&G.S_interp),	"size of interpolated array of surface deviations"},
 	{"image-size",NEED_ARG,NULL,	'I',	arg_int,	APTR(&G.S_image),	"resulting image size"},
 	{"N-photons",NEED_ARG,NULL,	'N',	arg_int,	APTR(&G.N_phot), 	"amount of photons falled to one pixel of matrix by one iteration"},
-	// parameter with suboptions parsed directly in parceargs
+	// parameter with suboptions parsed directly in parseargs
 	{"mir-parameters",NEED_ARG,NULL,'M',	arg_function,APTR(&get_mir_par),MirPar},
 	// another variant of setting parameter without argument
 	{"add-noice",NO_ARGS,	&G.randMask,1,	arg_none,	NULL,				"add random noice to mirror surface deviations"},
@@ -216,7 +216,7 @@ bool get_mirpars(void *arg, suboptions *V){
 }
 
 /**
- * functions of subargs parcing can looks as this
+ * functions of subargs parsing can looks as this
  */
 /**
  * Parse string of mirror parameters (--mir-diam=...)
@@ -236,13 +236,13 @@ bool get_mir_par(void *arg){
 }
 
 /**
- * Parce command line options and return dynamically allocated structure
+ * Parse command line options and return dynamically allocated structure
  * 		to global parameters
  * @param argc - copy of argc from main
  * @param argv - copy of argv from main
  * @return allocated structure with global parameters
  */
-glob_pars *parce_args(int argc, char **argv){
+glob_pars *parse_args(int argc, char **argv){
 	int i;
 	void *ptr;
 	ptr = memcpy(&G, &Gdefault, sizeof(G)); assert(ptr);
@@ -251,7 +251,7 @@ glob_pars *parce_args(int argc, char **argv){
 	// format of help: "Usage: progname [args]\n"
 	change_helpstring("Usage: %s [args]\n\n\tWhere args are:\n");
 	// parse arguments
-	parceargs(&argc, &argv, cmdlnopts);
+	parseargs(&argc, &argv, cmdlnopts);
 	if(help) showhelp(-1, cmdlnopts);
 	if(argc > 0){
 		G.rest_pars_num = argc;

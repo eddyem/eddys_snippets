@@ -29,7 +29,11 @@ typedef struct{
 } filterpars;
 
 
-void parce_filter(char *pars){
+void signals(int signo){
+	exit(signo);
+}
+
+void parse_filter(char *pars){
 	filterpars params = { 0, 3, 3};
 	mysuboption filteropts[] = {
 		{"type", NEED_ARG, arg_string, &params.filtertype},
@@ -47,7 +51,7 @@ void parce_filter(char *pars){
 int main(int argc, char **argv){
 	glob_pars *G = NULL; // default parameters see in cmdlnopts.c
 	mirPar *M = NULL;    // default mirror parameters
-	G = parce_args(argc, argv);
+	G = parse_args(argc, argv);
 	M = G->Mirror;
 	printf("Globals:\n");
 	if(!G->S_dev){
@@ -98,7 +102,7 @@ int main(int argc, char **argv){
 		int i = 0;
 		while(*fpars){
 			printf("%d:\n", i++);
-			parce_filter(*fpars);
+			parse_filter(*fpars);
 			++fpars;
 		}
 	}

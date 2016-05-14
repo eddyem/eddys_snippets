@@ -76,6 +76,7 @@ target_link_libraries(${PROJ} ${${PROJ}_LIBRARIES} ${USB_LIBRARIES})
 
 # Installation of the program
 INSTALL(FILES ${MO_FILE} DESTINATION "share/locale/ru/LC_MESSAGES")
+INSTALL(FILES "99-edmund_hsfw.rules" DESTINATION "/etc/udev/rules.d")
 INSTALL(TARGETS ${PROJ} DESTINATION "bin")
 
 ###### gettext ######

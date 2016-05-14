@@ -31,6 +31,7 @@
 typedef struct{
 	char *wheelID;         // ID of wheel to work with
 	char *wheelName;       // and/or its name
+	char *serial;          // turret's serial (string description)
 	int   filterPos;       // position of filter
 	char *filterName;      // and/or its name
 	char *filterId;        // or full ID like "A2"
@@ -42,7 +43,7 @@ typedef struct{
 
 // default & global parameters
 extern glob_pars const Gdefault;
-extern int listNms, gohome, reName;
+extern int listNms, gohome, reName, showpos;
 
 extern glob_pars G;
 

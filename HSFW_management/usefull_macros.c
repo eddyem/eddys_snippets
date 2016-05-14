@@ -170,14 +170,19 @@ mmapbuf *My_mmap(char *filename){
 	char *ptr;
 	size_t Mlen;
 	struct stat statbuf;
+	/// "Не задано имя файла!"
 	if(!filename) ERRX(_("No filename given!"));
 	if((fd = open(filename, O_RDONLY)) < 0)
+	/// "Не могу открыть %s для чтения"
 		ERR(_("Can't open %s for reading"), filename);
 	if(fstat (fd, &statbuf) < 0)
+	/// "Не могу выполнить stat %s"
 		ERR(_("Can't stat %s"), filename);
 	Mlen = statbuf.st_size;
 	if((ptr = mmap (0, Mlen, PROT_READ, MAP_PRIVATE, fd, 0)) == MAP_FAILED)
+	/// "Ошибка mmap"
 		ERR(_("Mmap error for input"));
+	/// "Не могу закрыть mmap'нутый файл"
 	if(close(fd)) ERR(_("Can't close mmap'ed file"));
 	mmapbuf *ret = MALLOC(mmapbuf, 1);
 	ret->data = ptr;
@@ -187,6 +192,7 @@ mmapbuf *My_mmap(char *filename){
 
 void My_munmap(mmapbuf *b){
 	if(munmap(b->data, b->len))
+	/// "Не могу munmap"
 		ERR(_("Can't munmap"));
 	FREE(b);
 }
@@ -211,6 +217,7 @@ void setup_con(){
 	newt = oldt;
 	newt.c_lflag &= ~(ICANON | ECHO);
 	if(tcsetattr(STDIN_FILENO, TCSANOW, &newt) < 0){
+		/// "Не могу настроить консоль"
 		WARN(_("Can't setup console"));
 		tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 		signals(0); //quit?
@@ -280,6 +287,7 @@ void tty_init(char *comdev){
 	}
 	DBG(" OK\nGet current settings... ");
 	if(ioctl(comfd,TCGETA,&oldtty) < 0){  // Get settings
+		/// "Не могу получить настройки"
 		WARN(_("Can't get settings"));
 		signals(0);
 	}
@@ -290,6 +298,7 @@ void tty_init(char *comdev){
 	tty.c_cc[VMIN]  = 0;  // non-canonical mode
 	tty.c_cc[VTIME] = 5;
 	if(ioctl(comfd,TCSETA,&tty) < 0){
+		/// "Не могу установить настройки"
 		WARN(_("Can't set settings"));
 		signals(0);
 	}

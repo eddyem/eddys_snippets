@@ -39,6 +39,7 @@ glob_pars G;
 int listNms   = 0       // list names
 	,gohome   = 0       // first go home
 	,reName   = 0       // rename wheels/positions
+	,showpos  = 0       // show current position (if none args)
 ;
 
 
@@ -47,6 +48,7 @@ int listNms   = 0       // list names
 glob_pars const Gdefault = {
 	 NULL          // wheelID
 	,NULL          // wheelName
+	,NULL          // serial
 	,0             // filterPos ( 0 - get current position)
 	,NULL          // filterName
 	,NULL          // filterId
@@ -63,6 +65,8 @@ myoption cmdlnopts[] = {
 	{"wheel-id",NEED_ARG,	NULL,	'W',	arg_string,	APTR(&G.wheelID),	N_("letter wheel identificator")},
 	/// "название колеса"
 	{"wheel-name",NEED_ARG,	NULL,	'N',	arg_string,	APTR(&G.wheelName),	N_("wheel name")},
+	/// "серийный номер турели (с начальными нулями)"
+	{"serial",	NEED_ARG,	NULL,	's',	arg_string,	APTR(&G.serial),	N_("turret serial (with leading zeros)")},
 	/// "номер позиции фильтра"
 	{"f-position",NEED_ARG,	NULL,	'p',	arg_int,	APTR(&G.filterPos),	N_("filter position number")},
 	/// "название фильтра"
@@ -125,10 +129,7 @@ glob_pars *parse_args(int argc, char **argv){
 		}
 	}
 	if(argc == oldargc){ // no parameters given or given only wrong parameters
-		listNms = LIST_PRES;
-		/// "Не передано никаких аргументов, вывожу список подключенных устройств!"
-		WARNX(_("No arguments given, list all devices connected!"));
-		return &G;
+		showpos = 1;
 	}
 	return &G;
 }

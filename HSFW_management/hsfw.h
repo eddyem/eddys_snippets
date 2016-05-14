@@ -48,5 +48,4 @@ enum name_cmd{
 
 void check_args();
 void process_args();
-
 #endif // __HSFW_H__

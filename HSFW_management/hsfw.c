@@ -83,12 +83,11 @@ void check_args(){
 				set_cur_wheel(i);
 		}
 	}
-	if(G.wheelName){ // find wheel by name given
+	if(!reName && G.wheelName){ // find wheel by name given
 		if(G.wheelID){
 			/// "Заданы и идентификатор, и имя колеса; попробуйте что-то одно!"
 			ERRX(_("You give both wheel ID and wheel name, try something one!"));
 		}
-		wheel_fd = -1;
 		for(i = 0; i < HW_found; ++i){
 			if(strcmp(wheels[i].name, G.wheelName) == 0){
 				set_cur_wheel(i);
@@ -96,18 +95,37 @@ void check_args(){
 			}
 		}
 	}
+	char oldid = wheel_id;
+	void setWid(){
+		if(oldid > 0) wheel_id = oldid;
+		if(!G.wheelID){
+			G.wheelID = calloc(2, 1);
+			*G.wheelID = wheel_id;
+		}
+	}
 	// if there's only one turret, fill wheel_id
-	if(wheel_id < 0 && HW_found == 1)
+	if(HW_found == 1 && (wheel_id < 0 || (wheel_fd < 0 && reName))){
 		set_cur_wheel(0);
+		if(reName) setWid();
+	}else if(G.serial){ /// HW given by its serial
+		for(i = 0; i < HW_found; ++i){
+			if(strcmp(wheels[i].serial, G.serial) == 0){
+				set_cur_wheel(i);
+				if(reName) setWid();
+				break;
+			}
+		}
+	}
 	if(wheel_fd < 0 || !wheel_chosen){
 		/// "Заданное колесо не обнаружено!"
 		ERRX(_("Given wheel not found!"));
 	}
-	if(gohome) return;
+	if(showpos || gohome) return;
 	if(G.filterId){ // filter given by its id like "B3"
 		char *fid = G.filterId;
 		/// "Идентификатор фильтра состоит из буквы (колесо) и цифры (позиция)"
 		if(strlen(G.filterId) != 2 || fid[1] > '9' || fid[1] < '0')
+			/// "Идентификатор фильтра - буква (колесо) и число (позиция)"
 			ERRX(_("Filter ID is letter (wheel) and number (position)"));
 		filter_pos = fid[1] - '0';
 	}else if(G.filterPos){ // filter given by numerical position
@@ -125,6 +143,7 @@ void check_args(){
 			ERRX(_("Filter %s not found!"), G.filterName);
 		}
 	}else{
+		if(reName) return;
 		/// "Не задано никакого действия"
 		ERRX("No action given");
 	}
@@ -216,6 +235,8 @@ void check_and_clear_err(int fd){
 
 /**
  * poll status register until moving stops
+ * @param fd  - turret file descriptor
+ * @param msg - ==1 to show message
  * @return current position
  */
 int poll_regstatus(int fd, int msg){
@@ -274,7 +295,7 @@ char *get_filter_name(wheel_descr *wheel, int pos){
  * list properties of wheels & fill remain fields of struct wheel_descr
  */
 void list_props(_U_ int verblevl, wheel_descr *wheel){
-	uint8_t buf[REG_NAME_LEN];
+	uint8_t buf[REG_NAME_LEN+1];
 	int fd = wheel->fd;
 	if(fd < 0){
 		/// "Не могу открыть устройство"
@@ -311,15 +332,21 @@ void list_props(_U_ int verblevl, wheel_descr *wheel){
 			strncpy(wheel->name, nm, 9);
 			if(verblevl) printf(", name '%s'", wheel->name);
 		}
-		if(verblevl) printf("\n\tFilters:\n");
+		if(wheel->serial && verblevl){
+			printf(", serial '%s'", wheel->serial);
+		}
+		if(verblevl) printf(", %d filters:\n", wheel->maxpos);
 		else return;
 		int i, m = wheel->maxpos + 1;
 		// now get filter names
 		for(i = 1; i < m; ++i){
 			nm = get_filter_name(wheel, i);
-			printf("\t\tPOS %d", i);
-			if(nm) printf(" -- '%s'", nm);
+			printf("\t%d", i);
+			if(nm) printf(": '%s'", nm);
 			printf("\n");
+		}
+		if(verblevl){
+			printf("current position: %d\n", poll_regstatus(wheel->fd, 0));
 		}
 	}
 	if(verblevl != LIST_ALL) return;
@@ -330,12 +357,13 @@ void list_props(_U_ int verblevl, wheel_descr *wheel){
 	wheel_descr wl;
 	wl.fd = fd;
 	wl.maxpos = ABS_MAX_POS;
+	if(wheel->serial) printf("Turret with serial '%s'\n", wheel->serial);
 	for(w = 'A'; w < 'I'; ++w){
 		char *nm = getwname(w);
 		int f;
 		printf("Wheel ID '%c'", w);
-		if(nm) printf(" with name '%s'", nm);
-		printf("; filters:\n");
+		if(nm) printf(", name '%s'", nm);
+		printf(", filters:\n");
 		wl.ID = w;
 		for(f = 1; f <= ABS_MAX_POS; ++f){
 			nm = get_filter_name(&wl, f);
@@ -347,7 +375,7 @@ void list_props(_U_ int verblevl, wheel_descr *wheel){
 				readreg(fd, buf, REG_NAME, REG_NAME_LEN);
 				break;
 			}
-			printf("\tPOS %d -- '%s'\n", f, nm);
+			printf("\t%d: '%s'\n", f, nm);
 		}
 	}
 }
@@ -377,9 +405,62 @@ void list_hw(int show){
 	}
 }
 
+/**
+ * Rename wheels or filters
+ */
 void rename_hw(){
 	FNAME();
 	check_and_clear_err(wheel_fd);
+	char *newname = NULL;
+	size_t L = 0;
+	uint8_t buf[REG_NAME_LEN];
+	void checknm(char *nm){
+		newname = nm;
+		/// "Название не должно превышать восьми символов"
+		if((L = strlen(nm)) > 8) ERRX(_("Name should be not longer than 8 symbols"));
+	}
+	memset(buf, 0, sizeof(buf));
+	uint8_t cmd = 0;
+	// now check what user wants to rename
+	if(G.filterName && (G.filterId || G.filterPos)){ // user wants to rename filter
+		checknm(G.filterName);
+		DBG("Rename filter %d to %s", filter_pos, newname);
+		cmd = RENAME_FILTER;
+	}else if(G.wheelName && (G.wheelID || G.filterId)){ // rename wheel
+		checknm(G.wheelName);
+		DBG("Rename wheel '%c' to %s", wheel_id, newname);
+		cmd = RENAME_WHEEL;
+	}
+	if(!cmd){
+		/// "Чтобы переименовать, необходимо указать новое название фильтра/колеса и его позицию/идентификатор!"
+		ERRX(_("You should give new filter/wheel name and its POS/ID to rename!"));
+	}
+
+	int i, stat = 1;
+	for(i = 0; i < 10 && stat; ++i){
+		buf[0] = REG_NAME;
+		buf[1] = cmd;
+		buf[2] = wheel_id;
+		if(cmd == RENAME_FILTER) buf[3] = filter_pos;
+		memcpy(&buf[4], newname, L);
+		if((stat = writereg(wheel_fd, buf, REG_NAME_LEN))) continue;
+		if((stat = readreg(wheel_fd, buf, REG_NAME, REG_NAME_LEN))) continue;
+		if(buf[2]){ // err not empty
+			DBG("ER: %d", buf[2]);
+			check_and_clear_err(wheel_fd);
+			stat = 1; continue;
+		}
+		if(memcmp(&buf[6], newname, L)){
+			DBG("Names not match!");
+			stat = 1;
+			continue;
+		}
+		break;
+	}
+	/// "Не удалось переименовать"
+	if(i == 10) ERRX(_("Can't rename"));
+	/// "Переименовано удачно!"
+	green(_("Succesfully renamed!\n"));
 }
 
 /**
@@ -446,6 +527,9 @@ void move_wheel(){
 void process_args(){
 	FNAME();
 	if(wheel_id < 0) return;
+	if(showpos){
+		printf("%d\n", poll_regstatus(wheel_fd, 0));
+	}
 	if(gohome){
 		go_home(wheel_fd);
 		return;

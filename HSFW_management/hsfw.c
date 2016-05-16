@@ -43,7 +43,7 @@ static wheel_descr *wheels = NULL; // array with descriptors of found devs
 char *get_filter_name(wheel_descr *wheel, int pos);
 void list_hw(int show);
 void rename_hw();
-void move_wheel();
+int move_wheel();
 void set_cur_wheel(int idx);
 int writereg(int fd, uint8_t *buf, int l);
 int readreg(int fd, uint8_t *buf, int reg, int l);
@@ -72,19 +72,23 @@ void check_args(){
 	int i;
 	if(G.wheelID || G.filterId){
 		char wID = (G.wheelID) ? *G.wheelID : *G.filterId;
-		if((wID < 'A' || wID > 'H') || (G.wheelID && strlen(G.wheelID) != 1)){
+		if((wID < 'A' || wID > POS_B_END) || (G.wheelID && strlen(G.wheelID) != 1)){
 			/// "Идентификатор колеса должен быть буквой от \"A\" до \"H\"!"
 			ERRX(_("Wheel ID should be a letter from \"A\" to \"H\"!"));
 		}
 		wheel_id = wID;
 		DBG("wheel given by id: %c", wheel_id);
 		for(i = 0; i < HW_found; ++i){
-			if(wheels[i].ID == wheel_id)
+			if(wheels[i].ID == wheel_id){
+				/// "Обнаружено более одного колеса с идентификатором '%c'!"
+				if(wheel_fd > 0) ERRX(_("More than one wheel with ID '%c' found!"), wheel_id);
 				set_cur_wheel(i);
+			}
 		}
 	}
-	if(!reName && G.wheelName){ // find wheel by name given
-		if(G.wheelID){
+	char oldid = wheel_id;
+	if(G.wheelName && (!reName || (G.filterPos || G.filterName))){ // find wheel by name given
+		if(G.wheelID && !reName){
 			/// "Заданы и идентификатор, и имя колеса; попробуйте что-то одно!"
 			ERRX(_("You give both wheel ID and wheel name, try something one!"));
 		}
@@ -94,8 +98,8 @@ void check_args(){
 				break;
 			}
 		}
+		if(reName) wheel_id = oldid;
 	}
-	char oldid = wheel_id;
 	void setWid(){
 		if(oldid > 0) wheel_id = oldid;
 		if(!G.wheelID){
@@ -103,11 +107,7 @@ void check_args(){
 			*G.wheelID = wheel_id;
 		}
 	}
-	// if there's only one turret, fill wheel_id
-	if(HW_found == 1 && (wheel_id < 0 || (wheel_fd < 0 && reName))){
-		set_cur_wheel(0);
-		if(reName) setWid();
-	}else if(G.serial){ /// HW given by its serial
+	if(G.serial){ // HW given by its serial
 		for(i = 0; i < HW_found; ++i){
 			if(strcmp(wheels[i].serial, G.serial) == 0){
 				set_cur_wheel(i);
@@ -115,12 +115,18 @@ void check_args(){
 				break;
 			}
 		}
+		if(i == HW_found) wheel_id = 0; // make an error message later
 	}
-	if(wheel_fd < 0 || !wheel_chosen){
+	// if there's only one turret, fill wheel_id
+	if(HW_found == 1 && (wheel_id < 0 || (wheel_fd < 0 && reName))){
+		set_cur_wheel(0);
+		if(reName) setWid();
+	}
+	if((wheel_fd < 0 || !wheel_chosen) && !G.filterName){
 		/// "Заданное колесо не обнаружено!"
 		ERRX(_("Given wheel not found!"));
 	}
-	if(showpos || gohome) return;
+	if(showpos || setdef) return;
 	if(G.filterId){ // filter given by its id like "B3"
 		char *fid = G.filterId;
 		/// "Идентификатор фильтра состоит из буквы (колесо) и цифры (позиция)"
@@ -131,22 +137,35 @@ void check_args(){
 	}else if(G.filterPos){ // filter given by numerical position
 		filter_pos = G.filterPos;
 	}else if(G.filterName){ // filter given by name - search it
-		for(i = 1; i <= max_pos; ++i){
-			DBG("Search filter %s in pos %d (%s)", G.filterName, i, get_filter_name(wheel_chosen, i));
-			if(strcmp(G.filterName, get_filter_name(wheel_chosen, i)) == 0){
-				filter_pos = i;
-				break;
+		int search_f(int N){
+			int i, m = wheels[N].maxpos;
+			for(i = 1; i <= m; ++i){
+				DBG("Search filter %s in pos %d (%s)", G.filterName, i, get_filter_name(&wheels[N], i));
+				if(strcmp(G.filterName, get_filter_name(&wheels[N], i)) == 0){
+					filter_pos = i;
+					if(!wheel_chosen){
+						set_cur_wheel(N);
+					}
+					break;
+				}
 			}
+			if(i > m) return 1;
+			return 0;
 		}
-		if(i > max_pos){
+		int not_found = 1;
+		if(wheel_chosen) not_found = search_f(wheel_id);
+		else for(i = 0; i < HW_found && not_found; ++i){
+			not_found = search_f(i);
+		}
+		if(not_found){
 			/// "Фильтр %s не обнаружен"
 			ERRX(_("Filter %s not found!"), G.filterName);
 		}
 	}else{
-		if(reName) return;
-		/// "Не задано никакого действия"
-		ERRX("No action given");
+		if(!gohome) showpos = 1; // no action given - just show position
+		return;
 	}
+	if(reName) max_pos = get_max_pos(wheel_id);
 	if(filter_pos < 1 || filter_pos > max_pos){
 		/// "Позиция фильтра должна быть числом от 1 до %d!"
 		ERRX(_("Filter position should be a number from 1 to %d!"), max_pos);
@@ -356,16 +375,16 @@ void list_props(_U_ int verblevl, wheel_descr *wheel){
 	green(_("\nAll records from EEPROM\n"));
 	wheel_descr wl;
 	wl.fd = fd;
-	wl.maxpos = ABS_MAX_POS;
 	if(wheel->serial) printf("Turret with serial '%s'\n", wheel->serial);
 	for(w = 'A'; w < 'I'; ++w){
 		char *nm = getwname(w);
 		int f;
 		printf("Wheel ID '%c'", w);
+		wl.maxpos = get_max_pos(w);
 		if(nm) printf(", name '%s'", nm);
-		printf(", filters:\n");
+		printf(", %d filters:\n", wl.maxpos );
 		wl.ID = w;
-		for(f = 1; f <= ABS_MAX_POS; ++f){
+		for(f = 1; f <= wl.maxpos; ++f){
 			nm = get_filter_name(&wl, f);
 			if(!nm){
 				check_and_clear_err(fd);
@@ -422,7 +441,10 @@ void rename_hw(){
 	memset(buf, 0, sizeof(buf));
 	uint8_t cmd = 0;
 	// now check what user wants to rename
-	if(G.filterName && (G.filterId || G.filterPos)){ // user wants to rename filter
+	if(setdef){
+		DBG("Reset names to default");
+		cmd = RESTORE_DEFVALS;
+	}else if(G.filterName && (G.filterId || G.filterPos)){ // user wants to rename filter
 		checknm(G.filterName);
 		DBG("Rename filter %d to %s", filter_pos, newname);
 		cmd = RENAME_FILTER;
@@ -440,9 +462,11 @@ void rename_hw(){
 	for(i = 0; i < 10 && stat; ++i){
 		buf[0] = REG_NAME;
 		buf[1] = cmd;
-		buf[2] = wheel_id;
+		if(cmd != RESTORE_DEFVALS){
+			buf[2] = wheel_id;
+			memcpy(&buf[4], newname, L);
+		}
 		if(cmd == RENAME_FILTER) buf[3] = filter_pos;
-		memcpy(&buf[4], newname, L);
 		if((stat = writereg(wheel_fd, buf, REG_NAME_LEN))) continue;
 		if((stat = readreg(wheel_fd, buf, REG_NAME, REG_NAME_LEN))) continue;
 		if(buf[2]){ // err not empty
@@ -493,13 +517,17 @@ void go_home(int fd){
 	check_and_clear_err(fd);
 }
 
-void move_wheel(){
+/**
+ * move given wheel
+ * @return 0 if all OK
+ */
+int move_wheel(){
 	DBG("Move wheel %c to pos %d", wheel_id, filter_pos);
-	if(wheel_fd < 0) return;
+	if(wheel_fd < 0) return 1;
 	if(filter_pos == poll_regstatus(wheel_fd, 0)){
 		/// "Уже в заданной позиции"
 		WARNX(_("Already at position"));
-		exit(0);
+		return 0;
 	}
 	uint8_t buf[REG_GOTO_LEN];
 	int i, stat = 1;
@@ -519,25 +547,38 @@ void move_wheel(){
 			break;
 		}
 	}
-	if(i == 10) exit(1);
+	if(i == 10) return 1;
 	poll_regstatus(wheel_fd, 1);
 	check_and_clear_err(wheel_fd);
+	return 0;
 }
 
-void process_args(){
+/**
+ * process arguments given
+ * @return 0 if all OK
+ */
+int process_args(){
 	FNAME();
-	if(wheel_id < 0) return;
+	if(wheel_id < 0) return 1;
 	if(showpos){
 		printf("%d\n", poll_regstatus(wheel_fd, 0));
+		return 0;
 	}
 	if(gohome){
 		go_home(wheel_fd);
-		return;
+		return 0;
 	}
-	if(reName){
+	if(reName || setdef){
 		rename_hw();
-		return;
+		return 0;
 	}
-	if(filter_pos < 0) return;
-	move_wheel();
+	if(filter_pos < 0) return 1;
+	return move_wheel();
+}
+
+// check max position allowed for given filter id
+int get_max_pos(char id){
+	if(id >= 'A' && id <= POS_A_END) return ABS_MAX_POS_A;
+	else if(id > POS_A_END && id <= POS_B_END) return ABS_MAX_POS_B;
+	return 0;
 }

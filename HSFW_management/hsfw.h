@@ -35,8 +35,13 @@
 #define REG_NAME		(0x16)
 #define REG_NAME_LEN	(14)
 
-// absolute max position (for any wheel)
-#define ABS_MAX_POS		(8)
+// absolute max position (5 for wheels 'A'..'E' & 8 for wheels 'F'..'G')
+#define ABS_MAX_POS_A		(5)
+#define ABS_MAX_POS_B		(8)
+// end of 5-position wheel descriptor range
+#define POS_A_END			('E')
+// end of 8-pos range
+#define POS_B_END			('H')
 
 enum name_cmd{
 	RESTORE_DEFVALS = 1,
@@ -47,5 +52,6 @@ enum name_cmd{
 };
 
 void check_args();
-void process_args();
+int process_args();
+int get_max_pos(char filter_id);
 #endif // __HSFW_H__

@@ -43,7 +43,7 @@ typedef struct{
 
 // default & global parameters
 extern glob_pars const Gdefault;
-extern int listNms, gohome, reName, showpos;
+extern int listNms, gohome, reName, showpos, setdef;
 
 extern glob_pars G;
 

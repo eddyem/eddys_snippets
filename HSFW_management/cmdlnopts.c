@@ -40,6 +40,7 @@ int listNms   = 0       // list names
 	,gohome   = 0       // first go home
 	,reName   = 0       // rename wheels/positions
 	,showpos  = 0       // show current position (if none args)
+	,setdef   = 0       // reset all names to default values
 ;
 
 
@@ -81,6 +82,7 @@ myoption cmdlnopts[] = {
 	{"home",	NO_ARGS,	NULL,	'H',	arg_none,	&gohome,			N_("move to home position")},
 	/// "переименовать сохраненные имена колес/фильтров"
 	{"rename",	NO_ARGS,	&reName,1,		arg_none,	NULL,				N_("rename stored wheels/filters names")},
+	{"resetnames",NO_ARGS,	&setdef,1,		arg_none,	NULL,				N_("reset all names to default values")},
 	end_option
 };
 

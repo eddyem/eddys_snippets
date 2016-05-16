@@ -32,7 +32,6 @@ int main(int argc, char **argv){
 	initial_setup();
 	parse_args(argc, argv);
 	check_args();
-	process_args();
-	return 0;
+	return process_args();
 }
 

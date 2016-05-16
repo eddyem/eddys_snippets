@@ -28,14 +28,6 @@ endif()
 # directory should contain dir locale/ru for gettext translations
 set(LCPATH ${CMAKE_SOURCE_DIR}/locale/ru)
 
-if(NOT DEFINED LOCALEDIR)
-	if(DEFINED DEBUG)
-		set(LOCALEDIR ${CMAKE_CURRENT_SOURCE_DIR}/locale)
-	else()
-		set(LOCALEDIR ${CMAKE_INSTALL_PREFIX}/share/locale)
-	endif()
-endif()
-
 ###### pkgconfig ######
 # pkg-config modules (for pkg-check-modules)
 set(MODULES libudev)
@@ -54,6 +46,13 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT AND CMAKE_INSTALL_PREFIX MATCHES 
 	set(CMAKE_INSTALL_PREFIX "/usr")
 endif()
 message("Install dir prefix: ${CMAKE_INSTALL_PREFIX}")
+if(NOT DEFINED LOCALEDIR)
+	if(DEFINED DEBUG)
+		set(LOCALEDIR ${CMAKE_CURRENT_SOURCE_DIR}/locale)
+	else()
+		set(LOCALEDIR ${CMAKE_INSTALL_PREFIX}/share/locale)
+	endif()
+endif()
 
 # gettext files
 set(PO_FILE ${LCPATH}/messages.po)
@@ -75,9 +74,10 @@ add_definitions(${CFLAGS} -DLOCALEDIR=\"${LOCALEDIR}\"
 target_link_libraries(${PROJ} ${${PROJ}_LIBRARIES} ${USB_LIBRARIES})
 
 # Installation of the program
+INSTALL(TARGETS ${PROJ} DESTINATION "bin")
 INSTALL(FILES ${MO_FILE} DESTINATION "share/locale/ru/LC_MESSAGES")
 INSTALL(FILES "99-edmund_hsfw.rules" DESTINATION "/etc/udev/rules.d")
-INSTALL(TARGETS ${PROJ} DESTINATION "bin")
+
 
 ###### gettext ######
 find_package(Gettext REQUIRED)

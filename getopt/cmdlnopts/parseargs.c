@@ -233,7 +233,7 @@ void parseargs(int *argc, char ***argv, myoption *options){
 		loptr->flag		= opts->flag;
 		loptr->val		= opts->val;
 		// fill short options if they are:
-		if(!opts->flag){
+		if(!opts->flag && opts->val){
 #ifdef EBUG
 			shortlist[i] = (char) opts->val;
 #endif
@@ -396,7 +396,7 @@ void showhelp(int oindex, myoption *options){
 	qsort(opts, N, sizeof(myoption), argsort);
 	do{
 		int p = sprintf(buf, "  "); // a little indent
-		if(!opts->flag) // .val is short argument
+		if(!opts->flag && opts->val) // .val is short argument
 			p += snprintf(buf+p, bufsz-p, "-%c, ", opts->val);
 		p += snprintf(buf+p, bufsz-p, "--%s", opts->name);
 		if(opts->has_arg == 1) // required argument

@@ -1,0 +1,13 @@
+Generate table and functions for calculation of sin and cos on MCU (in integers)
+
+compile: make
+defines:
+-DMAX_LEN=val - maximal length of generated array (128 by default)
+-DDATATYPE=\"type\" - type of data (\"int32_t\" by default) 
+
+
+run:
+gentab number
+	where 'number' is desired precision - step of sin/cos (for example, 0.001)
+	sin is integer, for "1" if precision is 0.001 would be 1000
+

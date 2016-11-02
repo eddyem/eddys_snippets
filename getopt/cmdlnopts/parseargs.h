@@ -26,11 +26,11 @@
 #include <stdlib.h>
 
 #ifndef TRUE
-	#define TRUE true
+    #define TRUE true
 #endif
 
 #ifndef FALSE
-	#define FALSE false
+    #define FALSE false
 #endif
 
 // macro for argptr
@@ -44,35 +44,35 @@ typedef  bool(*argfn)(void *arg);
  * WARNING!
  * My function change value of flags by pointer, so if you want to use another type
  * make a latter conversion, example:
- * 		char charg;
- * 		int iarg;
- * 		myoption opts[] = {
- * 		{"value", 1, NULL, 'v', arg_int, &iarg, "char val"}, ..., end_option};
- * 		..(parse args)..
- * 		charg = (char) iarg;
+ *      char charg;
+ *      int iarg;
+ *      myoption opts[] = {
+ *      {"value", 1, NULL, 'v', arg_int, &iarg, "char val"}, ..., end_option};
+ *      ..(parse args)..
+ *      charg = (char) iarg;
  */
 typedef enum {
-	arg_none = 0,	// no arg
-	arg_int,		// integer
-	arg_longlong,	// long long
-	arg_double,		// double
-	arg_float,		// float
-	arg_string,		// char *
-	arg_function	// parse_args will run function `bool (*fn)(char *optarg, int N)`
+    arg_none = 0,   // no arg
+    arg_int,        // integer
+    arg_longlong,   // long long
+    arg_double,     // double
+    arg_float,      // float
+    arg_string,     // char *
+    arg_function    // parse_args will run function `bool (*fn)(char *optarg, int N)`
 } argtype;
 
 /*
  * Structure for getopt_long & help
  * BE CAREFUL: .argptr is pointer to data or pointer to function,
- * 		conversion depends on .type
+ *      conversion depends on .type
  *
  * ATTENTION: string `help` prints through macro PRNT(), bu default it is gettext,
  * but you can redefine it before `#include "parseargs.h"`
  *
  * if arg is string, then value wil be strdup'ed like that:
- * 		char *str;
- * 		myoption opts[] = {{"string", 1, NULL, 's', arg_string, &str, "string val"}, ..., end_option};
- *		*(opts[1].str) = strdup(optarg);
+ *      char *str;
+ *      myoption opts[] = {{"string", 1, NULL, 's', arg_string, &str, "string val"}, ..., end_option};
+ *      *(opts[1].str) = strdup(optarg);
  * in other cases argptr should be address of some variable (or pointer to allocated memory)
  *
  * NON-NULL argptr should be written inside macro APTR(argptr) or directly: (void*)argptr
@@ -81,22 +81,22 @@ typedef enum {
  *
  */
 typedef enum{
-	NO_ARGS  = 0,  // first three are the same as in getopt_long
-	NEED_ARG = 1,
-	OPT_ARG  = 2,
-	MULT_PAR
+    NO_ARGS  = 0,  // first three are the same as in getopt_long
+    NEED_ARG = 1,
+    OPT_ARG  = 2,
+    MULT_PAR
 } hasarg;
 
 typedef struct{
-	// these are from struct option:
-	const char *name;		// long option's name
-	hasarg      has_arg;	// 0 - no args, 1 - nesessary arg, 2 - optionally arg, 4 - need arg & key can repeat (args are stored in null-terminated array)
-	int        *flag;		// NULL to return val, pointer to int - to set its value of val (function returns 0)
-	int         val;		// short opt name (if flag == NULL) or flag's value
-	// and these are mine:
-	argtype     type;		// type of argument
-	void       *argptr;		// pointer to variable to assign optarg value or function `bool (*fn)(char *optarg, int N)`
-	const char *help;		// help string which would be shown in function `showhelp` or NULL
+    // these are from struct option:
+    const char *name;       // long option's name
+    hasarg      has_arg;    // 0 - no args, 1 - nesessary arg, 2 - optionally arg, 4 - need arg & key can repeat (args are stored in null-terminated array)
+    int        *flag;       // NULL to return val, pointer to int - to set its value of val (function returns 0)
+    int         val;        // short opt name (if flag == NULL) or flag's value
+    // and these are mine:
+    argtype     type;       // type of argument
+    void       *argptr;     // pointer to variable to assign optarg value or function `bool (*fn)(char *optarg, int N)`
+    const char *help;       // help string which would be shown in function `showhelp` or NULL
 } myoption;
 
 /*
@@ -104,10 +104,10 @@ typedef struct{
  * used in parse_subopts()
  */
 typedef struct{
-	const char *name;
-	hasarg      has_arg;
-	argtype     type;
-	void       *argptr;
+    const char *name;
+    hasarg      has_arg;
+    argtype     type;
+    void       *argptr;
 } mysuboption;
 
 // last string of array (all zeros)

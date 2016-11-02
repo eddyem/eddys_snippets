@@ -33,7 +33,18 @@
 #include <errno.h>
 #include <err.h>
 #include <locale.h>
+#if defined GETTEXT_PACKAGE && defined LOCALEDIR
+/*
+ * GETTEXT
+ */
 #include <libintl.h>
+#define _(String)               gettext(String)
+#define gettext_noop(String)    String
+#define N_(String)              gettext_noop(String)
+#else
+#define _(String)               (String)
+#define N_(String)              (String)
+#endif
 #include <stdlib.h>
 #include <termios.h>
 #include <termio.h>
@@ -41,12 +52,6 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-/*
- * GETTEXT
- */
-#define _(String)				gettext(String)
-#define gettext_noop(String)	String
-#define N_(String)				gettext_noop(String)
 
 // unused arguments with -Wall -Werror
 #define _U_    __attribute__((__unused__))
@@ -54,16 +59,25 @@
 /*
  * Coloured messages output
  */
-#define RED			"\033[1;31;40m"
-#define GREEN		"\033[1;32;40m"
-#define OLDCOLOR	"\033[0;0;0m"
+#define RED         "\033[1;31;40m"
+#define GREEN       "\033[1;32;40m"
+#define OLDCOLOR    "\033[0;0;0m"
+
+#ifndef FALSE
+#define FALSE (0)
+#endif
+
+#ifndef TRUE
+#define TRUE (1)
+#endif
 
 /*
  * ERROR/WARNING messages
  */
 extern int globErr;
-#define ERR(...) do{globErr=errno; _WARN(__VA_ARGS__); exit(-1);}while(0)
-#define ERRX(...) do{globErr=0; _WARN(__VA_ARGS__); exit(-1);}while(0)
+extern void signals(int sig);
+#define ERR(...) do{globErr=errno; _WARN(__VA_ARGS__); signals(9);}while(0)
+#define ERRX(...) do{globErr=0; _WARN(__VA_ARGS__); signals(9);}while(0)
 #define WARN(...) do{globErr=errno; _WARN(__VA_ARGS__);}while(0)
 #define WARNX(...) do{globErr=0; _WARN(__VA_ARGS__);}while(0)
 
@@ -72,13 +86,13 @@ extern int globErr;
  * debug mode, -DEBUG
  */
 #ifdef EBUG
-	#define FNAME() fprintf(stderr, "\n%s (%s, line %d)\n", __func__, __FILE__, __LINE__)
-	#define DBG(...) do{fprintf(stderr, "%s (%s, line %d): ", __func__, __FILE__, __LINE__); \
-					fprintf(stderr, __VA_ARGS__);			\
-					fprintf(stderr, "\n");} while(0)
+    #define FNAME() fprintf(stderr, "\n%s (%s, line %d)\n", __func__, __FILE__, __LINE__)
+    #define DBG(...) do{fprintf(stderr, "%s (%s, line %d): ", __func__, __FILE__, __LINE__); \
+                    fprintf(stderr, __VA_ARGS__);           \
+                    fprintf(stderr, "\n");} while(0)
 #else
-	#define FNAME()	 do{}while(0)
-	#define DBG(...) do{}while(0)
+    #define FNAME()  do{}while(0)
+    #define DBG(...) do{}while(0)
 #endif //EBUG
 
 /*
@@ -86,7 +100,13 @@ extern int globErr;
  */
 #define ALLOC(type, var, size)  type * var = ((type *)my_alloc(size, sizeof(type)))
 #define MALLOC(type, size) ((type *)my_alloc(size, sizeof(type)))
-#define FREE(ptr)			do{free(ptr); ptr = NULL;}while(0)
+#define FREE(ptr)  do{if(ptr){free(ptr); ptr = NULL;}}while(0)
+
+#ifndef DBL_EPSILON
+#define DBL_EPSILON        (2.2204460492503131e-16)
+#endif
+
+double dtime();
 
 // functions for color output in tty & no-color in pipes
 extern int (*red)(const char *fmt, ...);
@@ -97,10 +117,22 @@ void initial_setup();
 
 // mmap file
 typedef struct{
-	char *data;
-	size_t len;
+    char *data;
+    size_t len;
 } mmapbuf;
 mmapbuf *My_mmap(char *filename);
 void My_munmap(mmapbuf *b);
+
+void restore_console();
+void setup_con();
+int read_console();
+int mygetchar();
+
+void restore_tty();
+void tty_init(char *comdev);
+size_t read_tty(uint8_t *buff, size_t length);
+int write_tty(uint8_t *buff, size_t length);
+
+int str2double(double *num, const char *str);
 
 #endif // __USEFULL_MACROS_H__

@@ -92,7 +92,7 @@ extern void signals(int sig);
  */
 #define ALLOC(type, var, size)  type * var = ((type *)my_alloc(size, sizeof(type)))
 #define MALLOC(type, size) ((type *)my_alloc(size, sizeof(type)))
-#define FREE(ptr)			do{free(ptr); ptr = NULL;}while(0)
+#define FREE(ptr)  do{if(ptr){free(ptr); ptr = NULL;}}while(0)
 
 double dtime();
 

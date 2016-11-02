@@ -30,24 +30,24 @@
  */
 // parameters of mirror
 typedef struct{
-	double D;     // diameter
-	double F;     // focus
-	double Zincl; // inclination from Z axe (radians)
-	double Aincl; // azimuth of inclination (radians)
+    double D;     // diameter
+    double F;     // focus
+    double Zincl; // inclination from Z axe (radians)
+    double Aincl; // azimuth of inclination (radians)
 } mirPar;
 
 typedef struct{
-	int **S_dev;	// size of initial array of surface deviations
-	int S_interp;	// size of interpolated S0
-	int S_image;	// resulting image size
-	int N_phot;		// amount of photons falled to one pixel of S1 by one iteration
-	int randMask;	// add to mask random numbers
-	double **randAmp;// amplitude of added random noice
-	mirPar *Mirror;	// mirror parameters
-	int rest_pars_num;// number of rest parameters
-	char** rest_pars;// the rest parameters: array of char*
-	char **str;		// string parameters
-	char **filter;	// some filter options
+    int **S_dev;    // size of initial array of surface deviations
+    int S_interp;   // size of interpolated S0
+    int S_image;    // resulting image size
+    int N_phot;     // amount of photons falled to one pixel of S1 by one iteration
+    int randMask;   // add to mask random numbers
+    double **randAmp;// amplitude of added random noice
+    mirPar *Mirror; // mirror parameters
+    int rest_pars_num;// number of rest parameters
+    char** rest_pars;// the rest parameters: array of char*
+    char **str;     // string parameters
+    char **filter;  // some filter options
 } glob_pars;
 
 

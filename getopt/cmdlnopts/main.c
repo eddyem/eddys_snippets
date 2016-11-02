@@ -23,89 +23,89 @@
 #include "cmdlnopts.h"
 
 typedef struct{
-	char *filtertype;
-	int xsize;
-	int ysize;
+    char *filtertype;
+    int xsize;
+    int ysize;
 } filterpars;
 
 
 void signals(int signo){
-	exit(signo);
+    exit(signo);
 }
 
 void parse_filter(char *pars){
-	filterpars params = { 0, 3, 3};
-	mysuboption filteropts[] = {
-		{"type", NEED_ARG, arg_string, &params.filtertype},
-		{"xsz",  NEED_ARG, arg_int, &params.xsize},
-		{"ysz",  NEED_ARG, arg_int, &params.ysize},
-		end_suboption
-	};
-	if(!get_suboption(pars, filteropts)){
-		printf("\tbad params\n");
-	}else{
-		printf("\tfiltertype = %s, sizes: %dx%d\n", params.filtertype, params.xsize, params.ysize);
-	}
+    filterpars params = { 0, 3, 3};
+    mysuboption filteropts[] = {
+        {"type", NEED_ARG, arg_string, &params.filtertype},
+        {"xsz",  NEED_ARG, arg_int, &params.xsize},
+        {"ysz",  NEED_ARG, arg_int, &params.ysize},
+        end_suboption
+    };
+    if(!get_suboption(pars, filteropts)){
+        printf("\tbad params\n");
+    }else{
+        printf("\tfiltertype = %s, sizes: %dx%d\n", params.filtertype, params.xsize, params.ysize);
+    }
 }
 
 int main(int argc, char **argv){
-	glob_pars *G = NULL; // default parameters see in cmdlnopts.c
-	mirPar *M = NULL;    // default mirror parameters
-	G = parse_args(argc, argv);
-	M = G->Mirror;
-	printf("Globals:\n");
-	if(!G->S_dev){
-		printf("S_dev = 8 (default)\n");
-	}else{
-		int i = 0, **vals = G->S_dev;
-		while(*vals){
-			printf("S_dev[%d]: %d\n", i++, **vals++);
-		}
-	}
-	if(!G->randAmp){
-		printf("randAmp = 1e-8 (default)\n");
-	}else{
-		int i = 0;
-		double **a = G->randAmp;
-		while(*a){
-			printf("randAmp[%d]: %g\n", i++, **a++);
-		}
-	}
-	if(G->str){
-		printf("meet str args:\n");
-		int i = 0;
-		char **strs = G->str;
-		if(!*strs) printf("fucn!\n");
-		while(*strs)
-			printf("str[%d] = %s\n", i++, *strs++);
-	}
-	printf("S_interp = %d\n", G->S_interp);
-	printf("S_image = %d\n", G->S_image);
-	printf("N_phot = %d\n", G->N_phot);
-	printf("randMask = %d\n", G->randMask);
-	printf("Mirror =\n");
-	printf("\tD = %g\n", M->D);
-	printf("\tF = %g\n", M->F);
-	printf("\tZincl = %g\n", M->Zincl);
-	printf("\tAincl = %g\n", M->Aincl);
-	printf("rewrite_ifexists = %d\n", rewrite_ifexists);
-	printf("verbose = %d\n", verbose);
-	if(G->rest_pars_num){
-		int i;
-		printf("There's also %d free parameters:\n", G->rest_pars_num);
-		for(i = 0; i < G->rest_pars_num; ++i)
-			printf("\t%4d: %s\n", i, G->rest_pars[i]);
-	}
-	if(G->filter){
-		printf("filter parameters:\n");
-		char **fpars = G->filter;
-		int i = 0;
-		while(*fpars){
-			printf("%d:\n", i++);
-			parse_filter(*fpars);
-			++fpars;
-		}
-	}
-	return 0;
+    glob_pars *G = NULL; // default parameters see in cmdlnopts.c
+    mirPar *M = NULL;    // default mirror parameters
+    G = parse_args(argc, argv);
+    M = G->Mirror;
+    printf("Globals:\n");
+    if(!G->S_dev){
+        printf("S_dev = 8 (default)\n");
+    }else{
+        int i = 0, **vals = G->S_dev;
+        while(*vals){
+            printf("S_dev[%d]: %d\n", i++, **vals++);
+        }
+    }
+    if(!G->randAmp){
+        printf("randAmp = 1e-8 (default)\n");
+    }else{
+        int i = 0;
+        double **a = G->randAmp;
+        while(*a){
+            printf("randAmp[%d]: %g\n", i++, **a++);
+        }
+    }
+    if(G->str){
+        printf("meet str args:\n");
+        int i = 0;
+        char **strs = G->str;
+        if(!*strs) printf("fucn!\n");
+        while(*strs)
+            printf("str[%d] = %s\n", i++, *strs++);
+    }
+    printf("S_interp = %d\n", G->S_interp);
+    printf("S_image = %d\n", G->S_image);
+    printf("N_phot = %d\n", G->N_phot);
+    printf("randMask = %d\n", G->randMask);
+    printf("Mirror =\n");
+    printf("\tD = %g\n", M->D);
+    printf("\tF = %g\n", M->F);
+    printf("\tZincl = %g\n", M->Zincl);
+    printf("\tAincl = %g\n", M->Aincl);
+    printf("rewrite_ifexists = %d\n", rewrite_ifexists);
+    printf("verbose = %d\n", verbose);
+    if(G->rest_pars_num){
+        int i;
+        printf("There's also %d free parameters:\n", G->rest_pars_num);
+        for(i = 0; i < G->rest_pars_num; ++i)
+            printf("\t%4d: %s\n", i, G->rest_pars[i]);
+    }
+    if(G->filter){
+        printf("filter parameters:\n");
+        char **fpars = G->filter;
+        int i = 0;
+        while(*fpars){
+            printf("%d:\n", i++);
+            parse_filter(*fpars);
+            ++fpars;
+        }
+    }
+    return 0;
 }
 

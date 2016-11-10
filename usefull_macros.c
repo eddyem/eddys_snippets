@@ -80,7 +80,6 @@ int r_WARN(const char *fmt, ...){
         errno = globErr;
         vwarn(fmt, ar);
         errno = 0;
-        globErr = 0;
     }else
         i = vfprintf(stderr, fmt, ar);
     va_end(ar);
@@ -104,7 +103,6 @@ int s_WARN(const char *fmt, ...){
         errno = globErr;
         vwarn(fmt, ar);
         errno = 0;
-        globErr = 0;
     }else
         i = +vfprintf(stderr, fmt, ar);
     va_end(ar);

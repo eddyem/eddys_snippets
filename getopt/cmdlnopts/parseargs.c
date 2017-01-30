@@ -340,12 +340,12 @@ static int argsort(const void *a1, const void *a2){
     int s1 = o1->val, s2 = o2->val;
     int *f1 = o1->flag, *f2 = o2->flag;
     // check if both options has short arg
-    if(f1 == NULL && f2 == NULL){ // both have short arg
+    if(f1 == NULL && f2 == NULL && s1 && s2){ // both have short arg
         return (s1 - s2);
-    }else if(f1 != NULL && f2 != NULL){ // both don't have short arg - sort by long
+    }else if((f1 != NULL || !s1) && (f2 != NULL || !s2)){ // both don't have short arg - sort by long
         return strcmp(l1, l2);
     }else{ // only one have short arg -- return it
-        if(f2) return -1; // a1 have short - it is 'lesser'
+        if(f2 || !s2) return -1; // a1 have short - it is 'lesser'
         else return 1;
     }
 }

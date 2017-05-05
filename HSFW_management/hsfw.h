@@ -22,33 +22,33 @@
 #ifndef __HSFW_H__
 #define __HSFW_H__
 
-#define REG_CLERR		(0x02)
-#define REG_CLERR_LEN	(2)
-#define REG_STATUS		(0x0a)
-#define REG_STATUS_LEN	(6)
-#define REG_INFO		(0x0b)
-#define REG_INFO_LEN	(7)
-#define REG_GOTO		(0x14)
-#define REG_GOTO_LEN	(3)
-#define REG_HOME		(0x15)
-#define REG_HOME_LEN	(3)
-#define REG_NAME		(0x16)
-#define REG_NAME_LEN	(14)
+#define REG_CLERR       (0x02)
+#define REG_CLERR_LEN   (2)
+#define REG_STATUS      (0x0a)
+#define REG_STATUS_LEN  (6)
+#define REG_INFO        (0x0b)
+#define REG_INFO_LEN    (7)
+#define REG_GOTO        (0x14)
+#define REG_GOTO_LEN    (3)
+#define REG_HOME        (0x15)
+#define REG_HOME_LEN    (3)
+#define REG_NAME        (0x16)
+#define REG_NAME_LEN    (14)
 
 // absolute max position (5 for wheels 'A'..'E' & 8 for wheels 'F'..'G')
-#define ABS_MAX_POS_A		(5)
-#define ABS_MAX_POS_B		(8)
+#define ABS_MAX_POS_A       (5)
+#define ABS_MAX_POS_B       (8)
 // end of 5-position wheel descriptor range
-#define POS_A_END			('E')
+#define POS_A_END           ('E')
 // end of 8-pos range
-#define POS_B_END			('H')
+#define POS_B_END           ('H')
 
 enum name_cmd{
-	RESTORE_DEFVALS = 1,
-	RENAME_FILTER,
-	FILTER_NAME,
-	RENAME_WHEEL,
-	WHEEL_NAME
+    RESTORE_DEFVALS = 1,
+    RENAME_FILTER,
+    FILTER_NAME,
+    RENAME_WHEEL,
+    WHEEL_NAME
 };
 
 void check_args();

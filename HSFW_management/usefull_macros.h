@@ -38,12 +38,12 @@
  * GETTEXT
  */
 #include <libintl.h>
-#define _(String)				gettext(String)
-#define gettext_noop(String)	String
-#define N_(String)				gettext_noop(String)
+#define _(String)               gettext(String)
+#define gettext_noop(String)    String
+#define N_(String)              gettext_noop(String)
 #else
-#define _(String)				(String)
-#define N_(String)				(String)
+#define _(String)               (String)
+#define N_(String)              (String)
 #endif
 #include <stdlib.h>
 #include <termios.h>
@@ -59,9 +59,9 @@
 /*
  * Coloured messages output
  */
-#define RED			"\033[1;31;40m"
-#define GREEN		"\033[1;32;40m"
-#define OLDCOLOR	"\033[0;0;0m"
+#define RED         "\033[1;31;40m"
+#define GREEN       "\033[1;32;40m"
+#define OLDCOLOR    "\033[0;0;0m"
 
 /*
  * ERROR/WARNING messages
@@ -78,13 +78,13 @@ extern void signals(int sig);
  * debug mode, -DEBUG
  */
 #ifdef EBUG
-	#define FNAME() fprintf(stderr, "\n%s (%s, line %d)\n", __func__, __FILE__, __LINE__)
-	#define DBG(...) do{fprintf(stderr, "%s (%s, line %d): ", __func__, __FILE__, __LINE__); \
-					fprintf(stderr, __VA_ARGS__);			\
-					fprintf(stderr, "\n");} while(0)
+    #define FNAME() fprintf(stderr, "\n%s (%s, line %d)\n", __func__, __FILE__, __LINE__)
+    #define DBG(...) do{fprintf(stderr, "%s (%s, line %d): ", __func__, __FILE__, __LINE__); \
+                    fprintf(stderr, __VA_ARGS__);           \
+                    fprintf(stderr, "\n");} while(0)
 #else
-	#define FNAME()	 do{}while(0)
-	#define DBG(...) do{}while(0)
+    #define FNAME()  do{}while(0)
+    #define DBG(...) do{}while(0)
 #endif //EBUG
 
 /*
@@ -92,7 +92,7 @@ extern void signals(int sig);
  */
 #define ALLOC(type, var, size)  type * var = ((type *)my_alloc(size, sizeof(type)))
 #define MALLOC(type, size) ((type *)my_alloc(size, sizeof(type)))
-#define FREE(ptr)  do{if(ptr){free(ptr); ptr = NULL;}}while(0)
+#define FREE(ptr)           do{free(ptr); ptr = NULL;}while(0)
 
 double dtime();
 
@@ -105,8 +105,8 @@ void initial_setup();
 
 // mmap file
 typedef struct{
-	char *data;
-	size_t len;
+    char *data;
+    size_t len;
 } mmapbuf;
 mmapbuf *My_mmap(char *filename);
 void My_munmap(mmapbuf *b);

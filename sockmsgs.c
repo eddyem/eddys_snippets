@@ -168,8 +168,6 @@ void server_(int sock){
     }
     // Main loop
     while(1){
-        fd_set readfds;
-        struct timeval timeout;
         socklen_t size = sizeof(struct sockaddr_in);
         struct sockaddr_in their_addr;
         int newsock;

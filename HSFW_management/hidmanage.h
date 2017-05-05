@@ -26,11 +26,11 @@
 #define W_PID "82cd"
 
 typedef struct{
-	int fd;
-	char *serial;
-	char ID;
-	char name[9];
-	int maxpos;
+    int fd;
+    char *serial;
+    char ID;
+    char name[9];
+    int maxpos;
 } wheel_descr;
 
 int find_wheels(wheel_descr **wheels);

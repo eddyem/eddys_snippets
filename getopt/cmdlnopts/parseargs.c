@@ -1,4 +1,4 @@
-/*
+/*                                                                                                  geany_encoding=koi8-r
  * parseargs.c - parsing command line arguments & print help
  *
  * Copyright 2013 Edward V. Emelianoff <eddy@sao.ru>
@@ -286,7 +286,7 @@ void parseargs(int *argc, char ***argv, myoption *options){
             else optind = get_optind(opt, options);
         }
         opts = &options[optind];
-        //if(opt == 0 && opts->has_arg == NO_ARGS) continue; // only long option changing integer flag
+    //    if(opt == 0 && opts->has_arg == NO_ARGS) continue; // only long option changing integer flag
         // now check option
         if(opts->has_arg == NEED_ARG || opts->has_arg == MULT_PAR)
             if(!optarg) showhelp(optind, options); // need argument

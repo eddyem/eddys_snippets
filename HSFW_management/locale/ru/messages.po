@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-05-16 14:08+0300\n"
+"POT-Creation-Date: 2017-05-05 16:16+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,224 +16,6 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=koi8-r\n"
 "Content-Transfer-Encoding: 8bit\n"
-
-#. amount of pcount and/or scount wrong
-#. / "Неправильный формат строки помощи"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/parseargs.c:56
-msgid "Wrong helpstring!"
-msgstr ""
-
-#. / "Целое вне допустимого диапазона"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/parseargs.c:86
-msgid "Integer out of range"
-msgstr ""
-
-#. / "Неправильный параметр: %s"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/parseargs.c:480
-#, c-format
-msgid "Wrong parameter: %s"
-msgstr ""
-
-#. / "%s: необходим аргумент!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/parseargs.c:485
-#, c-format
-msgid "%s: argument needed!"
-msgstr ""
-
-#. / "Неправильный аргумент \"%s\" параметра \"%s\""
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/parseargs.c:490
-#, c-format
-msgid "Wrong argument \"%s\" of parameter \"%s\""
-msgstr ""
-
-#. / "Не могу открыть %s"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hidmanage.c:80
-#, c-format
-msgid "Can't open %s"
-msgstr ""
-
-#. / "Не задано имя файла!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:174
-msgid "No filename given!"
-msgstr ""
-
-#. / "Не могу открыть %s для чтения"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:177
-#, c-format
-msgid "Can't open %s for reading"
-msgstr ""
-
-#. / "Не могу выполнить stat %s"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:180
-#, c-format
-msgid "Can't stat %s"
-msgstr ""
-
-#. / "Ошибка mmap"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:184
-msgid "Mmap error for input"
-msgstr ""
-
-#. / "Не могу закрыть mmap'нутый файл"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:186
-msgid "Can't close mmap'ed file"
-msgstr ""
-
-#. / "Не могу munmap"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:196
-msgid "Can't munmap"
-msgstr ""
-
-#. / "Не могу настроить консоль"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:221
-msgid "Can't setup console"
-msgstr ""
-
-#. Get settings
-#. / "Не могу получить настройки"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:291
-msgid "Can't get settings"
-msgstr ""
-
-#. / "Не могу установить настройки"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:302
-msgid "Can't set settings"
-msgstr ""
-
-#. / "Идентификатор колеса должен быть буквой от \"A\" до \"H\"!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:77
-msgid "Wheel ID should be a letter from \"A\" to \"H\"!"
-msgstr ""
-
-#. / "Обнаружено более одного колеса с идентификатором '%c'!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:84
-#, c-format
-msgid "More than one wheel with ID '%c' found!"
-msgstr ""
-
-#. / "Заданы и идентификатор, и имя колеса; попробуйте что-то одно!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:93
-msgid "You give both wheel ID and wheel name, try something one!"
-msgstr ""
-
-#. / "Заданное колесо не обнаружено!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:127
-msgid "Given wheel not found!"
-msgstr ""
-
-#. / "Идентификатор фильтра - буква (колесо) и число (позиция)"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:135
-msgid "Filter ID is letter (wheel) and number (position)"
-msgstr ""
-
-#. / "Фильтр %s не обнаружен"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:162
-#, c-format
-msgid "Filter %s not found!"
-msgstr ""
-
-#. / "Позиция фильтра должна быть числом от 1 до %d!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:171
-#, c-format
-msgid "Filter position should be a number from 1 to %d!"
-msgstr ""
-
-#. / "Ошибка отправки данных"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:191
-msgid "Error sending data"
-msgstr ""
-
-#. / "Ошибка чтения данных"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:206
-msgid "Error reading data"
-msgstr ""
-
-#. / "Ошибка, количество попыток истекло"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:230
-msgid "Error, tries amount exceed"
-msgstr ""
-
-#. / "Турель не инициализирована, движение в \"дом\""
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:248
-msgid "Turret isn't initialized, move home..."
-msgstr ""
-
-#. / "Ожидание окончания движения"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:265
-#, c-format
-msgid "Wait for end of moving "
-msgstr ""
-
-#. / "Произошла ошибка, повторите запуск"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:274
-msgid "Error ocured, repeat again"
-msgstr ""
-
-#. / "Заданная позиция вне диапазона 1..%d"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:294
-#, c-format
-msgid "Given position out of range 1..%d"
-msgstr ""
-
-#. / "Не могу открыть устройство"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:321
-msgid "Can't open device"
-msgstr ""
-
-#. / "\nСвойства подключенного колеса\n"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:347
-msgid ""
-"\n"
-"Connected wheel properties\n"
-msgstr ""
-
-#. / "\nВсе записи EEPROM\n"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:375
-msgid ""
-"\n"
-"All records from EEPROM\n"
-msgstr ""
-
-#. / "Турели не обнаружены"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:413
-msgid "No turrets found"
-msgstr ""
-
-#. / "Обнаружено %d турелей, но ни к одной нет прав доступа"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:419
-#, c-format
-msgid "Found %d turrets but have no access rights to any"
-msgstr ""
-
-#. / "Название не должно превышать восьми символов"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:439
-msgid "Name should be not longer than 8 symbols"
-msgstr ""
-
-#. / "Чтобы переименовать, необходимо указать новое название фильтра/колеса и его позицию/идентификатор!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:458
-msgid "You should give new filter/wheel name and its POS/ID to rename!"
-msgstr ""
-
-#. / "Не удалось переименовать"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:485
-msgid "Can't rename"
-msgstr ""
-
-#. / "Переименовано удачно!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:487
-msgid "Succesfully renamed!\n"
-msgstr ""
-
-#. / "Зацикливание, попробуйте еще раз"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:496
-msgid "Cycling detected, try again"
-msgstr ""
-
-#. / "Уже в заданной позиции"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:529
-msgid "Already at position"
-msgstr ""
 
 #. / "отобразить эту справку"
 #: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/cmdlnopts.c:64
@@ -302,4 +84,253 @@ msgstr ""
 #. / "Игнорируются параметры: "
 #: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/cmdlnopts.c:128
 msgid "Ignore parameters:"
+msgstr ""
+
+#. / "Не могу открыть %s"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hidmanage.c:80
+#, c-format
+msgid "Can't open %s"
+msgstr ""
+
+#. / "Обнаружено более одной турели с серийным номером '%s'!"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:79
+#, c-format
+msgid "More than one turret with serial '%s' found!"
+msgstr ""
+
+#. / "Турель с серийным номером '%s' не найдена"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:86
+#, c-format
+msgid "Turret with serial '%s' not found"
+msgstr ""
+
+#. / "Идентификатор колеса должен быть буквой от \"A\" до \"H\"!"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:94
+msgid "Wheel ID should be a letter from \"A\" to \"H\"!"
+msgstr ""
+
+#. / "Идентификатор фильтра должен состоять из двух символов: идентификатора колеса и номера позиции"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:97
+msgid "Filter ID should have two symbols: wheel ID and filter position"
+msgstr ""
+
+#. / "Обнаружено более одного колеса с идентификатором '%c'!"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:105
+#, c-format
+msgid "More than one wheel with ID '%c' found!"
+msgstr ""
+
+#. / "Колесо с идентификатором '%c' не найдено"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:113
+#, c-format
+msgid "Wheel with ID '%c' not found"
+msgstr ""
+
+#. / "Обнаружено более одного колеса с именем '%s'!"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:120
+#, c-format
+msgid "More than one wheel with name '%s' found!"
+msgstr ""
+
+#. / "Колесо с именем '%s' не найдено"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:127
+#, c-format
+msgid "Wheel with name '%s' not found"
+msgstr ""
+
+#. / "Обнаружено больше одного колеса с именем фильтра '%s'!"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:160
+#, c-format
+msgid "More than one wheel with filter name '%s' found!"
+msgstr ""
+
+#. / "Фильтр %s не обнаружен"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:166
+#, c-format
+msgid "Filter %s not found!"
+msgstr ""
+
+#. / "Заданное колесо не обнаружено!"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:171
+msgid "Given wheel not found!"
+msgstr ""
+
+#. / "Позиция фильтра должна быть числом от 1 до %d!"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:183
+#, c-format
+msgid "Filter position should be a number from 1 to %d!"
+msgstr ""
+
+#. / "Ошибка отправки данных"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:203
+msgid "Error sending data"
+msgstr ""
+
+#. / "Ошибка чтения данных"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:218
+msgid "Error reading data"
+msgstr ""
+
+#. / "Ошибка, количество попыток истекло"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:242
+msgid "Error, tries amount exceed"
+msgstr ""
+
+#. / "Турель не инициализирована, движение в \"дом\""
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:260
+msgid "Turret isn't initialized, move home..."
+msgstr ""
+
+#. / "Ожидание окончания движения"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:277
+#, c-format
+msgid "Wait for end of moving "
+msgstr ""
+
+#. / "Произошла ошибка, повторите запуск"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:286
+msgid "Error ocured, repeat again"
+msgstr ""
+
+#. / "Заданная позиция вне диапазона 1..%d"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:306
+#, c-format
+msgid "Given position out of range 1..%d"
+msgstr ""
+
+#. / "Не могу открыть устройство"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:333
+msgid "Can't open device"
+msgstr ""
+
+#. / "\nСвойства подключенного колеса\n"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:359
+msgid ""
+"\n"
+"Connected wheel properties\n"
+msgstr ""
+
+#. / "\nВсе записи EEPROM\n"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:388
+msgid ""
+"\n"
+"All records from EEPROM\n"
+msgstr ""
+
+#. / "Турели не обнаружены"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:426
+msgid "No turrets found"
+msgstr ""
+
+#. / "Обнаружено %d турелей, но ни к одной нет прав доступа"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:432
+#, c-format
+msgid "Found %d turrets but have no access rights to any"
+msgstr ""
+
+#. / "Название не должно превышать восьми символов"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:452
+msgid "Name should be not longer than 8 symbols"
+msgstr ""
+
+#. / "Чтобы переименовать, необходимо указать новое название фильтра/колеса и его позицию/идентификатор!"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:471
+msgid "You should give new filter/wheel name and its POS/ID to rename!"
+msgstr ""
+
+#. / "Не удалось переименовать"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:498
+msgid "Can't rename"
+msgstr ""
+
+#. / "Переименовано удачно!"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:500
+msgid "Succesfully renamed!\n"
+msgstr ""
+
+#. / "Зацикливание, попробуйте еще раз"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:509
+msgid "Cycling detected, try again"
+msgstr ""
+
+#. / "Уже в заданной позиции"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:542
+msgid "Already at position"
+msgstr ""
+
+#. amount of pcount and/or scount wrong
+#. / "Неправильный формат строки помощи"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/parseargs.c:56
+msgid "Wrong helpstring!"
+msgstr ""
+
+#. / "Целое вне допустимого диапазона"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/parseargs.c:86
+msgid "Integer out of range"
+msgstr ""
+
+#. / "Неправильный параметр: %s"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/parseargs.c:480
+#, c-format
+msgid "Wrong parameter: %s"
+msgstr ""
+
+#. / "%s: необходим аргумент!"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/parseargs.c:485
+#, c-format
+msgid "%s: argument needed!"
+msgstr ""
+
+#. / "Неправильный аргумент \"%s\" параметра \"%s\""
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/parseargs.c:490
+#, c-format
+msgid "Wrong argument \"%s\" of parameter \"%s\""
+msgstr ""
+
+#. / "Не задано имя файла!"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:174
+msgid "No filename given!"
+msgstr ""
+
+#. / "Не могу открыть %s для чтения"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:177
+#, c-format
+msgid "Can't open %s for reading"
+msgstr ""
+
+#. / "Не могу выполнить stat %s"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:180
+#, c-format
+msgid "Can't stat %s"
+msgstr ""
+
+#. / "Ошибка mmap"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:184
+msgid "Mmap error for input"
+msgstr ""
+
+#. / "Не могу закрыть mmap'нутый файл"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:186
+msgid "Can't close mmap'ed file"
+msgstr ""
+
+#. / "Не могу munmap"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:196
+msgid "Can't munmap"
+msgstr ""
+
+#. / "Не могу настроить консоль"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:221
+msgid "Can't setup console"
+msgstr ""
+
+#. Get settings
+#. / "Не могу получить настройки"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:291
+msgid "Can't get settings"
+msgstr ""
+
+#. / "Не могу установить настройки"
+#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:302
+msgid "Can't set settings"
 msgstr ""

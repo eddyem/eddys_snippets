@@ -66,9 +66,10 @@ void set_cur_wheel(int idx){
  * Check command line arguments, find filters/wheels by name, find max positions & so on
  */
 void check_args(){
+    FNAME();
     // here we fill value of wheel_id if no given and present only one turret
     list_hw(listNms);  // also exit if no HW found
-    if(listNms) return;
+    if(listNms != LIST_NONE) return;
     int i;
     // add wheel ID to global parameters if there was nothing
     if(G.serial){ // HW given by its serial
@@ -170,6 +171,7 @@ void check_args(){
         /// "Заданное колесо не обнаружено!"
         ERRX(_("Given wheel not found!"));
     }
+    DBG("listNms = %d", listNms);
     if(reName && !G.wheelID){
         G.wheelID = calloc(2, 1);
         *G.wheelID = wheel_id;
@@ -286,7 +288,7 @@ int poll_regstatus(int fd, int msg){
             ERRX(_("Error ocured, repeat again"));
         }
         usleep(50000);
-        if(msg) printf("."); fflush(stdout);
+        if(msg){printf("."); fflush(stdout);}
     }
     if(msg) printf("\n");
     return buf[4];
@@ -339,6 +341,7 @@ void list_props(int verblevl, wheel_descr *wheel){
     wheel->ID = buf[5];
     wheel->maxpos = buf[4];
     DBG("Wheel with id '%c' and maxpos %d", wheel->ID, wheel->maxpos);
+    DBG("Verblevl = %d", verblevl);
     char *getwname(int id){
         memset(buf, 0, sizeof(buf));
         buf[0] = REG_NAME;
@@ -353,33 +356,40 @@ void list_props(int verblevl, wheel_descr *wheel){
         }
         else return NULL;
     }
-    if(verblevl == LIST_PRES || !verblevl){ // list only presented devices or not list
+    if(verblevl == LIST_PRES || verblevl == LIST_SHORT || verblevl == LIST_NONE){ // list only presented devices or not list
         char *nm;
         /// "\nСвойства подключенного колеса\n"
-        if(verblevl) green(_("\nConnected wheel properties\n"));
-        if(verblevl) printf("Wheel ID '%c'", wheel->ID);
+        if(verblevl != LIST_NONE){
+            if(verblevl == LIST_PRES){
+                green(_("\nConnected wheel properties\n"));
+                printf("Wheel ID ");
+            }
+            printf("'%c' ", wheel->ID);
+        }
         nm = getwname(wheel->ID);
         if(nm){
             strncpy(wheel->name, nm, 9);
-            if(verblevl) printf(", name '%s'", wheel->name);
+            if(verblevl == LIST_PRES) printf(", name '%s'", wheel->name);
             DBG("Wheel name: %s", wheel->name);
         }
-        if(wheel->serial && verblevl){
-            printf(", serial '%s'", wheel->serial);
+        if(wheel->serial && verblevl != LIST_NONE){
+            if(verblevl == LIST_PRES) printf(", serial ");
+            printf("'%s' ", wheel->serial);
         }
-        if(verblevl) printf(", %d filters:\n", wheel->maxpos);
-        else return;
-        int i, m = wheel->maxpos + 1;
-        // now get filter names
-        for(i = 1; i < m; ++i){
-            nm = get_filter_name(wheel, i);
-            printf("\t%d", i);
-            if(nm) printf(": '%s'", nm);
-            printf("\n");
+        if(verblevl == LIST_NONE) return;
+        if(verblevl == LIST_PRES){
+            printf(", %d filters:\n", wheel->maxpos);
+            int i, m = wheel->maxpos + 1;
+            // now get filter names
+            for(i = 1; i < m; ++i){
+                nm = get_filter_name(wheel, i);
+                printf("\t%d", i);
+                if(nm) printf(": '%s'", nm);
+                printf("\n");
+            }
+            printf("current position: ");
         }
-        if(verblevl){
-            printf("current position: %d\n", poll_regstatus(wheel->fd, 0));
-        }
+        printf("%d\n", poll_regstatus(wheel->fd, 0));
     }
     if(verblevl != LIST_ALL) return;
     // now list all things stored in memory of turret driver

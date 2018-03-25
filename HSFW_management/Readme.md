@@ -23,23 +23,30 @@ given turret.
 
 ## Usage examples
 
-#### List all devices connected
-    Свойства подключенного колеса
-    Wheel ID 'A', name 'UBVRI', serial '00000563', 5 filters:
-        1: 'U'
-        2: 'B'
-        3: 'V'
-        4: 'R'
-        5: 'I'
-    current position: 1
+#### Short list of connected devices (wheel ID, turret serial and current position):
+    HSFW_manage
+    'B' '00000563' 1
+    'A' '00000532' 1
 
-    Свойства подключенного колеса
-    Wheel ID 'B', name 'Sloan', serial '00000532', 5 filters:
+#### List all devices connected
+    HSFW_manage --list
+
+    Connected wheel properties
+    Wheel ID 'B' , name 'Sloan', serial '00000563' , 5 filters:
         1: '1'
         2: '2'
         3: '3'
         4: '4'
         5: '5'
+    current position: 1
+
+    Connected wheel properties
+    Wheel ID 'A' , name 'UBVRI', serial '00000532' , 5 filters:
+        1: 'U'
+        2: 'B'
+        3: 'V'
+        4: 'R'
+        5: 'I'
     current position: 1
 
 #### Move wheel by turret's serial and position number

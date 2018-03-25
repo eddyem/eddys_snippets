@@ -202,7 +202,7 @@ mmapbuf *My_mmap(char *filename){
 void My_munmap(mmapbuf *b){
     if(munmap(b->data, b->len)){
     /// "Не могу munmap"
-        ERR(_("Can't munmap"));
+        WARN(_("Can't munmap"));
     }
     FREE(b);
 }
@@ -291,8 +291,6 @@ void tty_init(char *comdev){
     DBG("\nOpen port...\n");
     if ((comfd = open(comdev,O_RDWR|O_NOCTTY|O_NONBLOCK)) < 0){
         WARN("Can't use port %s\n",comdev);
-        ioctl(comfd, TCSANOW, &oldtty); // return TTY to previous state
-        close(comfd);
         signals(0); // quit?
     }
     DBG(" OK\nGet current settings... ");

@@ -8,7 +8,7 @@ set(VERSION "${MAJOR_VERSION}.${MID_VERSION}.${MINOR_VERSION}")
 message("VER: ${VERSION}")
 
 # default flags
-set(CFLAGS -O2 -Wextra -Wall -Werror -W -std=gnu99)
+set(CFLAGS -O2 -std=gnu99)
 
 set(CMAKE_COLOR_MAKEFILE ON)
 
@@ -24,6 +24,7 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SOURCES)
 
 # cmake -DEBUG=1 -> debugging
 if(DEFINED EBUG)
+    set(CFLAGS ${CFLAGS} -Wextra -Wall -Werror -W)
 	add_definitions(-DEBUG)
 endif()
 
@@ -117,7 +118,7 @@ add_custom_command(
 	COMMAND enconv ${PO_FILE}
 	DEPENDS ${SOURCES}
 )
-# we need this to prewent ru.po from deleting by make clean
+# we need this to prevent ru.po from deleting by make clean
 add_custom_target(
 	RU_FILE
 	COMMAND [ -f ${RU_FILE} ] && ${GETTEXT_MSGMERGE_EXECUTABLE} -Uis ${RU_FILE} ${PO_FILE} || cp ${PO_FILE} ${RU_FILE}

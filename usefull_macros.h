@@ -56,6 +56,9 @@
 // unused arguments with -Wall -Werror
 #define _U_    __attribute__((__unused__))
 
+#define ASTRING(MACRO)          #MACRO
+#define STRING(MACRO)           ASTRING(MACRO)
+
 /*
  * Coloured messages output
  */

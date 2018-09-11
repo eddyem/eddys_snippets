@@ -89,15 +89,18 @@ int main(int argc, char **argv){
 	while((iptr = strstr(iptr, "$Comp\n"))){
 		DBG("%dth component: ", ++i);
 		iptr = strstr(iptr, "\nL ");
-		if(!iptr) break; iptr += 3;
+		if(!iptr) break;
+		iptr += 3;
 		if(sscanf(iptr, "%s %s\n", comp, val) != 2) continue;
 		DBG("component %s with label %s\n", comp, val);
 		iptr = strstr(iptr, "\nU ");
-		if(!iptr) break; iptr += 3;
+		if(!iptr) break;
+		iptr += 3;
 		if(sscanf(iptr, "%d %d %s\n",&N1,&N2,comp) != 3) continue;
 		DBG("N1 = %d; N2 = %d; comp label: %s\n",N1,N2,comp);
 		iptr = strstr(iptr, "\nF"); // go to line "F 0"
-		if(!iptr) break; iptr++;
+		if(!iptr) break;
+		iptr++;
 		// printout all what was before:
 		oldptr = printdata(oldptr, iptr);
 		for(j = 0; j < L; j++){

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 set(PROJ tvguide)
 set(MINOR_VERSION "0")
 set(MID_VERSION "0")
@@ -7,8 +7,15 @@ set(VERSION "${MAJOR_VERSION}.${MID_VERSION}.${MINOR_VERSION}")
 
 message("VER: ${VERSION}")
 
+project(${PROJ} VERSION ${PROJ_VERSION} LANGUAGES C CXX)
+
 # default flags
-set(CFLAGS -O2 -std=gnu99)
+set(CMAKE_C_FLAGS_RELEASE "")
+set(CMAKE_C_FLAGS_DEBUG "")
+set(CMAKE_CXX_FLAGS_RELEASE "")
+set(CMAKE_CXX_FLAGS_DEBUG "")
+set(CMAKE_C_FLAGS "-O2 -std=gnu99")
+set(CMAKE_CXX_FLAGS "-O2")
 
 set(CMAKE_COLOR_MAKEFILE ON)
 
@@ -18,28 +25,31 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SOURCES)
 
 # we can change file list
 #if(NOT DEFINED something)
-#	set(SOURCES ${SOURCES} one_more_list)
-#	add_definitions(-DSOME_DEFS)
+#   set(SOURCES ${SOURCES} one_more_list)
+#   add_definitions(-DSOME_DEFS)
 #endif()
 
 # cmake -DEBUG=1 -> debugging
 if(DEFINED EBUG)
-    set(CFLAGS ${CFLAGS} -Wextra -Wall -Werror -W)
-	add_definitions(-DEBUG)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -Werror -W")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra -Wall -Werror -W")
+    set(CMAKE_BUILD_TYPE DEBUG)
+    add_definitions(-DEBUG)
+else()
+    set(CMAKE_BUILD_TYPE RELEASE)
 endif()
 
 set(MODULES libavformat libavcodec libswscale libavutil libavdevice)
 # additional modules on condition
 #if(DEFINED SOMETHING)
-#	set(MODULES ${MODULES} more_modules>=version)
-#	add_definitions(-DSOMEDEFS)
+#   set(MODULES ${MODULES} more_modules>=version)
+#   add_definitions(-DSOMEDEFS)
 #endif()
 
-project(${PROJ})
 # change wrong behaviour with install prefix
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT AND CMAKE_INSTALL_PREFIX MATCHES "/usr/local")
-	message("Change default install path to /usr")
-	set(CMAKE_INSTALL_PREFIX "/usr")
+    message("Change default install path to /usr")
+    set(CMAKE_INSTALL_PREFIX "/usr")
 endif()
 message("Install dir prefix: ${CMAKE_INSTALL_PREFIX}")
 
@@ -47,11 +57,11 @@ message("Install dir prefix: ${CMAKE_INSTALL_PREFIX}")
 set(LCPATH ${CMAKE_SOURCE_DIR}/locale/ru)
 
 if(NOT DEFINED LOCALEDIR)
-	if(DEFINED DEBUG)
-		set(LOCALEDIR ${CMAKE_CURRENT_SOURCE_DIR}/locale)
-	else()
-		set(LOCALEDIR ${CMAKE_INSTALL_PREFIX}/share/locale)
-	endif()
+    if(DEFINED DEBUG)
+        set(LOCALEDIR ${CMAKE_CURRENT_SOURCE_DIR}/locale)
+    else()
+        set(LOCALEDIR ${CMAKE_INSTALL_PREFIX}/share/locale)
+    endif()
 endif()
 
 # gettext files
@@ -68,15 +78,15 @@ find_package(PkgConfig REQUIRED)
 # set(${${PROJ}_LIBRARY_DIRS} ...)
 
 if(MODULES)
-	pkg_check_modules(${PROJ} REQUIRED ${MODULES})
+    pkg_check_modules(${PROJ} REQUIRED ${MODULES})
 endif()
 
 #OpenMP
 #include(FindOpenMP)
 #if(OPENMP_FOUND)
-#	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-#	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-#	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+#   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+#   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+#   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 #endif()
 
 # exe file
@@ -85,47 +95,47 @@ target_link_libraries(${PROJ} ${${PROJ}_LIBRARIES} ${OPENGL_LIBRARIES} ...)
 include_directories(${${PROJ}_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR} ...)
 link_directories(${${PROJ}_LIBRARY_DIRS} )
 add_definitions(${CFLAGS} -DLOCALEDIR=\"${LOCALEDIR}\"
-		-DPACKAGE_VERSION=\"${VERSION}\" -DGETTEXT_PACKAGE=\"${PROJ}\"
-		-DMINOR_VERSION=\"${MINOR_VERSION}\" -DMID_VERSION=\"${MID_VERSION}\"
-		-DMAJOR_VERSION=\"${MAJOR_VESION}\")
+        -DPACKAGE_VERSION=\"${VERSION}\" -DGETTEXT_PACKAGE=\"${PROJ}\"
+        -DMINOR_VERSION=\"${MINOR_VERSION}\" -DMID_VERSION=\"${MID_VERSION}\"
+        -DMAJOR_VERSION=\"${MAJOR_VESION}\")
 
 # Installation of the program
 if(NOT DEFINED DEBUG)
-	INSTALL(FILES ${MO_FILE} DESTINATION "share/locale/ru/LC_MESSAGES")
-			#PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
-	INSTALL(TARGETS ${PROJ} DESTINATION "bin")
-			#PERMISSIONS OWNER_WRITE OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-	# Script to be executed at installation time (kind of post-intallation script) to
-	# change the right accesses on the installed files
-	#INSTALL(SCRIPT inst.cmake)
+    INSTALL(FILES ${MO_FILE} DESTINATION "share/locale/ru/LC_MESSAGES")
+            #PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+    INSTALL(TARGETS ${PROJ} DESTINATION "bin")
+            #PERMISSIONS OWNER_WRITE OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+    # Script to be executed at installation time (kind of post-intallation script) to
+    # change the right accesses on the installed files
+    #INSTALL(SCRIPT inst.cmake)
 else()
-	install(CODE "MESSAGE(\"Don't install in DEBUG mode! First run cmake without -DEBUG defined.\")")
+    install(CODE "MESSAGE(\"Don't install in DEBUG mode! First run cmake without -DEBUG defined.\")")
 endif(NOT DEFINED DEBUG)
 
 find_package(Gettext REQUIRED)
 find_program(GETTEXT_XGETTEXT_EXECUTABLE xgettext)
 if(NOT GETTEXT_XGETTEXT_EXECUTABLE OR NOT GETTEXT_MSGFMT_EXECUTABLE)
-	message(FATAL_ERROR "xgettext not found")
+    message(FATAL_ERROR "xgettext not found")
 endif()
 file(MAKE_DIRECTORY ${LCPATH})
 file(MAKE_DIRECTORY ${LCPATH}/LC_MESSAGES)
 
 add_custom_command(
-	OUTPUT ${PO_FILE}
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	COMMAND ${GETTEXT_XGETTEXT_EXECUTABLE} --from-code=utf-8 ${SOURCES} -c -k_ -kN_ -o ${PO_FILE}
-	COMMAND sed -i 's/charset=.*\\\\n/charset=koi8-r\\\\n/' ${PO_FILE}
-	COMMAND enconv ${PO_FILE}
-	DEPENDS ${SOURCES}
+    OUTPUT ${PO_FILE}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND ${GETTEXT_XGETTEXT_EXECUTABLE} --from-code=utf-8 ${SOURCES} -c -k_ -kN_ -o ${PO_FILE}
+    COMMAND sed -i 's/charset=.*\\\\n/charset=koi8-r\\\\n/' ${PO_FILE}
+    COMMAND enconv ${PO_FILE}
+    DEPENDS ${SOURCES}
 )
 # we need this to prevent ru.po from deleting by make clean
 add_custom_target(
-	RU_FILE
-	COMMAND [ -f ${RU_FILE} ] && ${GETTEXT_MSGMERGE_EXECUTABLE} -Uis ${RU_FILE} ${PO_FILE} || cp ${PO_FILE} ${RU_FILE}
-	DEPENDS ${PO_FILE}
+    RU_FILE
+    COMMAND [ -f ${RU_FILE} ] && ${GETTEXT_MSGMERGE_EXECUTABLE} -Uis ${RU_FILE} ${PO_FILE} || cp ${PO_FILE} ${RU_FILE}
+    DEPENDS ${PO_FILE}
 )
 add_custom_command(
-	OUTPUT ${MO_FILE}
-	COMMAND make RU_FILE && ${GETTEXT_MSGFMT_EXECUTABLE} ${RU_FILE} -o ${MO_FILE}
-	DEPENDS ${PO_FILE}
+    OUTPUT ${MO_FILE}
+    COMMAND make RU_FILE && ${GETTEXT_MSGFMT_EXECUTABLE} ${RU_FILE} -o ${MO_FILE}
+    DEPENDS ${PO_FILE}
 )

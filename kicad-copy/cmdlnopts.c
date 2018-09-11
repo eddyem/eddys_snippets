@@ -49,7 +49,7 @@ myoption cmdlnopts[] = {
  */
 glob_pars *parce_args(int argc, char **argv){
 	int i;
-	memset(&G, sizeof(glob_pars), 0); // clear all
+	memset(&G, 0, sizeof(glob_pars)); // clear all
 	// format of help: "Usage: progname [args]\n"
 	change_helpstring("Usage: %s [args]\n\n\tWhere args are:\n");
 	// parse arguments

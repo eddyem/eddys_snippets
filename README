@@ -19,3 +19,5 @@ usefull_macros - a lot of different macros & functions
 	* MMAP files into memory
 
 stellarium_emul - snippet for stellarium telescope remote control
+
+netdaemon - snippet for network management of serial devices

@@ -1,0 +1,4 @@
+A set of small utils for astrosib telescopes on 10-micron mount with Baader all-sky dome.
+
+* teldaemon  - telescope daemon (open/close telescope shutters, get shutters state)
+* domedaemon - dome daemon (open/close dome, get dome state, get weater)

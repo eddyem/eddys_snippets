@@ -114,7 +114,9 @@ install(TARGETS ${PROJ} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 install(FILES ${PCFILE} DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
 
 # EXAMPLES
-add_subdirectory(examples)
+if(DEFINED EXAMPLES AND EXAMPLES EQUAL 1)
+    add_subdirectory(examples)
+endif()
 
 ###### gettext ######
 if(NOT DEFINED NOGETTEXT)

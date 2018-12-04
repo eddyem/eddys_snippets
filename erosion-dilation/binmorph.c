@@ -399,7 +399,7 @@ CCbox *cclabel4(unsigned char *Img, int W, int H, int W_0, size_t *Nobj){
 
 CCbox *cclabel4_1(unsigned char *Img, int W, int H, int W_0, size_t *Nobj){
 	unsigned char *I = FC_filter(Img, W_0, H);
-	#include "cclabling.h"
+	#include "cclabling_1.h"
 	FREE(I);
 	return ret;
 }

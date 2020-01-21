@@ -227,6 +227,9 @@ int main (int argc, char **argv){
     printf("("); radtodeg(DPI-aob);
     printf(")/"); radtodeg(zob);
     printf("\n");
+    if( iauAtoc13 ( "R", rob, dob, utc1, utc2, dut1,
+     elong, phi, hm, xp, yp, phpa, tc, rh, wl, &rca, &dca )) return -1;
+    reprd ( "observed -> ICRS:", rca, dca );
 
     /*
     *  Given:
@@ -260,10 +263,6 @@ int main (int argc, char **argv){
     printf("("); radtodeg(DPI-aob);
     printf(")/"); radtodeg(zob);
     printf("\n");
-
-    if( iauAtoc13 ( "R", rob, dob, utc1, utc2, dut1,
-     elong, phi, hm, xp, yp, phpa, tc, rh, wl, &rca, &dca )) return -1;
-    reprd ( "observed -> ICRS:", rca, dca );
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // libNOVA

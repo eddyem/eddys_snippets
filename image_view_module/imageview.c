@@ -91,8 +91,10 @@ void createWindow(windowData *win){
 	win->zoom = 1. / win->Daspect;
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, win->Tex);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, win->image->w, win->image->h, 0,
+			GL_RGB, GL_UNSIGNED_BYTE, win->image->rawdata);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 //    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 //    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
    	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
@@ -100,8 +102,6 @@ void createWindow(windowData *win){
 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, win->image->w, win->image->h, 0,
-			GL_RGB, GL_UNSIGNED_BYTE, win->image->rawdata);
 	glDisable(GL_TEXTURE_2D);
 	totWindows++;
 	createMenu(win->GL_ID);
@@ -236,10 +236,17 @@ void RedrawWindow(){
 */
 	w /= 2.; h /= 2.;
 	glBegin(GL_QUADS);
-		glTexCoord2f(0.0f, 0.0f); glVertex2f(-w, -h );
-		glTexCoord2f(1.0f, 0.0f); glVertex2f( w, -h );
-		glTexCoord2f(1.0f, 1.0f); glVertex2f( w,  h );
-		glTexCoord2f(0.0f, 1.0f); glVertex2f(-w,  h );
+/*
+		glTexCoord2f(1.0f, 1.0f); glVertex2f( w,  h ); // top right
+		glTexCoord2f(1.0f, 0.0f); glVertex2f( w, -h ); // bottom right
+		glTexCoord2f(0.0f, 0.0f); glVertex2f(-w, -h ); // bottom left
+		glTexCoord2f(0.0f, 1.0f); glVertex2f(-w,  h ); // top left
+		*/
+		glTexCoord2f(1.0f, 1.0f); glVertex2f( -w, -h ); // top right
+		glTexCoord2f(1.0f, 0.0f); glVertex2f( -w, h ); // bottom right
+		glTexCoord2f(0.0f, 0.0f); glVertex2f(w, h ); // bottom left
+		glTexCoord2f(0.0f, 1.0f); glVertex2f(w,  -h ); // top left
+		
 	glEnd();
 	glDisable(GL_TEXTURE_2D);
 	glFinish();

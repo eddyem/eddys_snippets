@@ -7,7 +7,7 @@
 msgid   ""
 msgstr  "Project-Id-Version: PACKAGE VERSION\n"
         "Report-Msgid-Bugs-To: \n"
-        "POT-Creation-Date: 2015-03-02 12:05+0300\n"
+        "POT-Creation-Date: 2020-01-23 12:32+0300\n"
         "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
         "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
         "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,41 +17,41 @@ msgstr  "Project-Id-Version: PACKAGE VERSION\n"
         "Content-Transfer-Encoding: 8bit\n"
 
 #. "Уже инициализировано!"
-#: /home/eddy/tmp/image_view_module/imageview.c:389
+#: /tmp/image_view_module/imageview.c:396
 msgid   "Already initialized!"
 msgstr  "Уже инициализировано!"
 
-#: /home/eddy/tmp/image_view_module/macros.c:183
+#: /tmp/image_view_module/macros.c:183
 msgid   "Can't close mmap'ed file"
 msgstr  "Не могу закрыть mmap'нутый файл"
 
-#: /home/eddy/tmp/image_view_module/imageview.c:362
+#: /tmp/image_view_module/imageview.c:369
 msgid   "Can't init mutex!"
 msgstr  "Не могу инициировать взаимное исключение!"
 
-#: /home/eddy/tmp/image_view_module/macros.c:192
+#: /tmp/image_view_module/macros.c:192
 msgid   "Can't munmap"
 msgstr  "Не могу вызывать munmap"
 
-#: /home/eddy/tmp/image_view_module/macros.c:177
+#: /tmp/image_view_module/macros.c:177
 #, c-format
 msgid   "Can't open %s for reading"
 msgstr  "Не могу открыть %s для чтения"
 
-#: /home/eddy/tmp/image_view_module/macros.c:179
+#: /tmp/image_view_module/macros.c:179
 #, c-format
 msgid   "Can't stat %s"
 msgstr  "Не могу выполнить stat для %s"
 
-#: /home/eddy/tmp/image_view_module/imageview.c:132
+#: /tmp/image_view_module/imageview.c:132
 msgid   "Error removing from list"
 msgstr  "Ошибка удаления из списка"
 
-#: /home/eddy/tmp/image_view_module/macros.c:182
+#: /tmp/image_view_module/macros.c:182
 msgid   "Mmap error for input"
 msgstr  "Ошибка mmap для входных данных"
 
-#: /home/eddy/tmp/image_view_module/macros.c:175
+#: /tmp/image_view_module/macros.c:175
 msgid   "No filename given!"
 msgstr  "Не указано имя файла!"
 

@@ -50,11 +50,15 @@ void* change_image(void *data){
 	//	DBG("refresh");
 		GLubyte *raw = win->image->rawdata;
 		for(y = 0; y < h; y++){
+			if(y<5){
+			raw += w*3; continue;
+			}
 			if(y%20 == 19){
 				raw += w*3;
 				continue;
 			}
 			for(x = 0; x < w; x++){
+			if(x==14){raw+=15;x+=4; continue;}
 				if(x%20 != 19){
 					if(i < 80) raw[0]++;
 					else if(i < 170) raw[1]++;

@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.9)
-project(myapp)
-add_executable(myapp helloworld.c)
+project(examples)
+link_libraries(usefull_macros)
 include_directories(../)
-target_link_libraries(myapp usefull_macros)
 
+#target_link_libraries(hello -lm)
+add_executable(hello helloworld.c)

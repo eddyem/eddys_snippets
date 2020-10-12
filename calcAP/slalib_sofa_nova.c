@@ -118,7 +118,7 @@ void radtodeg(double r){
 double getta(char *str){
     int a,b,s = 1; double c;
     if(3 != sscanf(str, "%d:%d:%lf", &a,&b,&c)) return -1;
-    if(a < 0){ s = -1; a = -a;}
+    if(a < 0 || *str == '-'){ s = -1; a = -a;}
     c /= 3600.;
     c += a + b/60.;
     c *= s;
@@ -217,6 +217,8 @@ int main (int argc, char **argv){
     dut1 = 0.13026 ; // DUT1
     /* ICRS to observed. */
     double aob, zob, hob, dob, rob;
+    printf("iauAtco13(%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g)\n",
+           rc, dc, pr, pd, px, rv, utc1, utc2, dut1, elong, phi, hm, xp, yp, phpa, tc, rh, wl);
     if ( iauAtco13 ( rc, dc, pr,
      pd, px, rv, utc1, utc2, dut1, elong, phi,
      hm, xp, yp, phpa, tc, rh, wl, &aob, &zob,

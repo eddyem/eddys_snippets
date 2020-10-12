@@ -7,7 +7,11 @@ B-trees - simple but slowly binary search trees with all main operations
 
 fifo_lifo - simple stack-like queues
 
+netdaemon - snippet for network management of serial devices
+
 simple_list - 1-directional list with functions: add element; delete list
+
+stellarium_emul - snippet for stellarium telescope remote control
 
 tmout - theads-based timeout to check something
 
@@ -18,6 +22,4 @@ usefull_macros - a lot of different macros & functions
 	* error/warning/debug macros
 	* MMAP files into memory
 
-stellarium_emul - snippet for stellarium telescope remote control
-
-netdaemon - snippet for network management of serial devices
+USBrelay - simplest tool to manage USB-HID chinese relays

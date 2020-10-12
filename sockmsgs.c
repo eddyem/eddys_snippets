@@ -86,14 +86,20 @@ void *handle_socket(void *asock){
         buff[readed] = 0;
     //  DBG("get %zd bytes: %s", readed, buff);
         // now we should check what do user want
-        char *got, *found = buff;
+        char *found = buff;
         DBG("Buff: %s", buff);
-        if((got = stringscan(buff, "GET")) || (got = stringscan(buff, "POST"))){ // web query
+        //if((got = stringscan(buff, "GET"))){ // web query
+        if(strncmp(buff, "GET", 3) == 0){
             webquery = 1;
-            char *slash = strchr(got, '/');
+            char *slash = strchr(buff, '/');
             if(slash) found = slash + 1;
             // web query have format GET /some.resource
+        }else if(strncmp(buff, "POST", 4) == 0){
+                webquery = 1;
+                char *hdrend = strstr(buff, "\r\n\r\n");
+                if(hdrend) found = hdrend + 4;
         }
+        DBG("Found=%s", found);
         size_t L;
         char *X;
         if((X = strstr(found, "sum="))){ // check working for GET from browser
@@ -103,18 +109,18 @@ void *handle_socket(void *asock){
                 newx = x;
                 DBG("User give sum=%d", x);
             }
-            L = snprintf(obuff, BUFLEN, "sum=%d\n", newx);
+            int l = snprintf(obuff, BUFLEN, "sum=%d\n", newx);
             if(webquery){ // save file with current value
             L = snprintf(obuff, BUFLEN,
                 "HTTP/2.0 200 OK\r\n"
                 "Access-Control-Allow-Origin: *\r\n"
                 "Access-Control-Allow-Methods: GET, POST\r\n"
                 "Access-Control-Allow-Credentials: true\r\n"
-                "Content-type: multipart/form-data\r\nContent-Length: %zd\r\n\r\n"
-                "sum=%d\n", L, newx);
-            }
+                "Content-type: text/html\r\nContent-Length: %d\r\n\r\n"
+                "sum=%d\n", l, newx);
+            }else L = l;
             if(L != (size_t)write(sock, obuff, L)) WARN("write");
-            DBG("%s", obuff);
+            DBG("\nWRITE TO client: %s\n", obuff);
         }else{ // simply copy back all data
             size_t blen = strlen(buff);
             if(webquery){

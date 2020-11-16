@@ -78,8 +78,9 @@ static char *popmessage(msglist **lst){
     if(!lst || !*lst) return NULL;
     char *ret;
     msglist *node = *lst;
-    ret = (*lst)->data;
-    *lst = (*lst)->next;
+    if(node->next) node->next->last = node->last; // pop not last message
+    ret = node->data;
+    *lst = node->next;
     FREE(node);
     return ret;
 }

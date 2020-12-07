@@ -109,7 +109,7 @@ static threadinfo *findthread(char *name){
 }
 
 // add message to queue
-static char *addmesg(msgidx idx, message *msg, char *txt){
+static char *mesgAddText(msgidx idx, message *msg, char *txt){
     if(idx < idxMOSI || idx > idxMISO){
         WARNX("Wrong message index");
         return NULL;
@@ -126,7 +126,7 @@ static char *addmesg(msgidx idx, message *msg, char *txt){
 }
 
 // get all messages from queue (allocates data, should be free'd after usage!)
-static char *getmesg(msgidx idx, message *msg){
+static char *mesgGetText(msgidx idx, message *msg){
     if(idx < idxMOSI || idx > idxMISO){
         WARNX("Wrong message index");
         return NULL;
@@ -203,12 +203,12 @@ int killThread(const char *name){
 static void *handler(void *data){
     threadinfo *ti = (threadinfo*)data;
     while(1){
-        char *got = getmesg(idxMOSI, &ti->mesg);
+        char *got = mesgGetText(idxMOSI, &ti->mesg);
         if(got){
             green("%s got: %s\n", ti->name, got);
             FREE(got);
-            addmesg(idxMISO, &ti->mesg, "received");
-            addmesg(idxMISO, &ti->mesg, "need more");
+            mesgAddText(idxMISO, &ti->mesg, "received");
+            mesgAddText(idxMISO, &ti->mesg, "need more");
         }
         usleep(100);
     }
@@ -220,7 +220,7 @@ static void dividemessages(message *msg, char *longtext){
     for(char *s = copy; ; s = NULL){
         char *nxt = strtok_r(s, " ", &saveptr);
         if(!nxt) break;
-        addmesg(idxMOSI, msg, nxt);
+        mesgAddText(idxMOSI, msg, nxt);
     }
     FREE(copy);
 }
@@ -276,7 +276,7 @@ int main(){
             threadinfo *ti = &lptr->ti;
             lptr = lptr->next;
             char *got;
-            while((got = getmesg(idxMISO, &ti->mesg))){
+            while((got = mesgGetText(idxMISO, &ti->mesg))){
                 red("got from '%s': %s\n", ti->name, got);
                 fflush(stdout);
                 FREE(got);

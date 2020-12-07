@@ -1,0 +1,12 @@
+aux.c
+aux.h
+camera_functions.h
+cmdlnopts.c
+cmdlnopts.h
+events.c
+events.h
+opengl.c
+image_functions.c
+image_functions.h
+imageview.c
+imageview.h

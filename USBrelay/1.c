@@ -48,6 +48,8 @@
 
 #define RELAY_VENDOR_ID       0x16c0
 #define RELAY_PRODUCT_ID      0x05df
+#define RELAY_VENDOR_ID_STR   "16c0"
+#define RELAY_PRODUCT_ID_STR  "05df"
 
 char *device = NULL; // device name
 int help = 0; // call help
@@ -103,6 +105,58 @@ static void relay_cmd(int cmd, int relaynmbr){
 
 #define INFO(...)   do{if(!quiet){green(__VA_ARGS__); printf("\n");}}while(0)
 
+static int get_relay_fd(){
+    struct udev *udev;
+    struct udev_enumerate *enumerate;
+    struct udev_list_entry *devices, *dev_list_entry;
+    // Create the udev object
+    udev = udev_new();
+    int fd = -1;
+    if(!udev){
+        WARN("udev_new()");
+        return -1;
+    }
+    // Create a list of the devices in the 'hidraw' subsystem.
+    enumerate = udev_enumerate_new(udev);
+    udev_enumerate_add_match_subsystem(enumerate, "hidraw");
+    udev_enumerate_scan_devices(enumerate);
+    devices = udev_enumerate_get_list_entry(enumerate);
+    // Check out each device found
+    udev_list_entry_foreach(dev_list_entry, devices){
+        const char *path;
+        struct udev_device *dev;
+        path = udev_list_entry_get_name(dev_list_entry);
+        dev = udev_device_new_from_syspath(udev, path);
+        const char *devpath = udev_device_get_devnode(dev);
+        DBG("Device Node Path: %s", devpath);
+        dev = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
+        if(!dev){
+            udev_device_unref(dev);
+            continue;
+        }
+        const char *vid, *pid;
+        vid = udev_device_get_sysattr_value(dev,"idVendor");
+        pid = udev_device_get_sysattr_value(dev, "idProduct");
+        DBG("  VID/PID: %s/%s", vid, pid);
+        if(strcmp(vid, RELAY_VENDOR_ID_STR) == 0 && strcmp(pid, RELAY_PRODUCT_ID_STR) == 0){
+            fd = open(devpath, O_RDWR|O_NONBLOCK);
+            DBG("get fd: %d", fd);
+            if(fd < 0){
+                udev_device_unref(dev);
+                continue;
+            }
+            DBG("%s  %s",
+                    udev_device_get_sysattr_value(dev,"manufacturer"),
+                    udev_device_get_sysattr_value(dev,"product"));
+            udev_device_unref(dev);
+            break;
+        }
+    }
+    // Free the enumerator object
+    udev_enumerate_unref(enumerate);
+    return fd;
+}
+
 int main(int argc, char **argv){
 	int res;
 	char buf[256];
@@ -111,11 +165,11 @@ int main(int argc, char **argv){
 
 	initial_setup();
 	parse_args(argc, argv);
-	if(!device) ERRX("No device given");
-
-	fd = open(device, O_RDWR|O_NONBLOCK);
+	if(!device){
+		fd = get_relay_fd();
+	}else  fd = open(device, O_RDWR|O_NONBLOCK);
 	if(fd < 0){
-		WARN("Unable to open device");
+		WARNX("Unable to open device");
 		return 1;
 	}
 

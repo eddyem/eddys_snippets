@@ -1,9 +1,10 @@
 # run `make DEF=...` to add extra defines
 PROGRAM := relay_manage
 LDFLAGS := -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,--discard-all
-LDFLAGS += -lusefull_macros
+LDFLAGS += -lusefull_macros -ludev
 SRCS := $(wildcard *.c)
 DEFINES := $(DEF) -D_GNU_SOURCE -D_XOPEN_SOURCE=1111
+DEFINES += -DEBUG
 OBJDIR := mk
 CFLAGS += -O2 -Wall -Wextra -Wno-trampolines -std=gnu99
 OBJS := $(addprefix $(OBJDIR)/, $(SRCS:%.c=%.o))

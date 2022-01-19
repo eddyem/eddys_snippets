@@ -1,0 +1,62 @@
+# run `make DEF=...` to add extra defines
+CLIENT := soccanclient
+SERVER := soccanserver
+LDFLAGS := -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,--discard-all
+LDFLAGS += -lusefull_macros
+DEFINES := $(DEF) -D_GNU_SOURCE -D_XOPEN_SOURCE=1111
+OBJDIR := mk
+CFLAGS += -O2 -Wno-trampolines -std=gnu99
+SSRC := server.c
+CSRC := client.c
+COMMSRCS := sslsock.c daemon.c cmdlnopts.c
+SOBJS := $(addprefix $(OBJDIR)/, $(SSRC:%.c=%.o))
+COBJS := $(addprefix $(OBJDIR)/, $(CSRC:%.c=%.o))
+COMMOBJS := $(addprefix $(OBJDIR)/, $(COMMSRCS:%.c=%.o))
+OBJS := $(SOBJS) $(COBJS) $(COMMOBJS)
+DEPS := $(OBJS:.o=.d)
+CC = gcc
+#CXX = g++
+
+
+all : $(OBJDIR) $(CLIENT) $(SERVER)
+
+debug: DEFINES += -DEBUG -Werror -Wall -Wextra 
+debug: all
+
+$(CLIENT) : DEFINES += -DCLIENT
+$(CLIENT) : $(COBJS)
+	@rm $(COMMOBJS) 2>/dev/null || true
+	@make DEF="$(DEFINES)" $(COMMOBJS)
+	@echo -e "\t\tLD $(CLIENT)"
+	$(CC) $(LDFLAGS) $(COBJS) $(COMMOBJS) -o $(CLIENT)
+
+
+$(SERVER) : DEFINES += -DSERVER
+$(SERVER) : $(SOBJS)
+	@rm $(COMMOBJS) 2>/dev/null || true
+	@make DEF="$(DEFINES)" $(COMMOBJS)
+	@echo -e "\t\tLD $(SERVER)"
+	$(CC) $(LDFLAGS) $(SOBJS) $(COMMOBJS) -o $(SERVER)
+	@rm $(COMMOBJS)
+
+
+$(OBJDIR):
+	mkdir $(OBJDIR)
+
+ifneq ($(MAKECMDGOALS),clean)
+-include $(DEPS)
+endif
+
+$(OBJDIR)/%.o: %.c
+	@echo -e "\t\tCC $<"
+	$(CC) -MD -c $(LDFLAGS) $(CFLAGS) $(DEFINES) -o $@ $<
+
+clean:
+	@echo -e "\t\tCLEAN"
+	@rm -f $(OBJS) $(DEPS)
+	@rmdir $(OBJDIR) 2>/dev/null || true
+
+xclean: clean
+	@rm -f $(PROGRAM)
+
+.PHONY: clean xclean

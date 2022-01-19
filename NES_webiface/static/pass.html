@@ -1,0 +1,92 @@
+<html>
+<head>
+<title>Авторизация</title>
+<script>
+const CGI_PATH = "https://ishtar.sao.ru/cgi-bin/auth";
+var URL=new Array(), RTN=null, reqnmbr=0;
+function $(id){ return document.getElementById(id);}
+function getargs(){
+	var QS = window.location.search.substring(1);
+	var pars = QS.split("&");
+	var i=0, s;
+	while((s=pars[i++])){
+		if(s.indexOf('URL') == 0){
+			s = s.split('=');
+			URL[URL.length] = s[1];
+		}
+		else if(s.indexOf('RTN') == 0){
+			s = s.split('=');
+			RTN = s[1];
+		}
+	}
+	if(URL.length == 0){alert("Отсутствует URL для авторизации"); return;}
+	if(RTN == null) RTN = URL[0];
+}
+function sendrequest(req_STR, onOK){
+	var request = new XMLHttpRequest(), timeout_id;
+	request.open("POST", CGI_PATH, true);
+	request.setRequestHeader("Accept-Charset", "koi8-r");
+	request.overrideMimeType("multipart/form-data; charset=koi8-r"); 
+	request.onreadystatechange=function(){
+		if (request.readyState == 4){
+			if (request.status == 200){
+				clearTimeout(timeout_id);
+				if(onOK) onOK(request);
+			}
+			else{
+				clearTimeout(timeout_id);
+				parseErr("request sending error");
+			}
+		}
+	}
+	request.send(req_STR);
+	timeout_id = setTimeout(function(){request.onreadystatechange=null; request.abort(); parseErr("request timeout");}, 3000);
+}
+function subm(id){
+	var str, str1, i;
+	var login = $('login').value;
+	var pass = $('passwd').value;
+	if(login == "" || pass == ""){
+		if(id) $(id).focus();
+		return;
+	}
+	var str = "login=" + login + " passwd=" + pass;
+	for(i = 0; i < URL.length; i++){
+		str1 = str + " URL=" + URL[i];
+		sendrequest(str1);
+	}
+}
+function onOK(request){
+	var txt = request.responseText;
+	if(txt.indexOf("KEY") != 0){
+		parseErr(txt);
+		return;
+	}
+	var n = txt.indexOf('\n');
+	if(n) txt = txt.substring(0, n);
+	var d = new Date();
+	d.setTime(d.getTime() + 72e6); // срок действия куки - 20 часов
+	txt += "; expires="+d.toGMTString();
+	document.cookie = txt;
+	if(++reqnmbr == URL.length) document.location.href = RTN;
+}
+function parseErr(txt){
+	console.log("Error: " + txt);
+	$('msg').innerHTML = "Error: " + txt;
+	setTimeout(function(){$('msg').innerHTML = "";}, 3500);
+}
+
+</script>
+</head>
+<body onload="getargs();">
+<div align="center">
+<h2>Пожалуйста введите регистрационную информацию для получения доступа к сервисам</h2>
+<div style="border: 1px solid; text-align: center; width: 200px; margin: 0 auto; padding: 5px;" id="pass">
+<div>Имя:</div><div><input type=text id="login" onchange="subm('passwd');"></div>
+<div>Пароль:</div><div><input type=password id="passwd" onchange="subm('login');"></div><br>
+<div align=center><button onclick="subm();">OK</button></div>
+</div>
+<div id="msg" style="margin-top: 15px; color: red;"></div>
+</div>
+<body>
+</html>

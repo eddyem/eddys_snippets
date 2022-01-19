@@ -1,0 +1,7 @@
+server:
+socat pty,link=/tmp/ttyX0,waitslave tcp:127.0.0.1:2002 &
+ssh -L 2002:robotel1:2000 -N -f robotel1 &
+
+client:
+
+socat TCP-LISTEN:2000 PTY,link=/tmp/ttyX0,raw,crnl &

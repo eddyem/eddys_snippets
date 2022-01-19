@@ -1,0 +1,5 @@
+#!/bin/bash
+
+for ((x=0; x<10; ++x)); do
+	socat TCP-LISTEN:2000 PTY,link=/tmp/ttyX0,raw,crnl 
+done

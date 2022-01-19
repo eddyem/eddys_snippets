@@ -1,0 +1,23 @@
+# Prerequisites
+*.d
+
+# Object files
+*.o
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.so
+*.so.*
+
+# qt-creator
+*.config
+*.cflags
+*.cxxflags
+*.creator*
+*.files
+*.includes

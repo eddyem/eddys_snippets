@@ -1,0 +1,1 @@
+SUBSYSTEMS=="net", ACTION=="add", ENV{INTERFACE}=="can0", RUN+="/etc/udev/rules.d/socketcan0"

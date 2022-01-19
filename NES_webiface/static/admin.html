@@ -1,0 +1,156 @@
+<html>
+<head>
+<style type="text/css">
+.shadow{
+	display:none; 
+	position:absolute;
+	top:0;
+	left:0;
+	width:100%;
+	height:100%;
+}
+.midmsg{
+	position:fixed;
+	top:50%;
+	left:50%;
+	margin-left:auto;
+	margin-right:auto;
+}
+.C{text-align:center;}
+.R{text-align:right;}
+</style>
+<script src="/pass.js" type="text/javascript" language="javascript"></script>
+<script>
+var user="", passwd="", level="", url="";
+const CGI_PATH = "https://ishtar.sao.ru/cgi-bin/auth";
+function parseErr(txt){
+	$('msg').innerHTML = "Ошибка!<p></p>" + txt.replace("\n", "<br>");
+	setTimeout(function(){$('msg').innerHTML = "";}, 3500);
+}
+function sendrequest(request, req_STR, onOK){
+	var timeout_id
+	request = new XMLHttpRequest();
+	request.open("POST", CGI_PATH, true);
+	request.setRequestHeader("Accept-Charset", "koi8-r");
+	request.overrideMimeType("multipart/form-data; charset=koi8-r");
+	request.setRequestHeader("Cookie", document.cookie); 
+	request.onreadystatechange=function(){
+		if (request.readyState == 4){
+			if (request.status == 200){
+				clearTimeout(timeout_id);
+				onOK(request);
+			}
+			else{
+				clearTimeout(timeout_id);
+				parseErr("Ошибка передачи запроса. Попробуйте еще раз.");
+			}
+		}
+	}
+	request.send(req_STR);
+	timeout_id = setTimeout(function(){parseErr("Таймаут передачи запроса. Попробуйте еще раз.");}, 3000);
+}
+function run(){
+	var QS;
+	sendrequest(QS, "admin=lsusers", lsusers);
+}
+function lsusers(QS){
+	var ans = QS.responseText;  
+	var pars = ans.split("\n");
+	var i, l, s;
+	for(i=0, l=pars.length; i < l; i++){
+		s = pars[i].split(";");
+		if(pars[i].length < 2) continue;
+		if(s.length != 3){
+			parseErr(ans+"<br>str="+s);
+			return;
+		}
+		addUsersString(s);
+	}
+}
+function addUsersString(str){
+	var ulist = $('userlist');
+	var div = document.createElement('div');
+	ulist.appendChild(div);
+	var u = str[0];
+	div.innerHTML = "<span>"+u+"</span> <span>"+str[1]+"</span> <span>"+str[2]+"</span> "+
+		"<span onclick='delUser(\""+u+"\");'>delete</span> "+
+		"<span onclick='editUser(\""+u+"\",\""+str[1]+"\",\""+str[2]+"\");'>edit</span>";
+}
+function useradd(arg){
+	function pair(name){
+		var str = "<div class='R'>"+name+"<input type=text id="+
+			name+" onchange=\""+name+"=$('"+name+"').value;\""+
+			" onblur=\""+name+"=$('"+name+"').value;\" value='"+eval(name)+"'></div>" 
+		return str;
+	}
+	var div = document.createElement('div');
+	$("box").style.display = "block";
+	div.className = "midmsg";
+	$("box").appendChild(div);
+	div.innerHTML = "<div class='C'>Добавить/изменить пользователя</div>"+
+		pair("user")+pair("passwd")+pair("level")+pair("url")+
+		"<div class='C'><button onclick='addUser(\""+arg+"\");'>OK</button>"+
+		"<button onclick='cancelAdd();'>Отмена</button></div>";
+}
+function chkAns(req, Msg){
+	if(req.responseText.length > 0)
+		parseErr(Msg);
+	else{
+		window.location.reload();
+	}
+}
+function addUser(arg){
+	var request;
+	function cantadd(req){
+		chkAns(req, "не могу добавить/редактировать пользователя<br>"+req.responseText);
+	}
+	if(user==""){
+		parseErr("Отсутствует имя пользователя");
+		return;
+	}
+	if(passwd==""){
+		parseErr("Не задан пароль пользователя");
+		return;
+	}
+	if(level=="" || Number(level) < 0){
+		parseErr("Не задан или задан неверно уровень доступа пользователя");
+		return;
+	}
+	if(url==""){
+		parseErr("Не задан адрес доступных пользователю ресурсов (или \"/\", если доступно все)");
+		return;
+	}
+	sendrequest(request,
+				"admin="+arg+"&user="+user+"&passwd="+passwd+"&level="+level+"&URL="+url,
+				cantadd);
+	user = passwd = level = url = ""; 
+}
+function cancelAdd(){
+	user = passwd = level = url = "";
+	$("box").innerHTML = "";
+	$("box").style.display = "none";
+}
+function delUser(username){
+	var request;
+	function cantdel(req){
+		chkAns(req, "не могу удалить пользователя<br>"+req.responseText);
+	}
+	sendrequest(request, "admin=userdel&user="+username, cantdel);
+}
+function editUser(username, ulevl, uurl){
+	user = username; passwd = "";
+	level = ulevl; url = uurl;
+	useradd("usermod");
+}
+</script>
+<title>Управление пользователями</title>
+</head>
+<body onload="getcookie(CGI_PATH); run();">
+<div class="shadow" id="box"></div>
+<div id="inout" style="position: fixed; top: 10px; right: 10px; cursor: pointer; font-weight: bold;" onclick="inout();" >Вход</div>
+<div onclick="useradd('useradd');">Новый пользователь</div>
+<div id="userlist"></div>
+
+<div id="msg" style="margin-top: 15px; color: red;"></div>
+</body>
+</html>

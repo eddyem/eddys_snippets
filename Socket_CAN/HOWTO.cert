@@ -1,0 +1,5 @@
+create:
+openssl req -newkey rsa:2048 -nodes -keyout cert.key -x509 -days 10100 -out cert.pem
+
+review:
+openssl x509 -text -noout -in cert.pem

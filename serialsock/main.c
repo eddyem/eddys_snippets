@@ -76,12 +76,12 @@ int main(int argc, char **argv){
         LOGERR("You should point serial device path");
         ERRX("You should point serial device path");
     }
-    int port = atoi(GP->port);
+/*    int port = atoi(GP->port);
     if(port < 1024 || port > 65535){
         LOGERR("Wrong port value: %d", port);
         WARNX("Wrong port value: %d", port);
         return 1;
-    }
+    }*/
     if(server) check4running(self, GP->pidfile);
     // signal reactions:
     signal(SIGTERM, signals); // kill (-15) - quit

@@ -27,8 +27,8 @@ typedef struct{
     char *devpath;          // path to serial device
     char *pidfile;          // name of PID file
     char *logfile;          // logging to this file
-    char *port;             // network port
     char *path;             // path to socket file
+    // int port;
     int speed;              // connection speed
     int verbose;            // verbose level: for messages & logging
     int client;             // ==1 if application runs in client mode

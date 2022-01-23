@@ -1,7 +1,7 @@
 # run `make DEF=...` to add extra defines
 PROGRAM := serialsock
 LDFLAGS := -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,--discard-all
-LDFLAGS += -lusefull_macros
+LDFLAGS += -lusefull_macros -lm -L/usr/local/lib/
 SRCS := $(wildcard *.c)
 DEFINES := $(DEF) -D_GNU_SOURCE -D_XOPEN_SOURCE=1111
 OBJDIR := mk
@@ -21,7 +21,7 @@ $(OBJS): $(OBJDIR)
 
 $(PROGRAM) : $(OBJS)
 	@echo -e "\t\tLD $(PROGRAM)"
-	$(CC) $(LDFLAGS) $(OBJS) -o $(PROGRAM)
+	$(CC) $(OBJS) $(LDFLAGS) -o $(PROGRAM)
 
 $(OBJDIR):
 	mkdir $(OBJDIR)
@@ -32,7 +32,7 @@ endif
 
 $(OBJDIR)/%.o: %.c
 	@echo -e "\t\tCC $<"
-	$(CC) -MD -c $(LDFLAGS) $(CFLAGS) $(DEFINES) -o $@ $<
+	$(CC) $< -MD -c $(CFLAGS) $(DEFINES) -o $@ 
 
 clean:
 	@echo -e "\t\tCLEAN"

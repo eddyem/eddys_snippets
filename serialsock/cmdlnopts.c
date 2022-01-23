@@ -35,7 +35,7 @@ static int help;
 static glob_pars G = {
     .pidfile = DEFAULT_PIDFILE,
     .speed = 9600,
-    .port = DEFAULT_PORT,
+//    .port = DEFAULT_PORT,
     .path = DEFAULT_SOCKPATH,
     .logfile = NULL // don't save logs
 };
@@ -53,7 +53,7 @@ static myoption cmdlnopts[] = {
     {"pidfile", NEED_ARG,   NULL,   'p',    arg_string, APTR(&G.pidfile),   _("pidfile (default: " DEFAULT_PIDFILE ")")},
     {"client",  NO_ARGS,    NULL,   'c',    arg_int,    APTR(&G.client),    _("run as client")},
     {"sockpath",NEED_ARG,   NULL,   'f',    arg_string, APTR(&G.path),      _("socket path (start from \\0 for no files)")},
-    {"port",    NEED_ARG,   NULL,   'P',    arg_string, APTR(&G.port),      _("port to connect (default: " DEFAULT_PORT ")")},
+//    {"port",    NEED_ARG,   NULL,   'P',    arg_string, APTR(&G.port),      _("port to connect (default: " DEFAULT_PORT ")")},
     {"verbose", NO_ARGS,    NULL,   'v',    arg_none,   APTR(&G.verbose),   _("increase log verbose level (default: LOG_WARN) and messages (default: none)")},
    end_option
 };

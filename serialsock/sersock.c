@@ -26,37 +26,6 @@
 #include "cmdlnopts.h"
 #include "sersock.h"
 
-/**
- * wait for answer from socket
- * @param sock - socket fd
- * @return 0 in case of error or timeout, 1 in case of socket ready
- */
-static int waittoread(int sock){
-    fd_set fds;
-    struct timeval timeout;
-    int rc;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 100;
-    FD_ZERO(&fds);
-    FD_SET(sock, &fds);
-    do{
-        rc = select(sock+1, &fds, NULL, NULL, &timeout);
-        if(rc < 0){
-            if(errno != EINTR){
-                WARN("select()");
-                return 0;
-            }
-            continue;
-        }
-        break;
-    }while(1);
-    if(FD_ISSET(sock, &fds)){
-        //DBG("FD_ISSET");
-        return 1;
-    }
-    return 0;
-}
-
 // work with single client, return FALSE if disconnected
 static int handle_socket(int sock, TTY_descr *d){
     char buff[BUFLEN];
@@ -305,7 +274,7 @@ static void client_(int sock){
             if(msg[L-1] == '\n') msg[L-1] = 0;
             LOGMSG("TERMINAL: %s", msg);
         }
-        if(!waittoread(sock)) continue;
+        if(1 != canberead(sock)) continue;
         int n = read(sock, recvBuff, Bufsiz-1);
         if(n == 0){
             WARNX("Server disconnected");

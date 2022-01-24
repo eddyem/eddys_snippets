@@ -17,11 +17,8 @@
  */
 
 #include <assert.h>
-#include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
-#include <strings.h>
 
 #include "cmdlnopts.h"
 #include "usefull_macros.h"

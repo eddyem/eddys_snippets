@@ -16,17 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <arpa/inet.h>
-#include <limits.h>
-#include <netdb.h>
-#include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/prctl.h>
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <usefull_macros.h>
 

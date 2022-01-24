@@ -16,19 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <arpa/inet.h>
-#include <limits.h>
 #include <netdb.h>
 #include <poll.h>
-#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/ioctl.h>
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <sys/un.h>  // unix socket
-#include <usefull_macros.h>
 
 #include "cmdlnopts.h"
 #include "sersock.h"

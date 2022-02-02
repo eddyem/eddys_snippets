@@ -306,6 +306,13 @@ static TTY_descr *openserialdev(char *path, int speed){
 }
 
 int start_socket(int server, char *path, TTY_descr **dev){
+    char apath[128];
+    DBG("path: %s", path);
+    if(strncmp("\\0", path, 2) == 0){
+        DBG("convert name");
+        apath[0] = 0;
+        strncpy(apath+1, path+2, 126);
+    }else strcpy(apath, path);
     if(server){
         if(!dev) return 1;
         if(!(*dev = openserialdev(GP->devpath, GP->speed))){
@@ -317,7 +324,7 @@ int start_socket(int server, char *path, TTY_descr **dev){
     int reuseaddr = 1;
     struct sockaddr_un saddr = {0};
     saddr.sun_family = AF_UNIX;
-    strncpy(saddr.sun_path, path, 106); // if sun_path[0] == 0 we don't create a file
+    memcpy(saddr.sun_path, apath, 106); // if sun_path[0] == 0 we don't create a file
     if((sock = socket(AF_UNIX, SOCK_SEQPACKET, 0)) < 0){ // or SOCK_STREAM?
         LOGERR("socket()");
         ERR("socket()");

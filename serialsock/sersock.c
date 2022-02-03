@@ -308,7 +308,11 @@ static TTY_descr *openserialdev(char *path, int speed){
 int start_socket(int server, char *path, TTY_descr **dev){
     char apath[128];
     DBG("path: %s", path);
-    if(strncmp("\\0", path, 2) == 0){
+    if(*path == 0){
+        DBG("convert name");
+        apath[0] = 0;
+        strncpy(apath+1, path+1, 126);
+    }else if(strncmp("\\0", path, 2) == 0){
         DBG("convert name");
         apath[0] = 0;
         strncpy(apath+1, path+2, 126);

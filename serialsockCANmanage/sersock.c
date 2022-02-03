@@ -77,10 +77,19 @@ static int CANsend(int sock, char *cmd){
 
 int start_socket(char *path, CANcmd mesg, int par){
     FNAME();
+    if(!path) return 1;
     int sock = -1;
     struct sockaddr_un saddr = {0};
     saddr.sun_family = AF_UNIX;
-    strncpy(saddr.sun_path, path, 106); // if sun_path[0] == 0 we don't create a file
+    if(*path == 0){ // if sun_path[0] == 0 then don't create a file
+        DBG("convert name");
+        saddr.sun_path[0] = 0;
+        strncpy(saddr.sun_path+1, path+1, 105);
+    }else if(strncmp("\\0", path, 2) == 0){
+        DBG("convert name");
+        saddr.sun_path[0] = 0;
+        strncpy(saddr.sun_path+1, path+2, 105);
+    }else  strncpy(saddr.sun_path, path, 106);
     if((sock = socket(AF_UNIX, SOCK_SEQPACKET, 0)) < 0){ // or SOCK_STREAM?
         LOGERR("socket()");
         ERR("socket()");

@@ -75,6 +75,49 @@ static int CANsend(int sock, char *cmd){
     return TRUE;
 }
 
+typedef union{
+    uint8_t b[4];
+    int32_t i32;
+} _4bytes;
+typedef union{
+    uint8_t b[2];
+    uint16_t u16;
+} _2bytes;
+
+// get motor speed & current
+// @parameters addr - device address (6 bit), sock - socket fd, cmdidx - command index
+static int getpars(int addr, int sock, int cmdidx){
+    static char buf[BUFLEN];
+    uint16_t id = 512 + (addr << 3) + 3, ansid = id + 1;
+    _4bytes udata;
+    _2bytes idx;
+    uint32_t tmillis, ID;
+    uint8_t cmd, subidx;
+    //uint8_t CANbuf[8] = {0};
+    sprintf(buf, "s %u 0x31 0 %d %d 0 0 0 0\n", id, (cmdidx>>8), (cmdidx&0xff));
+    if(CANsend(sock, buf)){
+        double T0 = dtime();
+        while(dtime() - T0 < TIMEOUT){
+            if(1 != canberead(sock)) continue;
+            int n = read(sock, buf, BUFLEN-1);
+            DBG("Got %d (%s)", n, buf);
+            if(n == 0){
+                WARNX("Server disconnected");
+                signals(1);
+            }
+            buf[n] = 0;
+            if(buf[n-1] == '\n') buf[n-1] = 0;
+            if(10 != sscanf(buf, "%d #%x %hhx %hhx %hhx %hhx %hhx %hhx %hhx %hhx",
+                            &tmillis, &ID, &cmd, &subidx, &idx.b[1], &idx.b[0], &udata.b[3], &udata.b[2], &udata.b[1], &udata.b[0])) continue;
+            DBG("tmillis=%u, ID=%u, cmd=%u, idx=%u, data=%d", tmillis, ID, cmd, idx.u16, udata.i32);
+            if(ID != ansid) continue;
+            LOGMSG("RECEIVE: %s", buf);
+            break;
+        }
+    }else return INT_MIN;
+    return udata.i32;
+}
+
 int start_socket(char *path, CANcmd mesg, int par){
     FNAME();
     if(!path) return 1;
@@ -98,8 +141,6 @@ int start_socket(char *path, CANcmd mesg, int par){
         LOGERR("connect()");
         ERR("connect()");
     }
-    int Bufsiz = BUFLEN;
-    char *recvBuff = MALLOC(char, Bufsiz);
     char cmd[BUFLEN];
     int setcmd = FALSE;
     int16_t spd;
@@ -117,27 +158,15 @@ int start_socket(char *path, CANcmd mesg, int par){
         break;
     }
     if(setcmd && !CANsend(sock, cmd)) return 1;
-    for(int i = 0; i < NMOTORS; ++i){
-        uint16_t id = 512 + ((i+1)<<3) + 3, cmdidx = PARIDX_GETSPEED;
-        //uint8_t CANbuf[8] = {0};
-        sprintf(cmd, "s %u 0x31 0 %d %d 0 0 0 0\n", id, (cmdidx>>8), (cmdidx&0xff));
-        if(!CANsend(sock, cmd)) continue;
-        double T0 = dtime();
-        while(dtime() - T0 < TIMEOUT){
-            if(1 != canberead(sock)) continue;
-            int n = read(sock, recvBuff, Bufsiz-1);
-            DBG("Got %d", n);
-            if(n == 0){
-                WARNX("Server disconnected");
-                signals(1);
-            }
-            recvBuff[n] = 0;
-            printf("%s", recvBuff);
-            if(recvBuff[n-1] == '\n') recvBuff[n-1] = 0;
-            LOGMSG("RECEIVE: %s", recvBuff);
-            break;
-        }
+    int gpar = getpars(1, sock, PARIDX_GETSPEED);
+    if(gpar != INT_MIN){
+        printf("SPEED=%.1f&", gpar/1000.);
     }
+    gpar = getpars(1, sock, PARIDX_GETCURRENT);
+        if(gpar != INT_MIN){
+            printf("CURRENT=%.1f&", gpar/1000.);
+        }
+    printf("\n");
     close(sock);
     signals(0);
     return 0;

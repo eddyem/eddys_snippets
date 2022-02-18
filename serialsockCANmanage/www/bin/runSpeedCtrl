@@ -1,0 +1,11 @@
+#!/bin/bash
+
+while true; do
+    NewVal=$((cat /home/eddy/bin/acc; /home/eddy/bin/SEWcontrol) | nc -w0 -lp 8080 | grep GET)
+    E=$(echo $NewVal | sed  's|.*setspeed=\([0-9\.]\+\).*|\1|' | grep "^[0-9]*[.]*[0-9]*$")
+#'
+    if [ "x$E" != "x" ]; then
+	echo "SPEED=$E" 
+	(( E > 299 )) && (( E < 1301 )) && /home/eddy/bin/SEWcontrol -s $E || /home/eddy/bin/SEWcontrol -0
+    fi
+done

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="ASCII"> 
+  <title>BTA primary mirror fans control</title>
+  <script>
+	var refrtime = 2000;
+   var T=setTimeout(refresh, refrtime);
+   function $(x){
+   	return document.getElementById(x);
+   }
+   function callback(resp){
+   	//console.log("Response: " + resp); 
+   	const urlParams = new URLSearchParams(resp);
+   	//console.log("Speed=" + urlParams.get('SPEED') + ", Current=" + urlParams.get('CURRENT'));
+   	$("curval").innerText = urlParams.get('CURRENT');
+   	$("spdval").innerText = urlParams.get('SPEED');
+   	delete urlParams;
+   }
+   function refresh(){
+   	let xhr = new XMLHttpRequest();
+   	xhr.onload = function(){callback(xhr.response);};
+   	xhr.open("POST", "http://mirtemp.sao.ru:8080/");
+   	xhr.send();
+   	T = setTimeout(refresh, refrtime);
+   }
+   function setspeed(val){
+   	let xhr = new XMLHttpRequest();
+   	xhr.open("GET", "http://mirtemp.sao.ru:8080/setspeed=" + val);
+   	xhr.send();
+   }
+   function setspeeda(){
+   	setspeed($("setspeed").value);
+   }
+   function chkrad(){
+		var rad = document.getElementsByName('rs');
+		for(var i=0; i < rad.length; ++i){
+			if(rad[i].checked){
+				//console.log("checked: " + rad[i].value);
+				setspeed(rad[i].value);
+			}
+	}
+}
+   </script>
+</head>
+
+<body>
+	<p>
+		New speed: <input id="setspeed" type="number" step="1" min="300" max="1300" value="500"> 
+		<button onclick="setspeeda();">Set</button>&nbsp;&nbsp;&nbsp;
+		<button onclick="setspeed(0);">Stop</button>
+	</p><p>
+		Set speed: <input type="radio" id="lowspd" name="rs" value="300"><label for="lowspd">Low</label>
+		<input type="radio" id="midspd" name="rs" value="800"><label for="midspd">Mid</label>
+		<input type="radio" id="highspd" name="rs" value="1300"><label for="highspd">High</label>
+		<input type="radio" id="stop" name="rs" checked value="0"><label for="stop">Stop</label>
+		<button onclick="chkrad();">Set</button><br>
+	</p>
+	<p>
+	 	Current: <span id="curval"></span> A. Speed: <span id="spdval"></span> rpm.
+	</p>
+</body>
+</html>

@@ -29,6 +29,7 @@
 static int help;
 static glob_pars G = {
     .path = DEFAULT_SOCKPATH,
+    .setspeed = INT_MAX,
 };
 glob_pars *GP = &G;
 

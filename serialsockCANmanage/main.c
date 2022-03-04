@@ -83,7 +83,7 @@ int main(int argc, char **argv){
 #endif
 */
     CANcmd mesg = CMD_GETSPEED;
-    if(GP->setspeed){
+    if(GP->setspeed != INT_MAX){
         if(GP->stop) ERRX("Commands 'stop' and 'set speed' can't be together");
         if(GP->setspeed < -0xffff/5 || GP->setspeed > 0xffff/5) ERRX("Parameter 'set speed' should be |int16_t| < %d", 0xffff/5);
         mesg = CMD_SETSPEED;

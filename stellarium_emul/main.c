@@ -95,7 +95,7 @@ char* stringscan(char *str, char *needle){
  * @return 0 if failed
  */
 int send_data(uint8_t *data, size_t dlen, int sockfd){
-    size_t sent = write(sockfd, data, dlen);
+    size_t sent = send(sockfd, data, dlen, MSG_NOSIGNAL);
     if(sent != dlen){
         WARN("write()");
         return 0;

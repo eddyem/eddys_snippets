@@ -97,7 +97,7 @@ static int send_data(int sock, int webquery, char *textbuf){
             WARN("sprintf()");
             return 0;
         }
-        if(L != write(sock, tbuf, L)){
+        if(L != send(sock, tbuf, L, MSG_NOSIGNAL)){
             WARN("write");
             return 0;
         }

@@ -119,17 +119,17 @@ void *handle_socket(void *asock){
                 "Content-type: text/html\r\nContent-Length: %d\r\n\r\n"
                 "sum=%d\n", l, newx);
             }else L = l;
-            if(L != (size_t)write(sock, obuff, L)) WARN("write");
+            if(L != (size_t)send(sock, obuff, L, MSG_NOSIGNAL)) WARN("write");
             DBG("\nWRITE TO client: %s\n", obuff);
         }else{ // simply copy back all data
             size_t blen = strlen(buff);
             if(webquery){
                 L = snprintf(obuff, BUFLEN, "HTTP/2.0 200 OK\r\nContent-type: text/html\r\n"
                     "Content-Length: %zd\r\n\r\n", blen);
-                if(L != write(sock, obuff, L)) WARN("write()");
+                if(L != send(sock, obuff, L, MSG_NOSIGNAL)) WARN("write()");
             }
             ++blen;
-            if(blen != write(sock, buff, blen)) WARN("write()");
+            if(blen != send(sock, buff, blen, MSG_NOSIGNAL)) WARN("write()");
         }
         if(webquery) break; // close connection if this is a web query
     }

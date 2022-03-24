@@ -123,7 +123,7 @@ void sendmessage(int fd, const char *msg, int l){
     char *tmpbuf = MALLOC(char, l+1);
     memcpy(tmpbuf, msg, l);
     if(msg[l-1] != '\n') tmpbuf[l++] = '\n';
-    if(l != write(fd, tmpbuf, l)){
+    if(l != send(fd, tmpbuf, l, MSG_NOSIGNAL)){
         LOGWARN("write()");
         WARN("write()");
     }else{

@@ -68,7 +68,7 @@ frame.can_dlc = 6;
 frame.can_id = 0xaa;
 const uint8_t d[] = {1, 2, 3, 4, 5, 6, 0, 0};
 memcpy(&frame.data, d, 8);
-int n = write(sock, &frame, sizeof(struct can_frame));
+int n = send(sock, &frame, sizeof(struct can_frame), MSG_NOSIGNAL);
 if(sizeof(struct can_frame) != n){
     printf("n=%d\n", n);
     WARN("write()");

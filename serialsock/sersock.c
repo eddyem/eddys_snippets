@@ -39,7 +39,7 @@ static int handle_socket(int sock, TTY_descr *d){
     buff[rd] = 0;
     DBG("GOT: %s", buff);
     ssize_t blen = strlen(buff);
-    if(blen != write(d->comfd, buff, blen)){
+    if(blen != send(d->comfd, buff, blen, MSG_NOSIGNAL)){
         LOGWARN("write()");
         WARN("write()");
     }
@@ -193,7 +193,7 @@ static void server_(int sock, TTY_descr *d){
         }
         if(serdata){
             for(int i = 1; i < nfd; ++i)
-                if(l != write(poll_set[i].fd, serdata, l)){
+                if(l != send(poll_set[i].fd, serdata, l, MSG_NOSIGNAL)){
                     LOGWARN("write()");
                     WARN("write()");
                 }

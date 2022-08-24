@@ -24,9 +24,9 @@ static inline __attribute__((always_inline)) void reset(uint64_t idx){
 
 int main(){
     masks = malloc(MASKSZ);
+    double t0 = dtime();
     memset(masks, 0b10101010, MASKSZ); // without even numbers
     masks[0] = 0b10101100; // with 2 and withoun 0 and 1
-    double t0 = dtime();
     for(uint64_t i = 3; i < 64; i += 2){
         if(get(i)){
             for(uint64_t j = i*2; j < MNUMBERS; j += i){
@@ -35,18 +35,23 @@ int main(){
         }
     }
     printf("\tfirst 64: %g\n", dtime()-t0);
-    omp_set_num_threads(8);
-#pragma omp parallel for
-    for(uint64_t i = 65; i < MNUMBERS; i += 2){
-        if(get(i)){
-            for(uint64_t j = i*2; j < MNUMBERS; j += i){
+#define THREADNO	8
+    omp_set_num_threads(THREADNO);
+#pragma omp parallel for shared(masks)
+    for(uint64_t i = 0; i < THREADNO; ++i){
+        for(uint64_t idx = 65 + 2*omp_get_thread_num(); idx < MNUMBERS; idx += THREADNO*2){
+        if(get(idx)){
+            for(uint64_t j = idx*2; j < MNUMBERS; j += idx){
                 reset(j);
             }
-        }
+        }}
     }
     printf("\tfull table: %g\n", dtime()-t0);
     for(uint64_t i = 0; i < 1000; ++i){
         if(get(i)) printf("%zd\n", i);
     }
+	for(uint64_t last = MNUMBERS-1; last > 1000; --last){
+		if(get(last)){ printf("last in list: %zd\n", last); break;}
+	}
     return 0;
 }

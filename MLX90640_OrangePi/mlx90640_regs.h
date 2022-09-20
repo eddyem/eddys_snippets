@@ -27,12 +27,22 @@
 #define REG_CONTROL_CHESS       (1<<12)
 #define REG_CONTROL_RES18       (2<<10)
 #define REG_CONTROL_RESMASK     (3<<10)
+#define REG_CONTROL_REFR_05HZ   (0<<7)
+#define REG_CONTROL_REFR_1HZ    (1<<7)
 #define REG_CONTROL_REFR_2HZ    (2<<7)
+#define REG_CONTROL_REFR_4HZ    (3<<7)
+#define REG_CONTROL_REFR_8HZ    (4<<7)
+#define REG_CONTROL_REFR_16HZ   (5<<7)
+#define REG_CONTROL_REFR_32HZ   (6<<7)
+#define REG_CONTROL_REFR_64HZ   (7<<7)
 #define REG_CONTROL_SUBP1       (1<<4)
 #define REG_CONTROL_SUBPMASK    (3<<4)
 #define REG_CONTROL_SUBPSEL     (1<<3)
 #define REG_CONTROL_DATAHOLD    (1<<2)
 #define REG_CONTROL_SUBPEN      (1<<0)
+
+// default value
+#define REG_CONTROL_DEFAULT     (REG_CONTROL_CHESS|REG_CONTROL_RES18|REG_CONTROL_REFR_2HZ|REG_CONTROL_SUBPEN)
 
 // calibration data start & len
 #define REG_CALIDATA            0x2410

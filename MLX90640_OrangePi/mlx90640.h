@@ -57,6 +57,7 @@ typedef struct{
     double kv[4];  // full - with scale; 0 - odd row, odd col; 1 - odd row even col; 2 - even row, odd col; 3 - even row, even col
     double cpAlpha[2];   // alpha_CP_subpage 0 and 1
     int16_t cpOffset[2];
+    uint8_t outliers[MLX_PIXNO]; // outliers - bad pixels (if == 1)
 } MLX90640_params;
 
 // default I2C address

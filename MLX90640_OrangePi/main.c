@@ -39,7 +39,15 @@ void signals(int sig){
     exit(sig);
 }
 
-
+static double image[MLX_PIXNO];
+static double image2[MLX_PIXNO];
+static void pushima(const double *img){
+    for(int i = 0; i < MLX_PIXNO; ++i){
+        double val = *img++;
+        image[i] += val;
+        image2[i] += val*val;
+    }
+}
 
 int main (int argc, char **argv){
     initial_setup();
@@ -50,16 +58,38 @@ int main (int argc, char **argv){
     if(GP->logfile) OPENLOG(GP->logfile, LOGLEVEL_ANY, 1);
 
     if(!mlx90640_init(GP->device, DEVICE_ID)) ERR("Can't open device");
-    double *ima = NULL;
-    if(!mlx90640_take_image(0, &ima) || !ima) ERRX("Can't take image");
-  //  mlx90640_dump_parameters();
-    double *ptr = ima;
-    green("Image:\n");
-    for(int row = 0; row < MLX_H; ++row){
-        for(int col = 0; col < MLX_W; ++col){
-            printf("%5.1f ", *ptr++);
+    //mlx90640_dump_parameters();
+#define N 9
+    double T0 = dtime();
+    uint8_t simple = 2;
+    //for(uint8_t simple = 0; simple < 3; ++simple){
+        memset(image, 0, sizeof(image));
+        memset(image2, 0, sizeof(image));
+        for(int i = 0; i < N; ++i){
+            double *ima = NULL;
+            if(!mlx90640_take_image(simple, &ima) || !ima) ERRX("Can't take image");
+            pushima(ima);
+            printf("Got image %d, T=%g\n", i, dtime() - T0);
         }
-        printf("\n");
-    }
+        double *im = image, *im2 = image2;
+        green("\nImage (simple=%d):\n", simple);
+        for(int row = 0; row < MLX_H; ++row){
+            for(int col = 0; col < MLX_W; ++col){
+                double v = *im++, v2 = *im2;
+                v /= N; v2 /= N;
+                printf("%5.1f ", v);
+                *im2++ = v2 - v*v;
+            }
+            printf("\n");
+        }
+        green("\nRMS:\n");
+        im2 = image2;
+        for(int row = 0; row < MLX_H; ++row){
+            for(int col = 0; col < MLX_W; ++col){
+                printf("%5.1f ", *im2++);
+            }
+            printf("\n");
+        }
+    //}
     return 0;
 }

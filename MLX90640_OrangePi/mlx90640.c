@@ -43,9 +43,16 @@ static double mlx_image[MLX_PIXNO]; // ready image
 
 // reg_control values for subpage #0 and #1
 static const uint16_t reg_control_val[2] = {
-    REG_CONTROL_CHESS | REG_CONTROL_RES18 | REG_CONTROL_REFR_2HZ | REG_CONTROL_SUBPSEL | REG_CONTROL_DATAHOLD | REG_CONTROL_SUBPEN,
-    REG_CONTROL_CHESS | REG_CONTROL_RES18 | REG_CONTROL_REFR_2HZ | REG_CONTROL_SUBP1 | REG_CONTROL_SUBPSEL | REG_CONTROL_DATAHOLD | REG_CONTROL_SUBPEN
+    REG_CONTROL_CHESS | REG_CONTROL_RES18 | REG_CONTROL_REFR_64HZ | REG_CONTROL_SUBPSEL | REG_CONTROL_DATAHOLD | REG_CONTROL_SUBPEN,
+    REG_CONTROL_CHESS | REG_CONTROL_RES18 | REG_CONTROL_REFR_64HZ | REG_CONTROL_SUBP1 | REG_CONTROL_SUBPSEL | REG_CONTROL_DATAHOLD | REG_CONTROL_SUBPEN
 };
+
+
+static int errctr = 0;
+static double Tlast = 0.;
+#define chstate()  do{errctr = 0; Tlast = dtime(); DBG("chstate()");}while(0)
+#define chkerr()   do{DBG("chkerr(), T=%g", dtime()-Tlast); if(++errctr > MLX_MAXERR_COUNT){ DBG("-> M_ERROR"); return FALSE;}else continue;}while(0)
+#define chktmout() do{DBG("chktmout, T=%g", dtime()-Tlast); if(dtime() - Tlast > MLX_TIMEOUT){ DBG("Timeout! -> M_ERROR"); return FALSE;}else continue;}while(0)
 
 
 // read register value
@@ -66,6 +73,55 @@ static int read_reg(uint16_t regaddr, uint16_t *data){
     return TRUE;
 }
 
+
+//#if 0
+ // Sometimes don't work :(
+// read N values starting from regaddr
+static int read_regN(uint16_t regaddr, uint16_t *data, uint16_t N){
+    if(I2Cfd < 1 || N > 128 || N == 0) return FALSE;
+    struct i2c_msg m[2];
+    struct i2c_rdwr_ioctl_data x = {.msgs = m, .nmsgs = 2};
+    m[0].addr = lastaddr; m[1].addr = lastaddr;
+    m[0].flags = 0;
+    m[1].flags = I2C_M_RD;
+    m[0].len = 2; m[1].len = N * 2;
+    uint8_t a[2], d[256] = {0};
+    a[0] = regaddr >> 8;
+    a[1] = regaddr & 0xff;
+    m[0].buf = a; m[1].buf = d;
+    if(ioctl(I2Cfd, I2C_RDWR, &x) < 0) return FALSE;
+    if(data) for(int i = 0; i < N; ++i){
+        *data++ = (uint16_t)((d[2*i] << 8) | (d[2*i + 1]));
+    }
+    return TRUE;
+}
+
+// blocking read N uint16_t values starting from `reg`
+// @param reg - register to read
+// @param N (io) - amount of bytes to read / bytes read
+// @return `dataarray` or NULL if failed
+static uint16_t *read_data(uint16_t reg, uint16_t *N){
+    if(I2Cfd < 1 || !N || *N < 1) return NULL;
+    uint16_t n = *N;
+    if(n < 1 || n > MLX_DMA_MAXLEN) return NULL;
+    uint16_t *data = dataarray;
+    uint16_t got = 0, rest = *N;
+    do{
+        uint8_t l = (rest > 128) ? 128 : (uint8_t)rest;
+        if(!read_regN(reg, data, l)){
+            DBG("can't read");
+            break;
+        }
+        rest -= l;
+        reg += l;
+        data += l;
+        got += l;
+    }while(rest);
+    *N = got;
+    return dataarray;
+}
+//#endif
+#if 0
 // blocking read N uint16_t values starting from `reg`
 // @param reg - register to read
 // @param N (io) - amount of bytes to read / bytes read
@@ -84,6 +140,8 @@ static uint16_t *read_data(uint16_t reg, uint16_t *N){
     *N = i;
     return dataarray;
 }
+#endif
+
 
 // write register value
 static int write_reg(uint16_t regaddr, uint16_t data){
@@ -109,15 +167,6 @@ int mlx90640_set_slave_address(uint8_t addr){
     return TRUE;
 }
 
-int mlx90640_init(const char *dev, uint8_t ID){
-    if(I2Cfd > 0) close(I2Cfd);
-    I2Cfd = open(dev, O_RDWR);
-    if(I2Cfd < 1) return FALSE;
-    if(!mlx90640_set_slave_address(ID)) return FALSE;
-    if(!read_reg(0, NULL)) return FALSE;
-    return TRUE;
-}
-
 static void dumpIma(double *im){
     for(int row = 0; row < MLX_H; ++row){
         for(int col = 0; col < MLX_W; ++col){
@@ -139,6 +188,14 @@ void mlx90640_dump_parameters(){
     printf("kv[]={"); for(int i = 0; i < 4; ++i) printf("%s%g", (i) ? ", " : "", params.kv[i]); printf("}\n");
     printf("cpAlpha[]={%g, %g}\n", params.cpAlpha[0], params.cpAlpha[1]);
     printf("cpOffset[]={%d, %d}\n", params.cpOffset[0], params.cpOffset[1]);
+    printf("outliers[]=\n");
+    uint8_t *o = params.outliers;
+    for(int row = 0; row < MLX_H; ++row){
+        for(int col = 0; col < MLX_W; ++col){
+            printf("%d ", *o++);
+        }
+        printf("\n");
+    }
 }
 
 /*****************************************************************************
@@ -222,6 +279,7 @@ static int get_parameters(){
           accRemScale = 1<<(val & 0x0f);
     pu16 = &CREG_VAL(REG_OFFAK1);
     double *kta = params.kta, *offset = params.offset;
+    uint8_t *ol = params.outliers;
     for(int row = 0; row < MLX_H; ++row){
         int idx = (row&1)<<1;
         for(int col = 0; col < MLX_W; ++col){
@@ -239,6 +297,7 @@ static int get_parameters(){
             if(i16 > 0x1F) i16 -= 0x40;
             double oft = (double)a_r + accRow[row]*accRowScale + accColumn[col]*accColumnScale +i16*accRemScale;
             *a++ = oft / diva;
+            *ol++ = (rv&1) ? 1 : 0;
         }
     }
     scale1 = (CREG_VAL(REG_KTAVSCALE) >> 8) & 0xF; // kvscale
@@ -281,16 +340,23 @@ static int get_parameters(){
     i8 = (int8_t)(CREG_VAL(REG_KSTATGC) >> 8);
     params.KsTa = (double)i8/(1<<13);
     div = 1<<((CREG_VAL(REG_CT34) & 0x0F) + 8); // kstoscale
+    DBG("kstoscale=%g (regct34=0x%04x)", div, CREG_VAL(REG_CT34));
     val = CREG_VAL(REG_KSTO12);
+    DBG("ksto12=0x%04x", val);
     i8 = (int8_t)(val & 0xFF);
-    params.ksTo[0] = 273.15 * i8 / div;
+    DBG("To1ee=%d", i8);
+    params.ksTo[0] = i8 / div;
     i8 = (int8_t)(val >> 8);
-    params.ksTo[1] = 273.15 * i8 / div;
+    DBG("To2ee=%d", i8);
+    params.ksTo[1] = i8 / div;
     val = CREG_VAL(REG_KSTO34);
+    DBG("ksto34=0x%04x", val);
     i8 = (int8_t)(val & 0xFF);
-    params.ksTo[2] = 273.15 * i8 / div;
+    DBG("To3ee=%d", i8);
+    params.ksTo[2] = i8 / div;
     i8 = (int8_t)(val >> 8);
-    params.ksTo[3] = 273.15 * i8 / div;
+    DBG("To4ee=%d", i8);
+    params.ksTo[3] = i8 / div;
     params.CT[0] = 0.; // 0degr - between ranges 1 and 2
     val = CREG_VAL(REG_CT34);
     mul = ((val & 0x3000)>>12)*10.; // step
@@ -306,9 +372,14 @@ static int get_parameters(){
 
 /**
  * @brief process_subpage - calculate all parameters from `dataarray` into `mlx_image`
+ * @param subpageno - number of subpage
+ * @param simpleimage == 0 - simplest, 1 - narrow range, 2 - extended range
  */
 static void process_subpage(int subpageno, int simpleimage){
-    DBG("process_subpage(%d)", subpageno);
+    DBG("\nprocess_subpage(%d)", subpageno);
+#ifdef EBUG
+    chstate();
+#endif
     int16_t i16a = (int16_t)IMD_VAL(REG_IVDDPIX);
     double dvdd = i16a - params.vdd25;
     dvdd = dvdd / params.kVdd;
@@ -334,7 +405,7 @@ static void process_subpage(int subpageno, int simpleimage){
             curval -= params.offset[pixno] * (1. + params.kta[pixno]*dTa) *
                     (1. + params.kv[idx|(col&1)]*dvdd); // add offset
             double IRcompens = curval; // IR_compensated
-            if(simpleimage){
+            if(simpleimage == 0){
                 curval -= params.cpOffset[subpageno] * (1. - params.cpKta * dTa) *
                         (1. + params.cpKv * dvdd); // CP
                 curval = IRcompens - params.tgc * curval; // IR gradient compens
@@ -347,20 +418,28 @@ static void process_subpage(int subpageno, int simpleimage){
                 double ac3 = alphaComp*alphaComp*alphaComp;
                 double Sx = ac3*IRcompens + alphaComp*ac3*Tar;
                 Sx = params.KsTa * sqrt(sqrt(Sx));
-                double To = IRcompens / (alphaComp * (1. - params.ksTo[1]) + Sx) + Tar;
+                double To = IRcompens / (alphaComp * (1. - 273.15*params.ksTo[1]) + Sx) + Tar;
                 curval = sqrt(sqrt(To)) - 273.15; // To
-                // TODO: extended
+                // extended range
+                if(simpleimage == 2){
+                    int idx = 0; // range 1 by default
+                    double ctx = -40.;
+                    if(curval > params.CT[0] && curval < params.CT[1]){ // range 2
+                        idx = 1; ctx = params.CT[0];
+                    }else if(curval < params.CT[2]){ // range 3
+                        idx = 2; ctx = params.CT[1];
+                    }else{ // range 4
+                        idx = 3; ctx = params.CT[2];
+                    }
+                    To = IRcompens / (alphaComp * params.alphacorr[idx] * (1. + params.ksTo[idx]*(curval - ctx))) + Tar;
+                    curval = sqrt(sqrt(To)) - 273.15;
+                }
             }
             mlx_image[pixno] = curval;
         }
     }
+    DBG("Time: %g", dtime()-Tlast);
 }
-
-static int errctr = 0;
-static double Tlast = 0.;
-#define chstate()  do{errctr = 0; Tlast = dtime(); }while(0)
-#define chkerr()   do{if(++errctr > MLX_MAXERR_COUNT){ DBG("-> M_ERROR"); return FALSE;}else continue;}while(0)
-#define chktmout() do{if(dtime() - Tlast > MLX_TIMEOUT){ DBG("Timeout! -> M_ERROR"); return FALSE;}else continue;}while(0)
 
 static int process_readconf(){
     chstate();
@@ -371,15 +450,19 @@ static int process_readconf(){
 }
 static int process_firstrun(){
     uint16_t reg, N;
+    write_reg(REG_CONTROL, REG_CONTROL_DEFAULT);
+    usleep(50);
+    write_reg(REG_CONTROL, REG_CONTROL_DEFAULT);
+    usleep(50);
     chstate();
     while(1){
     if(write_reg(REG_CONTROL, reg_control_val[0])
             && read_reg(REG_CONTROL, &reg)){
-        DBG("REG_CTRL=0x%04x", reg);
+        DBG("REG_CTRL=0x%04x, T=%g", reg, dtime()-Tlast);
         if(read_reg(REG_STATUS, &reg)) DBG("REG_STATUS=0x%04x", reg);
         N = REG_CALIDATA_LEN;
         if(read_data(REG_CALIDATA, &N)){
-            DBG("-> M_READCONF");
+            DBG("-> M_READCONF, T=%g", dtime()-Tlast);
             return process_readconf();
         }else chkerr();
     }else chkerr();
@@ -389,29 +472,32 @@ static int process_firstrun(){
 // start image acquiring for next subpage
 static int process_startima(int subpageno){
     chstate();
-    DBG("startima()");
+    DBG("startima(%d)", subpageno);
     uint16_t reg, N;
     while(1){
         // write `overwrite` flag twice
         if(!write_reg(REG_CONTROL, reg_control_val[subpageno]) ||
                 !write_reg(REG_STATUS, REG_STATUS_OVWEN) ||
                 !write_reg(REG_STATUS, REG_STATUS_OVWEN)) chkerr();
-        if(read_reg(REG_STATUS, &reg)){
-            if(reg & REG_STATUS_NEWDATA){
-                if(subpageno != (reg & REG_STATUS_SPNO)){
-                    DBG("wrong subpage number -> M_ERROR");
-                    return FALSE;
-                }else{ // all OK, run image reading
-                    chstate();
-                    write_reg(REG_STATUS, 0); // clear rdy bit
-                    N = MLX_PIXARRSZ;
-                    if(read_data(REG_IMAGEDATA, &N)){
-                        DBG("-> M_READOUT, N=%u", N);
-                        return TRUE;
-                    }else chkerr();
-                }
-            }else chktmout();
-        }else chkerr();
+        while(1){
+            if(read_reg(REG_STATUS, &reg)){
+                if(reg & REG_STATUS_NEWDATA){
+                    DBG("got newdata: %g", dtime() - Tlast);
+                    if(subpageno != (reg & REG_STATUS_SPNO)){
+                        DBG("wrong subpage number -> M_ERROR");
+                        return FALSE;
+                    }else{ // all OK, run image reading
+                        chstate();
+                        write_reg(REG_STATUS, 0); // clear rdy bit
+                        N = MLX_PIXARRSZ;
+                        if(read_data(REG_IMAGEDATA, &N) && N == MLX_PIXARRSZ){
+                            DBG("got readoutm N=%d: %g", N, dtime() - Tlast);
+                            return TRUE;
+                        }else chkerr();
+                    }
+                }else chktmout();
+            }else chkerr();
+        }
     }
     return FALSE;
 }
@@ -428,8 +514,7 @@ int mlx90640_take_image(uint8_t simple, double **image){
     if(params.kVdd == 0){ // no parameters -> make first run
         if(!process_firstrun()) return FALSE;
     }
-    //subpageno = 0;
-    DBG("-> M_STARTIMA");
+    DBG("\n\n\n-> M_STARTIMA");
     for(int sp = 0; sp < 2; ++sp){
         if(!process_startima(sp)) return FALSE; // get first subpage
         process_subpage(sp, simple);
@@ -438,4 +523,13 @@ int mlx90640_take_image(uint8_t simple, double **image){
     return TRUE;
 }
 
+int mlx90640_init(const char *dev, uint8_t ID){
+    if(I2Cfd > 0) close(I2Cfd);
+    I2Cfd = open(dev, O_RDWR);
+    if(I2Cfd < 1) return FALSE;
+    if(!mlx90640_set_slave_address(ID)) return FALSE;
+    if(!read_reg(0, NULL)) return FALSE;
+    if(!process_firstrun()) return FALSE;
+    return TRUE;
+}
 

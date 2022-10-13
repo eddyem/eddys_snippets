@@ -39,7 +39,7 @@ static int handle_socket(int sock, TTY_descr *d){
     buff[rd] = 0;
     DBG("GOT: %s", buff);
     ssize_t blen = strlen(buff);
-    if(blen != send(d->comfd, buff, blen, MSG_NOSIGNAL)){
+    if(blen != write(d->comfd, buff, blen)){
         LOGWARN("write()");
         WARN("write()");
     }
@@ -194,8 +194,8 @@ static void server_(int sock, TTY_descr *d){
         if(serdata){
             for(int i = 1; i < nfd; ++i)
                 if(l != send(poll_set[i].fd, serdata, l, MSG_NOSIGNAL)){
-                    LOGWARN("write()");
-                    WARN("write()");
+                    LOGWARN("send()");
+                    WARN("send()");
                 }
             if(serdata[l-1] == '\n') serdata[l-1] = 0;
             LOGMSG("SERIAL: %s", serdata);
@@ -323,6 +323,7 @@ int start_socket(int server, char *path, TTY_descr **dev){
             LOGERR("Can't open serial device %s", GP->devpath);
             ERR("Can't open serial device %s", GP->devpath);
         }
+        unlink(path); // remove old socket
     }
     int sock = -1;
     int reuseaddr = 1;

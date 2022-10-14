@@ -1,0 +1,7 @@
+cmdlnopts.c
+cmdlnopts.h
+main.c
+sersock.c
+sersock.h
+teacmd.c
+teacmd.h

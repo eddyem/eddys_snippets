@@ -1,0 +1,7 @@
+INSTRUME= 'TeA - Telescope Analyzer' / Acquisition hardware
+XMM     = 0                     / Coordinate, mm
+YMM     = 0                     / Coordinate, mm
+ZMM     = 0                     / Coordinate, mm
+XSTAT   = 'stop'                / Status of given coordinate motor
+YSTAT   = 'stop'                / Status of given coordinate motor
+ZSTAT   = 'stop'                / Status of given coordinate motor

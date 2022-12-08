@@ -15,33 +15,43 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// RUN: gcc -lusefull_macros hashtest.c -o hashtest && time ./hashtest En_words 
-// check hashes for all words in given dictionary and show words with similar hashes
-
 #include <stdio.h>
 #include <string.h>
 #include <usefull_macros.h>
 
 #define ALLOCSZ     (5000)
+#define DJB2
 
-//#if 0
+#if defined DJB2
 // djb2 http://www.cse.yorku.ca/~oz/hash.html
 static uint32_t hash(const char *str){
     uint32_t hash = 5381;
     uint32_t c;
     while((c = (uint32_t)*str++))
         hash = ((hash << 5) + hash) + c;
-        // hash = hash * 19 + c;
+        //hash = hash * 31 + c;
         //hash = hash * 33 + c;
     return hash;
 }
-//#endif
-#if 0
+#elif defined SDBM
 static uint32_t hash(const char *str){ // sdbm
     uint32_t hash = 5381;
     uint32_t c;
     while((c = (uint32_t)*str++))
         hash = c + (hash << 6) + (hash << 16) - hash;
+    return hash;
+}
+#elif defined JENKINS
+uint32_t hash(const char *str){
+    uint32_t hash = 0, c;
+    while((c = (uint32_t)*str++)){
+        hash += c;
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
+    }
+    hash += (hash << 3);
+    hash ^= (hash >> 11);
+    hash += (hash << 15);
     return hash;
 }
 #endif
@@ -53,8 +63,9 @@ typedef struct{
 } strhash;
 
 static int sorthashes(const void *a, const void *b){
-    strhash *h1 = (strhash*)a, *h2 = (strhash*)b;
-    return strcmp(h1->str, h2->str);
+    register uint32_t h1 = ((strhash*)a)->hash, h2 = ((strhash*)b)->hash;
+    if(h2 > h1) return h2 - h1;
+    else return -((h1 - h2));
 }
 
 int main(int argc, char **argv){

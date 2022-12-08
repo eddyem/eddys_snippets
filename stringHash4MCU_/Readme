@@ -1,0 +1,6 @@
+hashtest.c allows to test different hash functions on your dictionary
+hashgen.c will generate two files by dictionary: source and header
+use test.c to test generated files
+
+Compile: gcc -lusefull_macro file.c -o file
+gcc -lusefull_macro test.c hash.c -o test

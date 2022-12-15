@@ -21,7 +21,6 @@
 #include <ctype.h>
 
 #define ALLOCSZ     (5000)
-#define DJB2
 
 typedef struct{
     char *dict;
@@ -117,18 +116,23 @@ static uint32_t (*hash[HASHFNO])(const char *str) = {djb2, sdbm, jenkins};
 static const char *hashnames[HASHFNO] = {"DJB2", "SDBM", "Jenkins"};
 
 typedef struct{
-    char str[32];
-    uint32_t hash;
+    char str[32];       // string command
+    char fname[32];     // function namee
+    uint32_t hash;      // command hash
 } strhash;
 
-static int sorthashesH(const void *a, const void *b){
+static int sorthashesH(const void *a, const void *b){ // sort by hash
     register uint32_t h1 = ((strhash*)a)->hash, h2 = ((strhash*)b)->hash;
     if(h1 > h2) return 1;
     else if(h1 < h2) return -1;
     return 0;
 }
-static int sorthashesS(const void *a, const void *b){
+static int sorthashesS(const void *a, const void *b){ // sort by string
     char *s1 = ((strhash*)a)->str, *s2 = ((strhash*)b)->str;
+    return strcmp(s1, s2);
+}
+static int sorthashesF(const void *a, const void *b){ // sort by fname
+    char *s1 = ((strhash*)a)->fname, *s2 = ((strhash*)b)->fname;
     return strcmp(s1, s2);
 }
 
@@ -165,22 +169,8 @@ static char *fnname(const char *cmd){
 }
 
 static const char *fhdr =
-"int parsecmd(char *cmdwargs){\n\
-    if(!cmdwargs || !*cmdwargs) return 0;\n\
-    char cmd[32];\n\
-    int i = 0;\n\
-    char *args = cmdwargs;\n\
-    while(*args && *args < 33) ++args;\n\
-    if(!args || !*args) return 0;\n\
-    while(*args > 33 && i < 31){\n\
-        cmd[i++] = *args++;\n\
-    }\n\
-    cmd[i] = 0;\n\
-    if(i == 31) args = NULL;\n\
-    if(args){\n\
-        while(*args && *args < 33) ++args;\n\
-        if(!*args) args = NULL;\n\
-    }\n\
+"int parsecmd(char *cmd, char *args){\n\
+    if(!cmd || !args) return 0;\n\
     uint32_t h = hashf(cmd);\n\
     switch(h){\n"
 ;
@@ -191,11 +181,9 @@ static const char *ffooter =
 }\n\n"
 ;
 static const char *fns =
-"TRUE_INLINE int fn_%s(_U_ uint32_t hash,  _U_ char *args){ // %s (%u)\n\
-    return 1;\n\
-}\n\n"
+"int fn_%s(_U_ uint32_t hash,  _U_ char *args) WAL; // \"%s\" (%u)\n\n"
 ;
-static const char *fproto = "int parsecmd(char *cmdwargs);\n\n";
+static const char *fproto = "int parsecmd(char *cmdwargs, char *args);\n\n";
 static const char *sw =
 "        case CMD_%s:\n\
             return fn_%s(h, args);\n\
@@ -207,9 +195,9 @@ static const char *srchdr =
 #ifndef _U_\n\
 #define _U_ __attribute__((__unused__))\n\
 #endif\n\n\
-#ifndef TRUE_INLINE\n\
-#define TRUE_INLINE  __attribute__((always_inline)) static inline\n\
-#endif\n\n"
+#ifndef WAL\n\
+#define WAL __attribute__ ((weak, alias (\"__f1\")))\n\
+#endif\n\nint __f1(_U_ uint32_t h, _U_ char *a){return 1;}\n\n"
 ;
 
 static void build(strhash *H, int hno, int hlen){
@@ -229,8 +217,7 @@ static void build(strhash *H, int hno, int hlen){
     fprintf(source, srchdr, G.headerfile);
     if(G.genfunc){
         for(int i = 0; i < hlen; ++i){
-            //fprintf(source, fns, "popo", "lolo", 12);
-            fprintf(source, fns, fnname(H[i].str), H[i].str, H[i].hash);
+            fprintf(source, fns, H[i].fname, H[i].str, H[i].hash);
         }
     }
     fprintf(header, "%s", fproto);
@@ -238,7 +225,7 @@ static void build(strhash *H, int hno, int hlen){
     fprintf(source, "%s", fhdr);
     for(int i = 0; i < hlen; ++i){
         char *m = macroname(H[i].str);
-        fprintf(source, sw, m, fnname(H[i].str));
+        fprintf(source, sw, m, H[i].fname);
         fprintf(header, "#define CMD_%-*s    (%u)\n", lmax, m, H[i].hash);
     }
     fprintf(source, "%s", ffooter);
@@ -274,18 +261,30 @@ int main(int argc, char **argv){
         }else{
             snprintf(H[idx].str, 31, "%s", word);
         }
+        snprintf(H[idx].fname, 31, "%s", fnname(H[idx].str));
         ++idx;
         if(!nxt) break;
         word = nxt + 1;
     }
+    // test fname matches
+    qsort(H, idx, sizeof(strhash), sorthashesF);
+    int mflag = 0;
     int imax1 = idx - 1, hno = 0;
+    for(int i = 0; i < imax1; ++i){ // test hash matches
+        if(0 == strcmp(H[i].fname, H[i+1].fname)){
+            mflag = 1;
+            WARNX("Have two similar function names for '%s' and '%s': 'fn_%s'",
+                  H[i].str, H[i+1].str, H[i].fname);
+        }
+    }
+    if(mflag) ERRX("Can't generate code when names of some functions matches");
     for(; hno < HASHFNO; ++hno){
         for(int i = 0; i < idx; ++i)
             H[i].hash = hash[hno](H[i].str);
         qsort(H, idx, sizeof(strhash), sorthashesH);
         strhash *p = H;
         int nmatches = 0;
-        for(int i = 0; i < imax1; ++i, ++p){
+        for(int i = 0; i < imax1; ++i, ++p){ // test hash matches
             if(p->hash == p[1].hash) ++nmatches;
         }
         if(nmatches == 0){

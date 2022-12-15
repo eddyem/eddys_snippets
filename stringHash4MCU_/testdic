@@ -2,10 +2,12 @@ hello
 world
 what
 put
-change
+sim key
+change ip
+change param
 set
-clear
+	 clear
 reset
-get
+  get
 out
 in

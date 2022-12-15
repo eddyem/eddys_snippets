@@ -197,7 +197,7 @@ static const char *srchdr =
 #endif\n\n\
 #ifndef WAL\n\
 #define WAL __attribute__ ((weak, alias (\"__f1\")))\n\
-#endif\n\nint __f1(_U_ uint32_t h, _U_ char *a){return 1;}\n\n"
+#endif\n\nstatic int __f1(_U_ uint32_t h, _U_ char *a){return 1;}\n\n"
 ;
 
 static void build(strhash *H, int hno, int hlen){

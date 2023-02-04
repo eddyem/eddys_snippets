@@ -169,21 +169,39 @@ static char *fnname(const char *cmd){
 }
 
 static const char *fhdr =
-"int parsecmd(char *cmd, char *args){\n\
-    if(!cmd || !args) return 0;\n\
-    uint32_t h = hashf(cmd);\n\
-    switch(h){\n"
+"int parsecmd(const char *str){\n\
+        char cmd[CMD_MAXLEN + 1];\n\
+        if(!str || !*str) return RET_CMDNOTFOUND;\n\
+        int i = 0;\n\
+        while(*str > '@' && i < CMD_MAXLEN){ cmd[i++] = *str++; }\n\
+        cmd[i] = 0;\n\
+        if(*str){\n\
+            while(*str <= ' ') ++str;\n\
+        }\n\
+        char *args = (char*) str;\n\
+        uint32_t h = hashf(cmd);\n\
+        switch(h){\n\n"
 ;
 static const char *ffooter =
-"        default: return 0;\n\
+"        default: break;\n\
     }\n\
-    return 0;\n\
+    return RET_CMDNOTFOUND;\n\
 }\n\n"
 ;
 static const char *fns =
 "int fn_%s(_U_ uint32_t hash,  _U_ char *args) WAL; // \"%s\" (%u)\n\n"
 ;
-static const char *fproto = "int parsecmd(char *cmdwargs, char *args);\n\n";
+static const char *headercontent = "#ifndef _U_\n\
+#define _U_ __attribute__((__unused__))\n\
+#endif\n\n\
+#define CMD_MAXLEN  (32)\n\n\
+enum{\n\
+   RET_CMDNOTFOUND = -2,\n\
+   RET_WRONGCMD = -1,\n\
+   RET_BAD = 0,\n\
+   RET_GOOD = 1\n\
+};\n\n\
+int parsecmd(const char *cmdwargs);\n\n";
 static const char *sw =
 "        case CMD_%s:\n\
             return fn_%s(h, args);\n\
@@ -192,9 +210,6 @@ static const char *srchdr =
 "#include <stdint.h>\n\
 #include <stddef.h>\n\
 #include \"%s\"\n\n\
-#ifndef _U_\n\
-#define _U_ __attribute__((__unused__))\n\
-#endif\n\n\
 #ifndef WAL\n\
 #define WAL __attribute__ ((weak, alias (\"__f1\")))\n\
 #endif\n\nstatic int __f1(_U_ uint32_t h, _U_ char *a){return 1;}\n\n"
@@ -220,7 +235,7 @@ static void build(strhash *H, int hno, int hlen){
             fprintf(source, fns, H[i].fname, H[i].str, H[i].hash);
         }
     }
-    fprintf(header, "%s", fproto);
+    fprintf(header, "%s", headercontent);
     fprintf(source, "%s\n", hashsources[hno]);
     fprintf(source, "%s", fhdr);
     for(int i = 0; i < hlen; ++i){

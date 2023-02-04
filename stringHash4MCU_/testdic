@@ -1,13 +1,8 @@
-hello
-world
-what
-put
-sim key
-change ip
-change param
-set
-	 clear
-reset
-  get
-out
-in
+pos
+temp
+voltage
+time
+reboot
+stop
+goto
+esw

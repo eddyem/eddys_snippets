@@ -5,7 +5,7 @@ LDFLAGS += -lusefull_macros
 SRCS := $(wildcard *.c)
 DEFINES := $(DEF) -D_GNU_SOURCE -D_XOPEN_SOURCE=1111
 OBJDIR := mk
-CFLAGS += -O2 -Wall -Wextra -Wno-trampolines -std=gnu99
+CFLAGS += -O2 -Wall -Wextra -Wno-trampolines
 OBJS := $(addprefix $(OBJDIR)/, $(SRCS:%.c=%.o))
 DEPS := $(OBJS:.o=.d)
 TARGFILE := $(OBJDIR)/TARGET
@@ -22,6 +22,8 @@ ifeq ($(TARGET), DEBUG)
 	.DEFAULT_GOAL := debug
 endif
 
+release: CFLAGS += -flto
+release: LDFLAGS += -flto
 release: $(PROGRAM)
 
 debug: CFLAGS += -DEBUG -Werror

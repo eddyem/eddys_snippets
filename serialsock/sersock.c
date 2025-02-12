@@ -308,15 +308,21 @@ static TTY_descr *openserialdev(char *path, int speed){
 int start_socket(int server, char *path, TTY_descr **dev){
     char apath[128];
     DBG("path: %s", path);
-    if(*path == 0){
-        DBG("convert name");
-        apath[0] = 0;
-        strncpy(apath+1, path+1, 126);
-    }else if(strncmp("\\0", path, 2) == 0){
-        DBG("convert name");
-        apath[0] = 0;
-        strncpy(apath+1, path+2, 126);
-    }else strcpy(apath, path);
+    char *eptr;
+    long port = strtol(path, &eptr, 0);
+    if(eptr && *eptr){
+        DBG("UNIX socket");
+        port = -1;
+        if(*path == 0){
+            DBG("convert name");
+            apath[0] = 0;
+            strncpy(apath+1, path+1, 126);
+        }else if(strncmp("\\0", path, 2) == 0){
+            DBG("convert name");
+            apath[0] = 0;
+            strncpy(apath+1, path+2, 126);
+        }else strcpy(apath, path);
+    }
     if(server){
         if(!dev) return 1;
         if(!(*dev = openserialdev(GP->devpath, GP->speed))){
@@ -327,28 +333,61 @@ int start_socket(int server, char *path, TTY_descr **dev){
     }
     int sock = -1;
     int reuseaddr = 1;
-    struct sockaddr_un saddr = {0};
-    saddr.sun_family = AF_UNIX;
-    memcpy(saddr.sun_path, apath, 106); // if sun_path[0] == 0 we don't create a file
-    if((sock = socket(AF_UNIX, SOCK_SEQPACKET, 0)) < 0){ // or SOCK_STREAM?
-        LOGERR("socket()");
-        ERR("socket()");
-    }
-    if(server){
-        if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(int)) == -1){
-            LOGWARN("setsockopt");
-            WARN("setsockopt");
-        }
-        if(bind(sock, &saddr, sizeof(saddr)) == -1){
-            close(sock);
-            LOGERR("bind");
-            ERR("bind");
+    struct addrinfo hints = {0}, *res;
+    struct sockaddr_un unaddr = {0};
+    unaddr.sun_family = AF_UNIX;
+    if(port > 0){
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_flags = AI_PASSIVE;
+        if(getaddrinfo("127.0.0.1", path, &hints, &res) != 0){
+            ERR("getaddrinfo");
         }
     }else{
-        if(connect(sock, &saddr, sizeof(saddr)) == -1){
-            LOGERR("connect()");
-            ERR("connect()");
+        memcpy(unaddr.sun_path, apath, 106); // if sun_path[0] == 0 we don't create a file
+        hints.ai_addr = (struct sockaddr*) &unaddr;
+        hints.ai_addrlen = sizeof(unaddr);
+        hints.ai_family = AF_UNIX;
+        hints.ai_socktype = SOCK_SEQPACKET;
+        res = &hints;
+    }
+    for(struct addrinfo *p = res; p; p = p->ai_next){
+        if((sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0){ // or SOCK_STREAM?
+            LOGWARN("socket()");
+            WARN("socket()");
+            continue;
         }
+        if(server){
+            int reuseaddr = 1;
+            if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(int)) == -1){
+                LOGWARN("setsockopt()");
+                WARN("setsockopt()");
+                close(sock); sock = -1;
+                continue;
+            }
+            if(bind(sock, p->ai_addr, p->ai_addrlen) == -1){
+                LOGWARN("bind()");
+                WARN("bind()");
+                close(sock); sock = -1;
+                continue;
+            }
+            int enable = 1;
+            if(ioctl(sock, FIONBIO, (void *)&enable) < 0){ // make socket nonblocking
+                LOGERR("Can't make socket nonblocking");
+                ERRX("ioctl()");
+            }
+        }else{
+            if(connect(sock, p->ai_addr, p->ai_addrlen) == -1){
+                LOGWARN("connect()");
+                WARN("connect()");
+                close(sock); sock = -1;
+            }
+        }
+        break;
+    }
+    if(sock < 0){
+        LOGERR("Can't open socket");
+        ERRX("Can't open socket");
     }
     if(server) server_(sock, *dev);
     else client_(sock);

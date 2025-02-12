@@ -332,7 +332,6 @@ int start_socket(int server, char *path, TTY_descr **dev){
         unlink(path); // remove old socket
     }
     int sock = -1;
-    int reuseaddr = 1;
     struct addrinfo hints = {0}, *res;
     struct sockaddr_un unaddr = {0};
     unaddr.sun_family = AF_UNIX;

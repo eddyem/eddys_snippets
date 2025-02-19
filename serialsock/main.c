@@ -53,7 +53,6 @@ void signals(int sig){
 }
 
 int main(int argc, char **argv){
-    char *self = strdup(argv[0]);
     initial_setup();
     parse_args(argc, argv);
     if(GP->logfile){
@@ -75,7 +74,7 @@ int main(int argc, char **argv){
         WARNX("Wrong port value: %d", port);
         return 1;
     }*/
-    if(server) check4running(self, GP->pidfile);
+    if(server) check4running(NULL, GP->pidfile);
     // signal reactions:
     signal(SIGTERM, signals); // kill (-15) - quit
     signal(SIGHUP, SIG_IGN);  // hup - ignore
@@ -85,7 +84,7 @@ int main(int argc, char **argv){
     LOGMSG("Started");
 #ifndef EBUG
     if(server){
-        unsigned int pause = 5;
+        unsigned int pause = 1;
         while(1){
             childpid = fork();
             if(childpid){ // master
@@ -93,9 +92,9 @@ int main(int argc, char **argv){
                 LOGMSG("Created child with pid %d", childpid);
                 wait(NULL);
                 LOGWARN("Child %d died", childpid);
-                if(dtime() - t0 < 1.) pause += 5;
+                if(dtime() - t0 < 1.) ++pause;
                 else pause = 1;
-                if(pause > 900) pause = 900;
+                if(pause > 30) pause = 30;
                 sleep(pause); // wait a little before respawn
             }else{ // slave
                 prctl(PR_SET_PDEATHSIG, SIGTERM); // send SIGTERM to child when parent dies

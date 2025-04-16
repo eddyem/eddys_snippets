@@ -25,14 +25,12 @@
 
 // default PID filename:
 #define DEFAULT_PIDFILE     "/tmp/usbsock.pid"
-#define DEFAULT_PORT        "1234"
 #define DEFAULT_SOCKPATH    "\0canbus"
 
 static int help;
 static glob_pars G = {
     .pidfile = DEFAULT_PIDFILE,
     .speed = 9600,
-//    .port = DEFAULT_PORT,
     .path = DEFAULT_SOCKPATH,
     .logfile = NULL // don't save logs
 };
@@ -42,15 +40,14 @@ glob_pars *GP = &G;
  * Define command line options by filling structure:
  *  name        has_arg     flag    val     type        argptr              help
 */
-static myoption cmdlnopts[] = {
+static sl_option_t cmdlnopts[] = {
     {"help",    NO_ARGS,    NULL,   'h',    arg_int,    APTR(&help),        _("show this help")},
     {"devpath", NEED_ARG,   NULL,   'd',    arg_string, APTR(&G.devpath),   _("serial device path")},
     {"speed",   NEED_ARG,   NULL,   's',    arg_int,    APTR(&G.speed),     _("serial device speed (default: 9600)")},
     {"logfile", NEED_ARG,   NULL,   'l',    arg_string, APTR(&G.logfile),   _("file to save logs (default: none)")},
     {"pidfile", NEED_ARG,   NULL,   'p',    arg_string, APTR(&G.pidfile),   _("pidfile (default: " DEFAULT_PIDFILE ")")},
     {"client",  NO_ARGS,    NULL,   'c',    arg_int,    APTR(&G.client),    _("run as client")},
-    {"sockpath",NEED_ARG,   NULL,   'f',    arg_string, APTR(&G.path),      _("socket path (start from \\0 for no files)")},
-//    {"port",    NEED_ARG,   NULL,   'P',    arg_string, APTR(&G.port),      _("port to connect (default: " DEFAULT_PORT ")")},
+    {"sockpath",NEED_ARG,   NULL,   'f',    arg_string, APTR(&G.path),      _("socket path (start from \\0 for no files) or port")},
     {"verbose", NO_ARGS,    NULL,   'v',    arg_none,   APTR(&G.verbose),   _("increase log verbose level (default: LOG_WARN) and messages (default: none)")},
    end_option
 };
@@ -68,12 +65,12 @@ void parse_args(int argc, char **argv){
     char helpstring[1024], *hptr = helpstring;
     snprintf(hptr, hlen, "Usage: %%s [args]\n\n\tWhere args are:\n");
     // format of help: "Usage: progname [args]\n"
-    change_helpstring(helpstring);
+    sl_helpstring(helpstring);
     // parse arguments
-    parseargs(&argc, &argv, cmdlnopts);
+    sl_parseargs(&argc, &argv, cmdlnopts);
     for(i = 0; i < argc; i++)
         printf("Ignore parameter\t%s\n", argv[i]);
-    if(help) showhelp(-1, cmdlnopts);
+    if(help) sl_showhelp(-1, cmdlnopts);
 }
 
 /**

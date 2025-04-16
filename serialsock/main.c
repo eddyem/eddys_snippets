@@ -26,7 +26,7 @@
 #include "cmdlnopts.h"
 #include "sersock.h"
 
-static TTY_descr *dev = NULL;
+static sl_tty_t *dev = NULL;
 static pid_t childpid = 0;
 int server = 1;
 
@@ -38,8 +38,8 @@ void signals(int sig){
     }
     // master process
     DBG("Master process");
-    if(!server) restore_console();
-    else if(dev) close_tty(&dev);
+    if(!server) sl_restore_con();
+    else if(dev) sl_tty_close(&dev);
     if(sig){
         DBG("Exit with signal %d", sig);
         signal(sig, SIG_IGN);
@@ -53,7 +53,8 @@ void signals(int sig){
 }
 
 int main(int argc, char **argv){
-    initial_setup();
+    char *self = strdup(argv[0]);
+    sl_init();
     parse_args(argc, argv);
     if(GP->logfile){
         int lvl = LOGLEVEL_WARN + GP->verbose;
@@ -61,20 +62,14 @@ int main(int argc, char **argv){
         if(lvl > LOGLEVEL_ANY) lvl = LOGLEVEL_ANY;
         verbose(1, "Log file %s @ level %d\n", GP->logfile, lvl);
         OPENLOG(GP->logfile, lvl, 1);
-        if(!globlog) WARNX("Can't create log file");
+        if(!sl_globlog) WARNX("Can't create log file");
     }
     if(GP->client) server = 0;
     else if(!GP->devpath){
         LOGERR("You should point serial device path");
         ERRX("You should point serial device path");
     }
-/*    int port = atoi(GP->port);
-    if(port < 1024 || port > 65535){
-        LOGERR("Wrong port value: %d", port);
-        WARNX("Wrong port value: %d", port);
-        return 1;
-    }*/
-    if(server) check4running(NULL, GP->pidfile);
+    if(server) sl_check4running(self, GP->pidfile);
     // signal reactions:
     signal(SIGTERM, signals); // kill (-15) - quit
     signal(SIGHUP, SIG_IGN);  // hup - ignore
@@ -84,17 +79,17 @@ int main(int argc, char **argv){
     LOGMSG("Started");
 #ifndef EBUG
     if(server){
-        unsigned int pause = 1;
+        unsigned int pause = 5;
         while(1){
             childpid = fork();
             if(childpid){ // master
-                double t0 = dtime();
+                double t0 = sl_dtime();
                 LOGMSG("Created child with pid %d", childpid);
                 wait(NULL);
                 LOGWARN("Child %d died", childpid);
-                if(dtime() - t0 < 1.) ++pause;
+                if(sl_dtime() - t0 < 1.) pause += 5;
                 else pause = 1;
-                if(pause > 30) pause = 30;
+                if(pause > 60) pause = 60;
                 sleep(pause); // wait a little before respawn
             }else{ // slave
                 prctl(PR_SET_PDEATHSIG, SIGTERM); // send SIGTERM to child when parent dies

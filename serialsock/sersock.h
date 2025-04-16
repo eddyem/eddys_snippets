@@ -26,6 +26,6 @@
 
 #include <usefull_macros.h>
 
-int start_socket(int server, char *path, TTY_descr **dev);
+int start_socket(int server, char *path, sl_tty_t **dev);
 
 #endif // SERSOCK_H__

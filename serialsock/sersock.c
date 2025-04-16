@@ -27,7 +27,7 @@
 #include "sersock.h"
 
 // work with single client, return FALSE if disconnected
-static int handle_socket(int sock, TTY_descr *d){
+static int handle_socket(int sock, sl_tty_t *d){
     char buff[BUFLEN];
     ssize_t rd = read(sock, buff, BUFLEN-1);;
     DBG("Got %zd bytes", rd);
@@ -37,7 +37,7 @@ static int handle_socket(int sock, TTY_descr *d){
     }
     // add trailing zero to be on the safe side
     buff[rd] = 0;
-    DBG("GOT: %s", buff);
+    DBG("GOT: _%s_", buff);
     ssize_t blen = strlen(buff);
     if(blen != write(d->comfd, buff, blen)){
         LOGWARN("write()");
@@ -85,7 +85,7 @@ static int canberead(int fd){
  * @param len (o) - amount of butes read (-1 if disconnected)
  * @return pointer to data buffer or NULL if none
  */
-static char *getserdata(TTY_descr *D, int *len){
+static char *getserdata(sl_tty_t *D, int *len){
     static char serbuf[BUFLEN], *ptr = serbuf;
     static size_t blen = BUFLEN - 1;
     if(!D || D->comfd < 0) return NULL;
@@ -149,7 +149,7 @@ static char *getserdata(TTY_descr *D, int *len){
     return D->buf;
 }
 
-static void server_(int sock, TTY_descr *d){
+static void server_(int sock, sl_tty_t *d){
     if(listen(sock, MAXCLIENTS) == -1){
         WARN("listen");
         LOGWARN("listen");
@@ -260,7 +260,7 @@ static char *mygetline(){
 }
 
 static void client_(int sock){
-    setup_con(); // convert console mode into non-canon
+    sl_setup_con(); // convert console mode into non-canon
     int Bufsiz = BUFLEN;
     char *recvBuff = MALLOC(char, Bufsiz);
     while(1){
@@ -293,10 +293,10 @@ static void client_(int sock){
  * @param speed    - connection speed
  * @return pointer to device structure if all OK
  */
-static TTY_descr *openserialdev(char *path, int speed){
-    TTY_descr *d = new_tty(path, speed, BUFLEN);
+static sl_tty_t *openserialdev(char *path, int speed){
+    sl_tty_t *d = sl_tty_new(path, speed, BUFLEN);
     DBG("Device created");
-    if(!d || !(tty_open(d, 1))){
+    if(!d || !(sl_tty_open(d, 1))){
         WARN("Can't open device %s", path);
         LOGWARN("Can't open device %s", path);
         return NULL;
@@ -305,7 +305,7 @@ static TTY_descr *openserialdev(char *path, int speed){
     return d;
 }
 
-int start_socket(int server, char *path, TTY_descr **dev){
+int start_socket(int server, char *path, sl_tty_t **dev){
     char apath[128];
     DBG("path: %s", path);
     char *eptr;

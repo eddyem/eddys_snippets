@@ -29,21 +29,22 @@
 // work with single client, return FALSE if disconnected
 static int handle_socket(int sock, sl_tty_t *d){
     char buff[BUFLEN];
-    ssize_t rd = read(sock, buff, BUFLEN-1);;
+    ssize_t rd = read(sock, buff, BUFLEN-1);
     DBG("Got %zd bytes", rd);
     if(rd <= 0){ // error or disconnect
         DBG("Nothing to read from fd %d (ret: %zd)", sock, rd);
         return FALSE;
     }
     // add trailing zero to be on the safe side
+#ifdef EBUG
     buff[rd] = 0;
+#endif
     DBG("GOT: _%s_", buff);
-    ssize_t blen = strlen(buff);
-    if(blen != write(d->comfd, buff, blen)){
+    if(sl_tty_write(d->comfd, buff, rd)){
         LOGWARN("write()");
         WARN("write()");
     }
-    if(buff[blen-1] == '\n') buff[blen-1] = 0;
+    if(buff[rd-1] == '\n') buff[rd-1] = 0;
     LOGMSG("CLIENT_%d: %s", sock, buff);
     return TRUE;
 }
@@ -77,76 +78,6 @@ static int canberead(int fd){
         return 1;
     }
     return 0;
-}
-
-/**
- * @brief getserdata - read data (ending by '\n') from serial device
- * @param D (i)   - device
- * @param len (o) - amount of butes read (-1 if disconnected)
- * @return pointer to data buffer or NULL if none
- */
-static char *getserdata(sl_tty_t *D, int *len){
-    static char serbuf[BUFLEN], *ptr = serbuf;
-    static size_t blen = BUFLEN - 1;
-    if(!D || D->comfd < 0) return NULL;
-    char *nl = NULL;
-    do{
-        int s = canberead(D->comfd);
-        if(s == 0) break;
-        if(s < 0){ // interrupted?
-            if(len) *len = 0;
-            return NULL;
-        }
-        ssize_t l = read(D->comfd, ptr, blen);
-        if(l < 1){ // disconnected
-            DBG("device disconnected");
-            if(len) *len = -1;
-            return NULL;
-        }
-        ptr[l] = 0;
-        DBG("GOT %zd bytes: '%s'", l, ptr);
-        nl = strchr(ptr, '\n');
-        ptr += l;
-        blen -= l;
-        if(nl){
-            DBG("Got newline");
-            break;
-        }
-    }while(blen);
-    // recalculate newline from the beginning (what if old data stays there?)
-    nl = strchr(serbuf, '\n');
-    if(blen && !nl){
-        if(len) *len = 0;
-        return NULL;
-    }
-    // in case of overflow send buffer without trailing '\n'
-    int L;
-    if(nl) L = nl - serbuf + 1; // get line to '\n'
-    else L = strlen(serbuf); // get all buffer
-    if(len) *len = L;
-    memcpy(D->buf, serbuf, L); // copy all + trailing zero
-    D->buflen = L;
-    D->buf[L] = 0;
-    DBG("Put to buf %d bytes: '%s'", L, D->buf);
-    if(nl){
-        L = ptr - nl - 1; // symbols after newline
-        if(L > 0){ // there's some data after '\n' -> put it into the beginning
-            memmove(serbuf, nl+1, L);
-            blen = BUFLEN - 1 - L;
-            ptr = serbuf + L;
-            *ptr = 0;
-            DBG("now serbuf is '%s'", serbuf);
-        }else{
-            blen = BUFLEN - 1;
-            ptr = serbuf;
-            *ptr = 0;
-        }
-    }else{
-        blen = BUFLEN - 1;
-        ptr = serbuf;
-        *ptr = 0;
-    }
-    return D->buf;
 }
 
 static void server_(int sock, sl_tty_t *d){
@@ -185,20 +116,21 @@ static void server_(int sock, sl_tty_t *d){
                 ++nfd;
             }
         }
-        int l = -1;
-        char *serdata = getserdata(d, &l);
+        int l = sl_tty_read(d);
         if(l < 0){
             LOGERR("Serial device disconnected");
             ERRX("Serial device disconnected");
         }
-        if(serdata){
+        if(l > 0){
+            DBG("Got %d bytes from serial", l);
             for(int i = 1; i < nfd; ++i)
-                if(l != send(poll_set[i].fd, serdata, l, MSG_NOSIGNAL)){
+                if(l != send(poll_set[i].fd, d->buf, l, MSG_NOSIGNAL)){
                     LOGWARN("send()");
                     WARN("send()");
                 }
-            if(serdata[l-1] == '\n') serdata[l-1] = 0;
-            LOGMSG("SERIAL: %s", serdata);
+            if(l < (int)d->bufsz) d->buf[l] = 0;
+            if(d->buf[l-1] == '\n') d->buf[l-1] = 0;
+            LOGMSG("SERIAL: %s", d->buf);
         }
         // scan connections
         for(int fdidx = 1; fdidx < nfd; ++fdidx){

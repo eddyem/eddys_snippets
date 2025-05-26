@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Relay Control</title>
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 200px;
+            margin: 20px;
+        }
+        button {
+            padding: 10px;
+            font-size: 16px;
+        }
+        .indicator {
+            width: 100%;
+            height: 30px;
+            border: 1px solid black;
+            border-radius: 5px;
+        }
+        .red {
+            background-color: #ff9999;
+        }
+        .green {
+            background-color: #99ff99;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button id="leftBtn" onclick="sendCommand('open')">Open</button>
+        <button id="rightBtn" onclick="sendCommand('close')">Close</button>
+        <button onclick="sendCommand('stop')">Stop</button>
+        
+        <div class="indicator red" id="leftInd">Left</div>
+        <div class="indicator red" id="rightInd">Right</div>
+    </div>
+
+    <script>
+        async function updateStatus() {
+            try {
+                const response = await fetch('http://ishtar.sao.ru:9000/status', {
+                    method: 'POST',
+                    body: 'status\n'
+                });
+                const text = await response.text();
+                const status = parseStatus(text);
+                
+                // Update buttons
+                document.getElementById('leftBtn').disabled = status.relay0 === '1';
+                document.getElementById('rightBtn').disabled = status.relay1 === '1';
+                
+                // Update indicators
+                document.getElementById('leftInd').className = 
+                    `indicator ${status.in0 === '1' ? 'green' : 'red'}`;
+                document.getElementById('rightInd').className = 
+                    `indicator ${status.in1 === '1' ? 'green' : 'red'}`;
+            } catch (error) {
+                console.error('Status update failed:', error);
+            }
+        }
+
+        function parseStatus(text) {
+            const lines = text.split('\n');
+            const status = {};
+            lines.forEach(line => {
+                const [key, value] = line.split('=');
+                if (key && value !== undefined) {
+                    status[key] = value.replace('\n', '').trim();
+                }
+            });
+            return status;
+        }
+
+        async function sendCommand(cmd) {           
+            try {
+                await fetch(`http://ishtar.sao.ru:9000/${cmd}`, {
+                    method: 'POST',
+                    body: cmd
+                });
+                // Update status immediately after command
+                await updateStatus();
+            } catch (error) {
+                console.error('Command failed:', error);
+            }
+        }
+
+        // Update status every second
+        setInterval(updateStatus, 3000);
+        // Initial status update
+        updateStatus();
+    </script>
+</body>
+</html>

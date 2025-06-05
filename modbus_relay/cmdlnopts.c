@@ -57,6 +57,7 @@ static sl_option_t cmdlnopts[] = {
     {"node",    NEED_ARG,   NULL,   'n',    arg_int,    APTR(&GP.nodenum),  "node number (default: 1)"},
     {"readN",   NO_ARGS,    NULL,   0,      arg_int,    APTR(&GP.readn),    "read node number"},
     {"setN",    NEED_ARG,   NULL,   0,      arg_int,    APTR(&GP.setn),     "change node number"},
+    {"type",    NEED_ARG,   NULL,   't',    arg_int,    APTR(&GP.relaytype), "type of relay: 0 - standard 2relay, 1 - non-standard 4relay"},
     end_option
 };
 

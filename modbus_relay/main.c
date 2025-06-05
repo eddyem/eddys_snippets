@@ -46,13 +46,27 @@ int main(int argc, char **argv){
     modbus_set_response_timeout(ctx, 0, 100000);
     if(modbus_set_slave(ctx, GP.nodenum)) ERRX("Can't set modbus slave");
     if(modbus_connect(ctx) < 0) ERR("Can't open device %s", GP.device);
+    if(GP.relaytype < 0 || GP.relaytype > 1) ERRX("Type should be 0 or 1");
     VMSG("OK!\n");
     uint8_t dest8[8] = {0};
+    int result = 0;
+    int ninputs = 8, noutputs = 8;
+    if(GP.relaytype == 1){ ninputs = 4; noutputs = 4;}
     if(GP.setall){
-        memset(dest8, 1, 8);
-        if(modbus_write_bits(ctx, 0, 8, dest8) < 0) WARNX("Can't set all relays");
+        if(GP.relaytype == 0){
+            memset(dest8, 1, noutputs);
+            result = modbus_write_bits(ctx, 0, noutputs, dest8);
+        }else{
+            result = modbus_write_bit(ctx, 0xff, 0xff00);
+        }
+        if(result < 0) WARNX("Can't set all relays");
     }else if(GP.resetall){
-        if(modbus_write_bits(ctx, 0, 8, dest8) < 0) WARNX("Can't clear all relays");
+        if(GP.relaytype == 0){
+            result = modbus_write_bits(ctx, 0, noutputs, dest8);
+        }else{
+            result = modbus_write_bit(ctx, 0xff, 0);
+        }
+        if(result < 0) WARNX("Can't clear all relays");
     }else{
         if(GP.resetrelay){
             int **p = GP.resetrelay;
@@ -80,24 +94,24 @@ int main(int argc, char **argv){
         }
     }
     if(GP.getinput){
-        if(modbus_read_input_bits(ctx, 0, 8, dest8) < 0) WARNX("Can't read inputs");
+        if(modbus_read_input_bits(ctx, 0, ninputs, dest8) < 0) WARNX("Can't read inputs");
         else{
             int **p = GP.getinput;
             while(*p){
                 int n = **p;
-                if(n > 7 || n < 0) WARNX("Input number should be in [0, 7]");
+                if(n > ninputs-1 || n < 0) WARNX("Input number should be in [0, %d]", ninputs-1);
                 else printf("INPUT%d=%u\n", n, dest8[n]);
                 ++p;
             }
         }
     }
     if(GP.getrelay){
-        if(modbus_read_bits(ctx, 0, 8, dest8) < 0) WARNX("Can't read relays");
+        if(modbus_read_bits(ctx, 0, noutputs, dest8) < 0) WARNX("Can't read relays");
         else{
             int **p = GP.getrelay;
             while(*p){
                 int n = **p;
-                if(n > 7 || n < 0) WARNX("Relay number should be in [0, 7]");
+                if(n > noutputs-1 || n < 0) WARNX("Relay number should be in [0, %d]", noutputs-1);
                 else printf("RELAY%d=%u\n", n, dest8[n]);
                 ++p;
             }
@@ -108,7 +122,11 @@ int main(int argc, char **argv){
     }
     if(GP.setn){
         uint16_t nodeN = (uint16_t) GP.setn;
-        modbus_write_registers(ctx, 0, 1, &nodeN);
+        if(GP.relaytype == 0){
+            modbus_write_registers(ctx, 0, 1, &nodeN);
+        }else{
+            modbus_write_register(ctx, 0x4000, nodeN);
+        }
         modbus_set_slave(ctx, nodeN);
         getN(ctx);
     }

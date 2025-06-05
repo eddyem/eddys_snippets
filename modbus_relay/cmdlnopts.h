@@ -31,6 +31,7 @@ typedef struct{
     int nodenum;        // node number (default: 1)
     int readn;          // read node number
     int setn;           // set node number
+    int relaytype;      // type of relay
     int **setrelay;     // set relay number N
     int **resetrelay;   // reset relay number N
     int **getinput;     // read Nth input

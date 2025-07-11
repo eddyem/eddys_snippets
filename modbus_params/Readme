@@ -1,0 +1,18 @@
+
+modbus_par: reading/writing/dumping modbus registers using `dictionary`
+
+  -D, --dictionary=arg   file with dictionary (format: code register value writeable)
+  -O, --outdic=arg       output dictionary for full device dump by input dictionary registers
+  -R, --readc            registers (by keycodes, checked by dictionary) to read; multiply parameter
+  -W, --writec           write new value to register by keycode (format: keycode=val); multiply parameter
+  -b, --baudrate=arg     modbus baudrate (default: 9600)
+  -d, --device=arg       modbus device (default: /dev/ttyUSB0)
+  -h, --help             show this help
+  -k, --dumpkey          dump entry with this keycode; multiply parameter
+  -o, --outfile=arg      file with parameter's dump
+  -r, --readr            registers (by address) to read; multiply parameter
+  -s, --slave=arg        slave ID (default: 1)
+  -t, --dumptime=arg     dumping time interval (seconds, default: 0.1)
+  -v, --verbose          verbose level (each -v adds 1)
+  -w, --writer           write new value to register (format: reg=val); multiply parameter
+

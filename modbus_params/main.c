@@ -21,12 +21,14 @@
 #include <usefull_macros.h>
 
 #include "modbus.h"
+#include "server.h"
 #include "verbose.h"
 
 typedef struct{
     int help;           // help
     int verbose;        // verbose level (not used yet)
     int slave;          // slave ID
+    int isunix;         // Unix-socket
     char **dumpcodes;   // keycodes to dump into file
     char **writeregs;   // reg=val to write
     char **writecodes;  // keycode=val to write
@@ -36,6 +38,7 @@ typedef struct{
     char *outdic;       // output dictionary to save everything read from slave
     char *dicfile;      // file with dictionary
     char *device;       // serial device
+    char *node;         // server port or path
     int baudrate;       // baudrate
     double dTdump;      // dumping time interval (s)
 } parameters;
@@ -62,6 +65,8 @@ static sl_option_t cmdlnopts[] = {
     {"outdic",      NEED_ARG,   NULL,   'O',    arg_string, APTR(&G.outdic),    "output dictionary for full device dump by input dictionary registers"},
     {"readr",       MULT_PAR,   NULL,   'r',    arg_int,    APTR(&G.readregs),  "registers (by address) to read; multiply parameter"},
     {"readc",       MULT_PAR,   NULL,   'R',    arg_string, APTR(&G.readcodes), "registers (by keycodes, checked by dictionary) to read; multiply parameter"},
+    {"node",        NEED_ARG,   NULL,   'N',    arg_string, APTR(&G.node),      "node \"IP\", or path (could be \"\\0path\" for anonymous UNIX-socket)"},
+    {"unixsock",    NO_ARGS,    NULL,   'U',    arg_int,    APTR(&G.isunix),    "UNIX socket instead of INET"},
     end_option
 };
 
@@ -111,8 +116,15 @@ int main(int argc, char **argv){
     if(G.readregs) dumpregs(G.readregs);
     if(G.readcodes) dumpcodes(G.readcodes);
     if(G.dumpfile){
+        if(!setDumpT(G.dTdump)) ERRX("Can't set dumptime %g", G.dTdump);
         DBG("dumpfile");
-        if(!rundump(G.dTdump)) signals(-1);
+        if(!rundump()) signals(-1);
+    }
+    if(G.node){
+        DBG("Create server");
+        if(!runserver(G.node, G.isunix)) signals(-1); // this function exits only after server death
+    }
+    if(G.dumpfile){
         DBG("Done, wait for ctrl+C");
         while(1);
     }

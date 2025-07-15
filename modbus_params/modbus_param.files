@@ -1,5 +1,7 @@
 main.c
 modbus.c
 modbus.h
+server.c
+server.h
 verbose.c
 verbose.h

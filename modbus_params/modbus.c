@@ -27,8 +27,10 @@
 #include "verbose.h"
 
 static FILE *dumpfile = NULL;
+static char *dumpname = NULL;
 static dicentry_t *dumppars = NULL;
 static int dumpsize = 0;
+static double dumpTime = 0.1;
 
 static dicentry_t *dictionary = NULL;
 static int dictsize = 0;
@@ -167,13 +169,16 @@ int opendumpfile(const char *name){
         WARN("Can't open %s", name);
         return FALSE;
     }
-    fprintf(dumpfile, "# time,s ");
+    dumpname = strdup(name);
+    fprintf(dumpfile, "#   time,s ");
     for(int i = 0; i < dumpsize; ++i){
         fprintf(dumpfile, "%s ", dumppars[i].code);
     }
     fprintf(dumpfile, "\n");
     return TRUE;
 }
+
+char *getdumpname(){ return dumpname;}
 
 void closedumpfile(){
     if(dumpfile && !isstopped){
@@ -182,6 +187,7 @@ void closedumpfile(){
             while(!isstopped);
         }
         fclose(dumpfile);
+        FREE(dumpname);
     }
 }
 
@@ -193,7 +199,7 @@ static void *dumpthread(void *p){
     double startT = sl_dtime();
     while(!stopdump){
         double t0 = sl_dtime();
-        fprintf(dumpfile, "%6.3g", t0 - startT);
+        fprintf(dumpfile, "%10.3f ", t0 - startT);
         for(int i = 0; i < dumpsize; ++i){
             if(!read_entry(&dumppars[i])) fprintf(dumpfile, "---- ");
             else fprintf(dumpfile, "%4d ", dumppars[i].value);
@@ -205,20 +211,23 @@ static void *dumpthread(void *p){
     return NULL;
 }
 
-int rundump(double dT){
-    if(!dumpfile){
-        WARNX("Open dump file first");
-        return FALSE;
-    }
+int setDumpT(double dT){
     if(dT < 0.){
         WARNX("Time interval should be > 0");
         return FALSE;
     }
+    dumpTime = dT;
+    DBG("user give dT: %g", dT);
+    return TRUE;
+}
+
+int rundump(){
+    if(!dumpfile){
+        WARNX("Open dump file first");
+        return FALSE;
+    }
     pthread_t thread;
-    static double T = 0.;
-    if(T != dT) T = dT;
-    DBG("user give dT: %g", T);
-    if(pthread_create(&thread, NULL, dumpthread, (void*)&T)){
+    if(pthread_create(&thread, NULL, dumpthread, (void*)&dumpTime)){
         WARN("Can't create dumping thread");
         return FALSE;
     }
@@ -237,19 +246,32 @@ void close_modbus(){
 
 // read register and modify entry->reg; return FALSE if failed
 int read_entry(dicentry_t *entry){
-    if(!entry) return FALSE;
+    if(!entry){
+        WARNX("NULL instead of entry");
+        return FALSE;
+    }
     int ret = TRUE;
     pthread_mutex_lock(&modbus_mutex);
-    if(modbus_read_registers(modbus_ctx, entry->reg, 1, &entry->value) < 0) ret = FALSE;
+    if(modbus_read_registers(modbus_ctx, entry->reg, 1, &entry->value) < 0){
+        WARNX("Can't read entry by reg %u", entry->reg);
+        ret = FALSE;
+    }
     pthread_mutex_unlock(&modbus_mutex);
     return ret;
 }
 // write register value; FALSE - if failed or read-only
 int write_entry(dicentry_t *entry){
-    if(!entry || entry->readonly) return FALSE;
+    if(!entry || entry->readonly){
+        if(!entry) WARNX("NULL instead of entry");
+        else WARNX("Can't write readonly entry %u", entry->reg);
+        return FALSE;
+    }
     int ret = TRUE;
     pthread_mutex_lock(&modbus_mutex);
-    if(modbus_write_register(modbus_ctx, entry->reg, entry->value) < 0) ret = FALSE;
+    if(modbus_write_register(modbus_ctx, entry->reg, entry->value) < 0){
+        WARNX("Error writing %u to %u", entry->value, entry->reg);
+        ret = FALSE;
+    }
     pthread_mutex_unlock(&modbus_mutex);
     return ret;
 }

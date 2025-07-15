@@ -30,7 +30,9 @@ typedef struct{
 int setdumppars(char **pars);
 int opendumpfile(const char *name);
 void closedumpfile();
-int rundump(double dT);
+int setDumpT(double dT);
+int rundump();
+char *getdumpname();
 
 int opendict(const char *dic);
 

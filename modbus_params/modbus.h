@@ -18,36 +18,16 @@
 
 #pragma once
 
-#include <stdint.h>
+#include "dictionary.h"
 
-typedef struct{
-    char *code;             // mnemonic code
-    uint16_t value;         // value
-    uint16_t reg;           // register number
-    uint8_t readonly;       // ==1 if can't be changed
-} dicentry_t;
-
-int setdumppars(char **pars);
-int opendumpfile(const char *name);
-void closedumpfile();
-int setDumpT(double dT);
-int rundump();
-char *getdumpname();
-
-int opendict(const char *dic);
-
-dicentry_t *findentry_by_code(const char *code);
-dicentry_t *findentry_by_reg(uint16_t reg);
-
-int open_modbus(const char *path, int baudrate);
+int  open_modbus(const char *path, int baudrate);
 void close_modbus();
-int set_slave(int ID);
+int  set_slave(int ID);
 
 int read_entry(dicentry_t *entry);
 int write_entry(dicentry_t *entry);
-int write_regval(char **keyval);
+int write_regval(char **regval);
 int write_codeval(char **codeval);
 
-int dumpall(const char *outdic);
-void dumpregs(int **addresses);
-void dumpcodes(char **keycodes);
+void read_registers(int **addresses);
+void read_keycodes(char **keycodes);

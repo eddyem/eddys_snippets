@@ -18,223 +18,16 @@
 
 #include <inttypes.h>
 #include <modbus/modbus.h>
-#include <stdatomic.h>
 #include <stdio.h>
 #include <string.h>
 #include <usefull_macros.h>
 
+#include "dictionary.h"
 #include "modbus.h"
 #include "verbose.h"
 
-static FILE *dumpfile = NULL;
-static char *dumpname = NULL;
-static dicentry_t *dumppars = NULL;
-static int dumpsize = 0;
-static double dumpTime = 0.1;
-
-static dicentry_t *dictionary = NULL;
-static int dictsize = 0;
-
 static modbus_t *modbus_ctx = NULL;
 static pthread_mutex_t modbus_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-static atomic_int stopdump = FALSE, isstopped = TRUE;
-
-// open dictionary file and check it; return TRUE if all OK
-// all after "#" is comment;
-// dictionary format: "'code' 'register' 'value' 'readonly flag'\n", e.g.
-// "F00.09 61444 5000 1"
-int opendict(const char *dic){
-    FILE *f = fopen(dic, "r");
-    if(!f){
-        WARN("Can't open %s", dic);
-        return FALSE;
-    }
-    int dicsz = 0;
-    size_t linesz = BUFSIZ;
-    char *line = MALLOC(char, linesz);
-    dicentry_t curentry;
-    curentry.code = MALLOC(char, BUFSIZ);
-    int retcode = TRUE;
-    while(1){
-        if(getline(&line, &linesz, f) < 0) break;
-        // DBG("Original LINE: '%s'", line);
-        char *comment = strchr(line, '#');
-        if(comment) *comment = 0;
-        char *newline = strchr(line, '\n');
-        if(newline) *newline = 0;
-       // DBG("LINE: '%s'", line);
-        if(*line == 0) continue;
-        if(4 != sscanf(line, "%s %" SCNu16 " %" SCNu16 " %" SCNu8, curentry.code, &curentry.reg, &curentry.value, &curentry.readonly)){
-            WARNX("Can't understand this line: '%s'", line);
-            continue;
-        }
-       // DBG("Got line: '%s %" PRIu16 " %" PRIu16 " %" PRIu8, curentry.code, curentry.reg, curentry.value, curentry.readonly);
-        if(++dictsize >= dicsz){
-            dicsz += 50;
-            dictionary = realloc(dictionary, sizeof(dicentry_t) * dicsz);
-            if(!dictionary){
-                WARN("Can't allocate memory for dictionary");
-                retcode = FALSE;
-                goto ret;
-            }
-        }
-        dicentry_t *entry = &dictionary[dictsize-1];
-        entry->code = strdup(curentry.code);
-        entry->reg = curentry.reg;
-        entry->value = curentry.value;
-        entry->readonly = curentry.readonly;
-        //DBG("Add entry; now dictsize is %d", dictsize);
-    }
-ret:
-    fclose(f);
-    FREE(curentry.code);
-    FREE(line);
-    return retcode;
-}
-
-static int chkdict(){
-    if(dictsize < 1){
-        WARNX("Open dictionary first");
-        return FALSE;
-    }
-    return TRUE;
-}
-
-// find dictionary entry
-dicentry_t *findentry_by_code(const char *code){
-    if(!chkdict()) return NULL;
-    for(int i = 0; i < dictsize; ++i){
-        if(strcmp(code, dictionary[i].code)) continue;
-        return &dictionary[i];
-    }
-    return NULL;
-}
-dicentry_t *findentry_by_reg(uint16_t reg){
-    if(!chkdict()) return NULL;
-    for(int i = 0; i < dictsize; ++i){
-        if(reg != dictionary[i].reg) continue;
-        return &dictionary[i];
-    }
-    return NULL;
-}
-
-// prepare a list with dump parameters
-int setdumppars(char **pars){
-    if(!pars || !*pars) return FALSE;
-    if(!chkdict()) return FALSE;
-    FNAME();
-    char **p = pars;
-    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-    static int cursz = -1; // current allocated size
-    int N = 0;
-    pthread_mutex_lock(&mutex);
-    while(*p){ // count parameters and check them
-        dicentry_t *e = findentry_by_code(*p);
-        if(!e){
-            WARNX("Can't find entry with code %s", *p);
-            pthread_mutex_unlock(&mutex);
-            return FALSE;
-        }
-        DBG("found entry do dump, reg=%d", e->reg);
-        if(cursz <= N){
-            cursz += 50;
-            DBG("realloc list to %d", cursz);
-            dumppars = realloc(dumppars, sizeof(dicentry_t) * (cursz));
-            DBG("zero mem");
-            bzero(&dumppars[N], sizeof(dicentry_t)*(cursz-N));
-        }
-        FREE(dumppars[N].code);
-        dumppars[N] = *e;
-        dumppars[N].code = strdup(e->code);
-        DBG("Add %s", e->code);
-        ++N; ++p;
-    }
-    dumpsize = N;
-    pthread_mutex_unlock(&mutex);
-    return TRUE;
-}
-
-// open dump file and add header; return FALSE if failed
-int opendumpfile(const char *name){
-    if(!chkdict()) return FALSE;
-    if(dumpsize < 1){
-        WARNX("Set dump parameters first");
-        return FALSE;
-    }
-    if(!name) return FALSE;
-    closedumpfile();
-    dumpfile = fopen(name, "w+");
-    if(!dumpfile){
-        WARN("Can't open %s", name);
-        return FALSE;
-    }
-    dumpname = strdup(name);
-    fprintf(dumpfile, "#   time,s ");
-    for(int i = 0; i < dumpsize; ++i){
-        fprintf(dumpfile, "%s ", dumppars[i].code);
-    }
-    fprintf(dumpfile, "\n");
-    return TRUE;
-}
-
-char *getdumpname(){ return dumpname;}
-
-void closedumpfile(){
-    if(dumpfile && !isstopped){
-        if(!isstopped){
-            stopdump = TRUE;
-            while(!isstopped);
-        }
-        fclose(dumpfile);
-        FREE(dumpname);
-    }
-}
-
-static void *dumpthread(void *p){
-    isstopped = FALSE;
-    stopdump = FALSE;
-    double dT = *(double*)p;
-    DBG("Dump thread started. Period: %gs", dT);
-    double startT = sl_dtime();
-    while(!stopdump){
-        double t0 = sl_dtime();
-        fprintf(dumpfile, "%10.3f ", t0 - startT);
-        for(int i = 0; i < dumpsize; ++i){
-            if(!read_entry(&dumppars[i])) fprintf(dumpfile, "---- ");
-            else fprintf(dumpfile, "%4d ", dumppars[i].value);
-        }
-        fprintf(dumpfile, "\n");
-        while(sl_dtime() - t0 < dT) usleep(100);
-    }
-    isstopped = TRUE;
-    return NULL;
-}
-
-int setDumpT(double dT){
-    if(dT < 0.){
-        WARNX("Time interval should be > 0");
-        return FALSE;
-    }
-    dumpTime = dT;
-    DBG("user give dT: %g", dT);
-    return TRUE;
-}
-
-int rundump(){
-    if(!dumpfile){
-        WARNX("Open dump file first");
-        return FALSE;
-    }
-    pthread_t thread;
-    if(pthread_create(&thread, NULL, dumpthread, (void*)&dumpTime)){
-        WARN("Can't create dumping thread");
-        return FALSE;
-    }
-    DBG("Thread created, detach");
-    pthread_detach(thread);
-    return TRUE;
-}
 
 void close_modbus(){
     if(modbus_ctx){
@@ -277,14 +70,14 @@ int write_entry(dicentry_t *entry){
 }
 
 // write multiply regs (without checking by dict) by NULL-terminated array "reg=val"; return amount of items written
-int write_regval(char **keyval){
+int write_regval(char **regval){
     int written = 0;
     dicentry_t entry = {0};
-    while(*keyval){
-        DBG("Parse %s", *keyval);
+    while(*regval){
+        DBG("Parse %s", *regval);
         char key[SL_KEY_LEN], value[SL_VAL_LEN];
-        if(2 != sl_get_keyval(*keyval, key, value)){
-            WARNX("%s isn't in format reg=val", *keyval);
+        if(2 != sl_get_keyval(*regval, key, value)){
+            WARNX("%s isn't in format reg=val", *regval);
         }else{
             DBG("key: %s, val: %s", key, value);
             int r=-1, v=-1;
@@ -299,7 +92,7 @@ int write_regval(char **keyval){
                 }else verbose(LOGLEVEL_WARN, "Can't write %u to register %u", entry.value, entry.reg);
             }
         }
-        ++keyval;
+        ++regval;
     }
     return written;
 }
@@ -374,28 +167,8 @@ int set_slave(int ID){
     return ret;
 }
 
-// dump all registers by input dictionary into output; also modify values of registers in dictionary
-int dumpall(const char *outdic){
-    if(!chkdict()) return -1;
-    int got = 0;
-    FILE *o = fopen(outdic, "w");
-    if(!o){
-        WARN("Can't open %s", outdic);
-        return -1;
-    }
-    for(int i = 0; i < dictsize; ++i){
-        if(read_entry(&dictionary[i])){
-            verbose(LOGLEVEL_MSG, "Read register %d, value: %d\n", dictionary[i].reg, dictionary[i].value);
-            ++got;
-            fprintf(o, "%s %4" PRIu16 " %4" PRIu16 " %" PRIu8 "\n", dictionary[i].code, dictionary[i].reg, dictionary[i].value, dictionary[i].readonly);
-        }else verbose(LOGLEVEL_WARN, "Can't read value of register %d\n", dictionary[i].reg);
-    }
-    fclose(o);
-    return got;
-}
-
-// read dump register values and dump to stdout
-void dumpregs(int **addresses){
+// read dump register values (not checking in dict) and dump to stdout (not modifying dictionary)
+void read_registers(int **addresses){
     dicentry_t entry = {0};
     green("Dump registers: (reg val)\n");
     while(*addresses){
@@ -411,8 +184,8 @@ void dumpregs(int **addresses){
     }
     printf("\n");
 }
-// `dumpregs` but by keycodes (not modifying dictionary)
-void dumpcodes(char **keycodes){
+// `read_registers` but by keycodes (not modifying dictionary)
+void read_keycodes(char **keycodes){
     if(!chkdict()) return;
     dicentry_t entry = {0};
     green("Dump registers: (code (reg) val)\n");

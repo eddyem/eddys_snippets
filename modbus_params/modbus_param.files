@@ -1,3 +1,5 @@
+dictionary.c
+dictionary.h
 main.c
 modbus.c
 modbus.h

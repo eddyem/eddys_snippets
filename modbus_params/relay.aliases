@@ -1,0 +1,15 @@
+# aliases for test purposes
+
+allon : id = 5 # turn all on
+alloff: id = 0 # turn all off
+get   : id
+#wrong:
+  : test3 = stop
+help :
+some wrong
+# good but with space inside
+  space test    : test3 = 0
+# newer call
+test1 : test2
+# no newline
+got   : test1

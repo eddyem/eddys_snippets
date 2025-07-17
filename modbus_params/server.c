@@ -19,8 +19,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "server.h"
+#include "dictionary.h"
 #include "modbus.h"
+#include "server.h"
 
 static sl_sock_t *s = NULL;
 
@@ -41,10 +42,58 @@ static sl_sock_hresult_e newdump(sl_sock_t *client, _U_ sl_sock_hitem_t *item, c
     }
     return RESULT_OK;
 }
+// list all dictionary or only given
+static sl_sock_hresult_e listdict(sl_sock_t *client, _U_ sl_sock_hitem_t *item, const char *req){
+    char buf[BUFSIZ];
+    size_t N = get_dictsize();
+    if(!N) return RESULT_FAIL;
+    if(!req){ // getter - list all
+        DBG("list all dict");
+        for(size_t i = 0; i < N; ++i){
+            if(dicentry_descrN(i, buf, BUFSIZ)){
+                sl_sock_sendstrmessage(client, buf);
+            }
+        }
+    }else{ // setter - list by code/reg
+        DBG("list %s", req);
+        dicentry_t *e = findentry_by_code(req);
+        if(!e){
+            DBG("User wants number?");
+            int x;
+            if(!sl_str2i(&x, req) || (x < 0 || x > UINT16_MAX)) return RESULT_BADVAL;
+            DBG("REG: %d", x);
+            e = findentry_by_reg((uint16_t)x);
+            if(!e) return RESULT_BADVAL;
+        }
+        if(!dicentry_descr(e, buf, BUFSIZ)) return RESULT_FAIL;
+        sl_sock_sendstrmessage(client, buf);
+    }
+    return RESULT_SILENCE;
+}
+// list all aliases
+static sl_sock_hresult_e listaliases(sl_sock_t *client, _U_ sl_sock_hitem_t *item, const char *req){
+    char buf[BUFSIZ];
+    size_t N = get_aliasessize();
+    if(!N) return RESULT_FAIL;
+    if(!req){ // all
+        for(size_t i = 0; i < N; ++i){
+            if(alias_descrN(i, buf, BUFSIZ)){
+                sl_sock_sendstrmessage(client, buf);
+            }
+        }
+    }else{
+        alias_t *a = find_alias(req);
+        if(!a || !alias_descr(a, buf, BUFSIZ)) return RESULT_FAIL;
+        sl_sock_sendstrmessage(client, buf);
+    }
+    return RESULT_SILENCE;
+}
 
 static sl_sock_hitem_t handlers[] = {
     {closedump, "clodump", "stop dump and close current dump file", NULL},
     {newdump, "newdump", "open new dump file or get name of current", NULL},
+    {listdict, "list", "list all dictionary (as getter) or given register (as setter: by codename or value)", NULL},
+    {listaliases, "alias", "list all of aliases (as getter) or with given name (by setter)", NULL},
     {NULL, NULL, NULL, NULL}
 };
 
@@ -76,11 +125,17 @@ static sl_sock_hresult_e defhandler(sl_sock_t *s, const char *str){
         entry = findentry_by_code(key);
     }
     if(!entry){
+        // check alias - should be non-setter!!!
+        if(n == 1){
+            alias_t *alias = find_alias(key);
+            if(alias) // recoursive call of defhandler
+                return defhandler(s, alias->expr);
+        }
         WARNX("Entry %s not found", key);
         return RESULT_BADKEY;
     }
     if(n == 1){ // getter
-        if(!read_entry(entry)) return RESULT_BADKEY;
+        if(!read_entry(entry)) return RESULT_FAIL;
         snprintf(value, SL_VAL_LEN-1, "%s=%u\n", key, entry->value);
     }else{ // setter
         if(!sl_str2i(&N, value)){

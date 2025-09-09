@@ -1,0 +1,487 @@
+/*
+ * This file is part of the mlxtest project.
+ * Copyright 2022 Edward V. Emelianov <edward.emelianoff@gmail.com>.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <math.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <usefull_macros.h>
+
+#include "mlx90640.h"
+#include "mlx90640_regs.h"
+
+// tolerance of floating point comparison
+#define FP_TOLERANCE    (1e-3)
+
+static fp_t mlx_image[MLX_PIXNO] = {0}; // ready image
+
+#ifdef EBUG
+static double Tlast = 0.;
+#define chstate()  do{Tlast = sl_dtime(); DBG("chstate()");}while(0)
+#endif
+
+void dumpIma(const fp_t im[MLX_PIXNO]){
+    for(int row = 0; row < MLX_H; ++row){
+        for(int col = 0; col < MLX_W; ++col){
+            printf("%5.1f ", *im++);
+        }
+        printf("\n");
+    }
+}
+
+static void chki(const char *name, int16_t param, int16_t standard){
+    printf("%*s | %-16d | %-16d - ", -16, name, param, standard);
+    if(param != standard){
+        red("NOT equal!\n"); exit(1);
+    }
+    printf("OK\n");
+}
+static void chkf(const char *name, fp_t param, fp_t standard){
+    printf("%*s | %-16g | %-16g - ", -16, name, param, standard);
+    fp_t diff = (fabs(param) + fabs(standard)) * FP_TOLERANCE;
+    if(fabs(param - standard) > diff){
+//        DBG("diff = %g", diff);
+        red("NOT equal!\n"); exit(1);
+    }
+    printf("OK\n");
+}
+static void chkfa(const char *name, const fp_t *ap, const fp_t *as, int n){
+    char buf[16];
+    snprintf(buf, 15, "(size %d)", n);
+    printf("%*s | %-16s | %-16s - ", -16, name, "(array)", buf);
+    for(int i = 0; i < n; ++i){
+        fp_t diff = (fabs(as[i]) + fabs(ap[i])) * FP_TOLERANCE;
+        if(fabs(ap[i] - as[i]) > diff){
+//            DBG("diff = %g", diff);
+            red("NOT equal on index %d (%g and %g)\n", i, ap[i], as[i]);
+            exit(1);
+        }
+    }
+    printf("OK");
+    if(n < 10){
+        for(int i = 0; i < n; ++i) printf(" %g", as[i]);
+    }
+    printf("\n");
+}
+static void chku8a(const char *name, const uint8_t *ap, const uint8_t *as, int n){
+    char buf[16];
+    snprintf(buf, 15, "(size %d)", n);
+    printf("%*s | %-16s | %-16s - ", -16, name, "(array)", buf);
+    for(int i = 0; i < n; ++i){
+        if(ap[i] != as[i]){
+            red("NOT equal on index %d (%d and %d)\n", i, ap[i], as[i]);
+            exit(1);
+        }
+    }
+    printf("OK");
+    if(n < 10){
+        for(int i = 0; i < n; ++i) printf(" %d", as[i]);
+    }
+    printf("\n");
+}
+void chkImage(const fp_t Image[MLX_PIXNO], const fp_t ToFrame[MLX_PIXNO]){
+    chkfa("Image", Image, ToFrame, MLX_PIXNO);
+}
+
+void dump_parameters(MLX90640_params *params, const MLX90640_params *standard){
+    printf("###########################################################\n");
+    printf("%*s | %*s | %*s\n###########################################################\n",
+           -16, "# name", -16, "value", -16, "standard");
+#define CHKI(f)  do{chki(#f, params->f, standard->f);}while(0)
+#define CHKF(f)  do{chkf(#f, params->f, standard->f);}while(0)
+#define CHKFA(f, n) do{chkfa(#f, params->f, standard->f, n);}while(0)
+#define CHKU8A(f, n) do{chku8a(#f, params->f, standard->f, n);}while(0)
+    CHKI(kVdd);
+    CHKI(vdd25);
+    CHKF(KvPTAT);
+    CHKI(vPTAT25);
+    CHKF(alphaPTAT);
+    CHKI(gainEE);
+    CHKF(tgc);
+    CHKF(cpKv);
+    CHKF(cpKta);
+    CHKF(KsTa);
+    CHKFA(CT, 3);
+    CHKFA(KsTo, 4);
+    CHKFA(alpha, MLX_PIXNO);
+    CHKFA(offset, MLX_PIXNO);
+    CHKFA(kta, MLX_PIXNO);
+    CHKFA(kv, 4);
+    CHKFA(cpAlpha, 2);
+    CHKI(resolEE);
+    CHKI(cpOffset[0]); CHKI(cpOffset[1]);
+    CHKU8A(outliers, MLX_PIXNO);
+#if 0
+    printf("kVdd=%d\nvdd25=%d\nKvPTAT=%g\nKtPTAT=%g\nvPTAT25=%d\n", params->kVdd, params->vdd25, params->KvPTAT, params->KtPTAT, params->vPTAT25);
+    printf("alphaPTAT=%g\ngainEE=%d\ntgc=%g\ncpKv=%g\ncpKta=%g\n", params->alphaPTAT, params->gainEE, params->tgc, params->cpKv, params->cpKta);
+    printf("KsTa=%g\nCT[]={%g, %g, %g}\n", params->KsTa, params->CT[0], params->CT[1], params->CT[2]);
+    printf("KsTo[]={"); for(int i = 0; i < 4; ++i) printf("%s%g", (i) ? ", " : "", params->KsTo[i]); printf("}\n");
+    printf("alphacorr[]={"); for(int i = 0; i < 4; ++i) printf("%s%g", (i) ? ", " : "", params->alphacorr[i]); printf("}\n");
+    printf("alpha[]=\n"); dumpIma(params->alpha);
+    printf("offset[]=\n"); dumpIma(params->offset);
+    printf("kta[]=\n"); dumpIma(params->kta);
+    printf("kv[]={"); for(int i = 0; i < 4; ++i) printf("%s%g", (i) ? ", " : "", params->kv[i]); printf("}\n");
+    printf("cpAlpha[]={%g, %g}\n", params->cpAlpha[0], params->cpAlpha[1]);
+    printf("cpOffset[]={%d, %d}\n", params->cpOffset[0], params->cpOffset[1]);
+    printf("outliers[]=\n");
+    uint8_t *o = params->outliers;
+    for(int row = 0; row < MLX_H; ++row){
+        for(int col = 0; col < MLX_W; ++col){
+            printf("%d ", *o++);
+        }
+        printf("\n");
+    }
+#endif
+#undef CHKI
+#undef CHKF
+}
+
+/*****************************************************************************
+                Calculate parameters & values
+ *****************************************************************************/
+
+// fill OCC/ACC row/col arrays
+static void occacc(int8_t *arr, int l, const uint16_t *regstart){
+    int n = l >> 2; // divide by 4
+    int8_t *p = arr;
+    for(int i = 0; i < n; ++i){
+        register uint16_t val = *regstart++;
+        *p++ = (val & 0x000F) >> 0;
+        *p++ = (val & 0x00F0) >> 4;
+        *p++ = (val & 0x0F00) >> 8;
+        *p++ = (val         ) >> 12;
+    }
+    for(int i = 0; i < l; ++i, ++arr){
+        if(*arr > 0x07) *arr -= 0x10;
+    }
+}
+
+// get all parameters' values from `dataarray`, return FALSE if something failed
+int get_parameters(const uint16_t dataarray[MLX_DMA_MAXLEN], MLX90640_params *params){
+    #define CREG_VAL(reg) dataarray[CREG_IDX(reg)]
+    int8_t i8;
+    int16_t i16;
+    uint16_t *pu16;
+    uint16_t val = CREG_VAL(REG_VDD);
+    i8 = (int8_t) (val >> 8);
+    params->kVdd = i8 * 32; // keep sign
+    if(params->kVdd == 0) return FALSE;
+    i16 = val & 0xFF;
+    params->vdd25 = ((i16 - 0x100) * 32) - (1<<13);
+    val = CREG_VAL(REG_KVTPTAT);
+    i16 = (val & 0xFC00) >> 10;
+    if(i16 > 0x1F) i16 -= 0x40;
+    params->KvPTAT = (fp_t)i16 / (1<<12);
+    i16 = (val & 0x03FF);
+    if(i16 > 0x1FF) i16 -= 0x400;
+    params->KtPTAT = (fp_t)i16 / 8.;
+    params->vPTAT25 = (int16_t) CREG_VAL(REG_PTAT);
+    val = CREG_VAL(REG_APTATOCCS) >> 12;
+    params->alphaPTAT = val / 4. + 8.;
+    params->gainEE = (int16_t)CREG_VAL(REG_GAIN);
+    if(params->gainEE == 0) return FALSE;
+    int8_t occRow[MLX_H];
+    int8_t occColumn[MLX_W];
+    occacc(occRow, MLX_H, &CREG_VAL(REG_OCCROW14));
+    occacc(occColumn, MLX_W, &CREG_VAL(REG_OCCCOL14));
+    int8_t accRow[MLX_H];
+    int8_t accColumn[MLX_W];
+    occacc(accRow, MLX_H, &CREG_VAL(REG_ACCROW14));
+    occacc(accColumn, MLX_W, &CREG_VAL(REG_ACCCOL14));
+    val = CREG_VAL(REG_APTATOCCS);
+    // need to do multiplication instead of bitshift, so:
+    fp_t occRemScale = 1<<(val&0x0F),
+          occColumnScale = 1<<((val>>4)&0x0F),
+          occRowScale = 1<<((val>>8)&0x0F);
+    int16_t offavg = (int16_t) CREG_VAL(REG_OSAVG);
+    // even/odd column/row numbers are for starting from 1, so for starting from 0 we should swap them:
+    // even - for 1,3,5,...; odd - for 0,2,4,... etc
+    int8_t ktaavg[4];
+    // 0 - odd row, odd col; 1 - odd row even col; 2 - even row, odd col; 3 - even row, even col
+    val = CREG_VAL(REG_KTAAVGODDCOL);
+    ktaavg[2] = (int8_t)(val & 0xFF); // odd col (1,3,..), even row (2,4,..) -> col 0,2,..; row 1,3,..
+    ktaavg[0] = (int8_t)(val >> 8); // odd col, odd row -> col 0,2,..; row 0,2,..
+    val = CREG_VAL(REG_KTAAVGEVENCOL);
+    ktaavg[3] = (int8_t)(val & 0xFF); // even col, even row -> col 1,3,..; row 1,3,..
+    ktaavg[1] = (int8_t)(val >> 8); // even col, odd row -> col 1,3,..; row 0,2,..
+    // so index of ktaavg is 2*(row&1)+(col&1)
+    val = CREG_VAL(REG_KTAVSCALE);
+    uint8_t scale1 = ((val & 0xFF)>>4) + 8, scale2 = (val&0xF);
+    if(scale1 == 0 || scale2 == 0) return FALSE;
+    fp_t mul = (fp_t)(1<<scale2), div = (fp_t)(1<<scale1); // kta_scales
+    uint16_t a_r = CREG_VAL(REG_SENSIVITY); // alpha_ref
+    val = CREG_VAL(REG_SCALEACC);
+    fp_t *a = params->alpha;
+    uint32_t diva32 = 1 << (val >> 12);
+    fp_t diva = (fp_t)(diva32);
+    diva *= (fp_t)(1<<30); // alpha_scale
+    DBG("diva: %g", diva);
+    fp_t accRowScale = 1<<((val & 0x0f00)>>8),
+          accColumnScale = 1<<((val & 0x00f0)>>4),
+          accRemScale = 1<<(val & 0x0f);
+    pu16 = (uint16_t*)&CREG_VAL(REG_OFFAK1);
+    fp_t *kta = params->kta, *offset = params->offset;
+    uint8_t *ol = params->outliers;
+    for(int row = 0; row < MLX_H; ++row){
+        int idx = (row&1)<<1;
+        for(int col = 0; col < MLX_W; ++col){
+            // offset
+            register uint16_t rv = *pu16++;
+            i16 = (rv & 0xFC00) >> 10;
+            if(i16 > 0x1F) i16 -= 0x40;
+            *offset++ = (fp_t)offavg + (fp_t)occRow[row]*occRowScale + (fp_t)occColumn[col]*occColumnScale + (fp_t)i16*occRemScale;
+            // kta
+            i16 = (rv & 0xF) >> 1;
+            if(i16  > 0x03) i16 -= 0x08;
+            *kta++ = (ktaavg[idx|(col&1)] + i16*mul) / div;
+            // alpha
+            i16 = (rv & 0x3F0) >> 4;
+            if(i16 > 0x1F) i16 -= 0x40;
+            fp_t oft = (fp_t)a_r + accRow[row]*accRowScale + accColumn[col]*accColumnScale +i16*accRemScale;
+            *a++ = oft / diva;
+            *ol++ = (rv&1) ? 1 : 0;
+        }
+    }
+    scale1 = (CREG_VAL(REG_KTAVSCALE) >> 8) & 0xF; // kvscale
+    div = (fp_t)(1<<scale1);
+    val = CREG_VAL(REG_KVAVG);
+    // kv indexes: +2 for odd (нечетных) rows, +1 for odd columns, so:
+    // [ 3, 2; 1, 0] for left upper corner (because datashit counts from 1, not from 0!)
+    i16 = val >> 12; if(i16 > 0x07) i16 -= 0x10;
+    ktaavg[0] = (int8_t)i16; // odd col, odd row
+    i16 = (val & 0xF0) >> 4; if(i16 > 0x07) i16 -= 0x10;
+    ktaavg[1] = (int8_t)i16; // even col, odd row
+    i16 = (val & 0x0F00) >> 8; if(i16 > 0x07) i16 -= 0x10;
+    ktaavg[2] = (int8_t)i16; // odd col, even row
+    i16 = val & 0x0F; if(i16 > 0x07) i16 -= 0x10;
+    ktaavg[3] = (int8_t)i16; // even col, even row
+    for(int i = 0; i < 4; ++i) params->kv[i] = ktaavg[i] / div;
+    val = CREG_VAL(REG_CPOFF);
+    params->cpOffset[0] = (val & 0x03ff);
+    if(params->cpOffset[0] > 0x1ff) params->cpOffset[0] -= 0x400;
+    params->cpOffset[1] = val >> 10;
+    if(params->cpOffset[1] > 0x1f) params->cpOffset[1] -= 0x40;
+    params->cpOffset[1] += params->cpOffset[0];
+    val = ((CREG_VAL(REG_KTAVSCALE) & 0xF0) >> 4) + 8;
+    i8 = (int8_t)(CREG_VAL(REG_KVTACP) & 0xFF);
+    params->cpKta = (fp_t)i8 / (1<<val);
+    val = (CREG_VAL(REG_KTAVSCALE) & 0x0F00) >> 8;
+    i16 = CREG_VAL(REG_KVTACP) >> 8;
+    if(i16 > 0x7F) i16 -= 0x100;
+    params->cpKv = (fp_t)i16 / (1<<val);
+    i16 = CREG_VAL(REG_KSTATGC) & 0xFF;
+    if(i16 > 0x7F) i16 -= 0x100;
+    params->tgc = (fp_t)i16;
+    params->tgc /= 32.;
+    val = (CREG_VAL(REG_SCALEACC)>>12); // alpha_scale_CP
+    i16 = CREG_VAL(REG_ALPHA)>>10; // cp_P1_P0_ratio
+    if(i16 > 0x1F) i16 -= 0x40;
+    div = (fp_t)(1<<val);
+    div *= (fp_t)(1<<27);
+    params->cpAlpha[0] = (fp_t)(CREG_VAL(REG_ALPHA) & 0x03FF) / div;
+    div = (fp_t)(1<<7);
+    params->cpAlpha[1] = params->cpAlpha[0] * (1. + (fp_t)i16/div);
+    i8 = (int8_t)(CREG_VAL(REG_KSTATGC) >> 8);
+    params->KsTa = (fp_t)i8/(1<<13);
+    div = 1<<((CREG_VAL(REG_CT34) & 0x0F) + 8); // kstoscale
+    DBG("kstoscale=%g (regct34=0x%04x)", div, CREG_VAL(REG_CT34));
+    val = CREG_VAL(REG_KSTO12);
+    DBG("ksto12=0x%04x", val);
+    i8 = (int8_t)(val & 0xFF);
+    DBG("To1ee=%d", i8);
+    params->KsTo[0] = i8 / div;
+    i8 = (int8_t)(val >> 8);
+    DBG("To2ee=%d", i8);
+    params->KsTo[1] = i8 / div;
+    val = CREG_VAL(REG_KSTO34);
+    DBG("ksto34=0x%04x", val);
+    i8 = (int8_t)(val & 0xFF);
+    DBG("To3ee=%d", i8);
+    params->KsTo[2] = i8 / div;
+    i8 = (int8_t)(val >> 8);
+    DBG("To4ee=%d", i8);
+    params->KsTo[3] = i8 / div;
+    // CT1 = -40, CT2 = 0 -> start from zero index, so CT[0] is CT2, CT[1] is CT3, CT[2] is CT4
+    params->CT[0] = 0.; // 0degr - between ranges 1 and 2
+    val = CREG_VAL(REG_CT34);
+    mul = ((val & 0x3000)>>12)*10.; // step
+    params->CT[1] = ((val & 0xF0)>>4)*mul; // CT3 - between ranges 2 and 3
+    params->CT[2] = ((val & 0x0F00) >> 8)*mul + params->CT[1]; // CT4 - between ranges 3 and 4
+    // alphacorr for each range: 11.1.11
+    params->alphacorr[0] = 1./(1. + params->KsTo[0] * 40.);
+    params->alphacorr[1] = 1.;
+    params->alphacorr[2] = (1. + params->KsTo[1] * params->CT[1]);
+    params->alphacorr[3] = (1. + params->KsTo[2] * (params->CT[2] - params->CT[1])) * params->alphacorr[2];
+    params->resolEE = (uint8_t)((CREG_VAL(REG_KTAVSCALE) & 0x3000) >> 12);
+    // Don't forget to check 'outlier' flags for wide purpose
+    return TRUE;
+#undef CREG_VAL
+}
+
+/**
+ * @brief process_subpage - calculate all parameters from `dataarray` into `mlx_image`
+ * @param subpageno - number of subpage
+ * @param simpleimage == 0 - simplest, 1 - narrow range, 2 - extended range
+ */
+fp_t *process_subpage(MLX90640_params *params, const int16_t Frame[MLX_DMA_MAXLEN], int subpageno, int simpleimage){
+#define IMD_VAL(reg) Frame[IMD_IDX(reg)]
+    DBG("\nprocess_subpage(%d)", subpageno);
+#ifdef EBUG
+    chstate();
+#endif
+    // 11.2.2.1. Resolution restore
+    // temporary:
+    fp_t resol_corr = (fp_t)(1<<params->resolEE) / (1<<2); // calibrated resol/current resol
+    DBG("resolEE=%d, resolCur=%d", params->resolEE, 2);
+    //fp_t resol_corr = (fp_t)(1<<params->resolEE) / (1<<((reg_control_val[subpageno]&0x0C00)>>10)); // calibrated resol/current resol
+    //DBG("resolEE=%d, resolCur=%d", params->resolEE, ((reg_control_val[subpageno]&0x0C00)>>10));
+    // 11.2.2.2. Supply voltage value calculation
+    int16_t i16a = (int16_t)IMD_VAL(REG_IVDDPIX);
+    fp_t dvdd = resol_corr*i16a - params->vdd25;
+    dvdd /= params->kVdd;
+    fp_t dV = i16a - params->vdd25; // for next step
+    dV /= params->kVdd;
+    DBG("ram=%d, vdd25=%d, dvdd=%g, resol=%g", i16a, params->vdd25, dvdd, resol_corr);
+    DBG("Vd=%g", dvdd+3.3);
+    // 11.2.2.3. Ambient temperature calculation
+    i16a = (int16_t)IMD_VAL(REG_ITAPTAT);
+    int16_t i16b = (int16_t)IMD_VAL(REG_ITAVBE);
+    fp_t dTa = (fp_t)i16a / (i16a * params->alphaPTAT + i16b); // vptatart
+    dTa *= (fp_t)(1<<18);
+    dTa = (dTa / (1. + params->KvPTAT*dV)) - params->vPTAT25;
+    dTa = dTa / params->KtPTAT; // without 25degr - Ta0
+    DBG("Ta=%g", dTa+25.);
+    // 11.2.2.4. Gain parameter calculation
+    i16a = (int16_t)IMD_VAL(REG_IGAIN);
+    fp_t Kgain = params->gainEE / (fp_t)i16a;
+    DBG("Kgain=%g", Kgain);
+    fp_t pixOS[2]; // pix_gain_CP_SPx
+    // 11.2.2.6.1
+    pixOS[0] = ((int16_t)IMD_VAL(REG_ICPSP0))*Kgain; // pix_OS_CP_SPx
+    pixOS[1] = ((int16_t)IMD_VAL(REG_ICPSP1))*Kgain;
+    DBG("pixGain: %g/%g", pixOS[0], pixOS[1]);
+    for(int i = 0; i < 2; ++i){ // calc pixOS by gain
+        // 11.2.2.6.2
+        pixOS[i] -= params->cpOffset[i]*(1. + params->cpKta*dTa)*(1. + params->cpKv*dvdd);
+    }
+    // now make first approximation to image
+    uint16_t pixno = 0;  // current pixel number - for indexing in parameters etc
+    for(int row = 0, rowidx = 0; row < MLX_H; ++row, rowidx ^= 2){
+        for(int col = 0, idx = rowidx; col < MLX_W; ++col, ++pixno, idx ^= 1){
+            uint8_t sp = (row&1)^(col&1); // subpage of current pixel
+            if(sp != subpageno) continue;
+            // 11.2.2.5.1
+            fp_t curval = (fp_t)(Frame[pixno]) * Kgain; // gain compensation
+            // 11.2.2.5.3
+            curval -= params->offset[pixno] * (1. + params->kta[pixno]*dTa) *
+                    (1. + params->kv[idx]*dvdd); // add offset
+            // now `curval` is pix_OS == V_IR_emiss_comp
+            // 11.2.2.7
+            fp_t IRcompens = curval - params->tgc * pixOS[subpageno]; // IR_compensated
+            if(simpleimage == 0){ // ???
+                curval = IRcompens;
+                /*
+                curval -= params->cpOffset[subpageno] * (1. - params->cpKta * dTa) *
+                        (1. + params->cpKv * dvdd); // CP
+                curval = IRcompens - params->tgc * curval; // IR gradient compens
+                */
+            }else{
+                // 11.2.2.8
+                fp_t alphaComp = params->alpha[pixno] - params->tgc * params->cpAlpha[subpageno];
+                alphaComp /= 1. + params->KsTa * dTa;
+                // 11.2.2.9: calculate To for basic range
+                fp_t Tar = dTa + 273.15 + 25.; // Ta+273.15
+                Tar = Tar*Tar*Tar*Tar; // T_aK4 (when \epsilon==1 this is T_{a-r} too)
+                fp_t ac3 = alphaComp*alphaComp*alphaComp;
+                fp_t Sx = ac3*IRcompens + alphaComp*ac3*Tar;
+                Sx = params->KsTo[1] * SQRT(SQRT(Sx));
+                fp_t To;
+                if(simpleimage == 1){
+                    To = IRcompens / (alphaComp * (1. - 273.15*params->KsTo[1]) + Sx) + Tar;
+                }else{ // extended range
+                    int idx = 0; // range 1 by default
+                    fp_t ctx = -40.;
+                    if(curval > params->CT[0] && curval < params->CT[1]){ // range 2
+                        idx = 1; ctx = params->CT[0];
+                    }else if(curval < params->CT[2]){ // range 3
+                        idx = 2; ctx = params->CT[1];
+                    }else{ // range 4
+                        idx = 3; ctx = params->CT[2];
+                    }
+                    To = IRcompens / (alphaComp * params->alphacorr[idx] * (1. + params->KsTo[idx]*(curval - ctx))) + Tar;
+                }
+                curval = SQRT(SQRT(To)) - 273.15;
+            }
+            mlx_image[pixno] = curval;
+        }
+    }
+    DBG("Time: %g", sl_dtime()-Tlast);
+    return mlx_image;
+#undef IMD_VAL
+}
+#if 0
+// start image acquiring for next subpage
+static int process_startima(int subpageno){
+    chstate();
+    DBG("startima(%d)", subpageno);
+    uint16_t reg, N;
+    while(1){
+        // write `overwrite` flag twice
+        if(!write_reg(REG_CONTROL, reg_control_val[subpageno]) ||
+                !write_reg(REG_STATUS, REG_STATUS_OVWEN) ||
+                !write_reg(REG_STATUS, REG_STATUS_OVWEN)) chkerr();
+        while(1){
+            if(read_reg(REG_STATUS, &reg)){
+                if(reg & REG_STATUS_NEWDATA){
+                    DBG("got newdata: %g", sl_dtime() - Tlast);
+                    if(subpageno != (reg & REG_STATUS_SPNO)){
+                        DBG("wrong subpage number -> M_ERROR");
+                        return FALSE;
+                    }else{ // all OK, run image reading
+                        chstate();
+                        write_reg(REG_STATUS, 0); // clear rdy bit
+                        N = MLX_PIXARRSZ;
+                        if(read_data(REG_IMAGEDATA, &N) && N == MLX_PIXARRSZ){
+                            DBG("got readoutm N=%d: %g", N, sl_dtime() - Tlast);
+                            return TRUE;
+                        }else chkerr();
+                    }
+                }else chktmout();
+            }else chkerr();
+        }
+    }
+    return FALSE;
+}
+
+// if state of MLX allows, make an image else return error
+// @param simple ==1 for simplest image processing (without T calibration)
+int mlx90640_take_image(uint8_t simple, fp_t **image){
+    if(I2Cfd < 1) return FALSE;
+    if(params->kVdd == 0){ // no parameters -> make first run
+        if(!process_firstrun()) return FALSE;
+    }
+    DBG("\n\n\n-> M_STARTIMA");
+    for(int sp = 0; sp < 2; ++sp){
+        if(!process_startima(sp)) return FALSE; // get first subpage
+        process_subpage(sp, simple);
+    }
+    if(image) *image = mlx_image;
+    return TRUE;
+}
+
+#endif

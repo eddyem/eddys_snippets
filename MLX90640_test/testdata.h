@@ -30,12 +30,13 @@ static const uint16_t EEPROM[MLX_DMA_MAXLEN] = {
     #include "eeprom.csv"
 };
 
-static const int16_t FRAME0[MLX_DMA_MAXLEN] = {
+static const int16_t DataFrame[2][MLX_DMA_MAXLEN] = {
+    {
     #include "frame0.csv"
-};
-
-static const int16_t FRAME1[MLX_DMA_MAXLEN] = {
+    },
+    {
     #include "frame1.csv"
+    }
 };
 
 static const MLX90640_params extracted_parameters = {
@@ -75,7 +76,7 @@ static const fp_t ToFrame[2][MLX_PIXNO] = {
 #include "to_frame0.csv"
     },
     {
-#include "to_frame0.csv"
+#include "to_frame1.csv"
     }
 };
 

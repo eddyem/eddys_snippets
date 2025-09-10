@@ -30,12 +30,14 @@ int main (int _U_ argc, char _U_ **argv){
     MLX90640_params p;
     if(!get_parameters(EEPROM, &p)) ERRX("Can't get parameters from test data");
     dump_parameters(&p, &extracted_parameters);
+    fp_t *sp;
     for(int i = 0; i < 2; ++i){
         printf("Process subpage %d\n", i);
-        fp_t *sp = process_subpage(&p, FRAME0, i, 2);
+        sp = process_subpage(&p, DataFrame[i], i, 2);
         if(!sp) ERRX("WTF?");
         dumpIma(sp);
         chkImage(sp, ToFrame[i]);
     }
+    drawIma(sp);
     return 0;
 }

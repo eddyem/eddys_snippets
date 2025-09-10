@@ -44,6 +44,39 @@ void dumpIma(const fp_t im[MLX_PIXNO]){
     }
 }
 
+#define GRAY_LEVELS     (16)
+// 16-level character set ordered by fill percentage (provided by user)
+static const char* CHARS_16 = " .':;+*oxX#&%B$@";
+void drawIma(const fp_t im[MLX_PIXNO]){
+    // Find min and max values
+    fp_t min_val = im[0], max_val = im[0];
+    const fp_t *iptr = im;
+    for(int row = 0; row < MLX_H; ++row){
+        for(int col = 0; col < MLX_W; ++col){
+            fp_t cur = *iptr++;
+            if(cur < min_val) min_val = cur;
+            else if(cur > max_val) max_val = cur;
+        }
+    }
+    fp_t range = max_val - min_val;
+    if(fabs(range) < 0.001) range = 1.; // solid fill -> blank
+    // Generate and print ASCII art
+    iptr = im;
+    for(int row = 0; row < MLX_H; ++row){
+        for(int col = 0; col < MLX_W; ++col){
+            fp_t normalized = ((*iptr++) - min_val) / range;
+            // Map to character index (0 to 15)
+            int index = (int)(normalized * (GRAY_LEVELS-1) + 0.5);
+            // Ensure we stay within bounds
+            if(index < 0) index = 0;
+            else if(index > (GRAY_LEVELS-1)) index = (GRAY_LEVELS-1);
+            putchar(CHARS_16[index]);
+        }
+        putchar('\n');
+    }
+    printf("\nTemperature range: %.2f to %.2f\n", min_val, max_val);
+}
+
 static void chki(const char *name, int16_t param, int16_t standard){
     printf("%*s | %-16d | %-16d - ", -16, name, param, standard);
     if(param != standard){
@@ -390,42 +423,38 @@ fp_t *process_subpage(MLX90640_params *params, const int16_t Frame[MLX_DMA_MAXLE
             // 11.2.2.5.3
             curval -= params->offset[pixno] * (1. + params->kta[pixno]*dTa) *
                     (1. + params->kv[idx]*dvdd); // add offset
-            // now `curval` is pix_OS == V_IR_emiss_comp
-            // 11.2.2.7
-            fp_t IRcompens = curval - params->tgc * pixOS[subpageno]; // IR_compensated
-            if(simpleimage == 0){ // ???
+            // now `curval` is pix_OS == V_IR_emiss_comp (we can divide it by `emissivity` to compensate for it)
+            // 11.2.2.7: 'Pattern' is just subpage number!
+            fp_t IRcompens = curval - params->tgc * pixOS[subpageno]; // 11.2.2.8. Normalizing to sensitivity
+            if(simpleimage == 0){ // 13.3. Using the device in ?image mode?
                 curval = IRcompens;
-                /*
-                curval -= params->cpOffset[subpageno] * (1. - params->cpKta * dTa) *
-                        (1. + params->cpKv * dvdd); // CP
-                curval = IRcompens - params->tgc * curval; // IR gradient compens
-                */
             }else{
                 // 11.2.2.8
                 fp_t alphaComp = params->alpha[pixno] - params->tgc * params->cpAlpha[subpageno];
-                alphaComp /= 1. + params->KsTa * dTa;
+                alphaComp *= 1. + params->KsTa * dTa;
                 // 11.2.2.9: calculate To for basic range
                 fp_t Tar = dTa + 273.15 + 25.; // Ta+273.15
                 Tar = Tar*Tar*Tar*Tar; // T_aK4 (when \epsilon==1 this is T_{a-r} too)
                 fp_t ac3 = alphaComp*alphaComp*alphaComp;
                 fp_t Sx = ac3*IRcompens + alphaComp*ac3*Tar;
                 Sx = params->KsTo[1] * SQRT(SQRT(Sx));
-                fp_t To;
-                if(simpleimage == 1){
-                    To = IRcompens / (alphaComp * (1. - 273.15*params->KsTo[1]) + Sx) + Tar;
-                }else{ // extended range
+                fp_t To4 = IRcompens / (alphaComp * (1. - 273.15*params->KsTo[1]) + Sx) + Tar;
+                curval = SQRT(SQRT(To4)) - 273.15;
+                if(simpleimage == 2){ // 11.2.2.9.1.3. Extended To range calculation
                     int idx = 0; // range 1 by default
                     fp_t ctx = -40.;
-                    if(curval > params->CT[0] && curval < params->CT[1]){ // range 2
-                        idx = 1; ctx = params->CT[0];
-                    }else if(curval < params->CT[2]){ // range 3
-                        idx = 2; ctx = params->CT[1];
-                    }else{ // range 4
+                    if(curval > params->CT[2]){ // range 4
                         idx = 3; ctx = params->CT[2];
+                    }else if(curval > params->CT[1]){ // range 3
+                        idx = 2; ctx = params->CT[1];
+                    }else if(curval > params->CT[0]){ // range 2, default
+                        idx = 1; ctx = params->CT[0];
                     }
-                    To = IRcompens / (alphaComp * params->alphacorr[idx] * (1. + params->KsTo[idx]*(curval - ctx))) + Tar;
+                    if(idx != 1){ // recalculate for extended range if we are out of standard range
+                        To4 = IRcompens / (alphaComp * params->alphacorr[idx] * (1. + params->KsTo[idx]*(curval - ctx))) + Tar;
+                        curval = SQRT(SQRT(To4)) - 273.15;
+                    }
                 }
-                curval = SQRT(SQRT(To)) - 273.15;
             }
             mlx_image[pixno] = curval;
         }

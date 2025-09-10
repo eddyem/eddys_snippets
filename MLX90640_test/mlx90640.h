@@ -64,3 +64,4 @@ void dump_parameters(MLX90640_params *params, const MLX90640_params *standard);
 fp_t *process_subpage(MLX90640_params *params, const int16_t Frame[MLX_DMA_MAXLEN], int subpageno, int simpleimage);
 void chkImage(const fp_t Image[MLX_PIXNO], const fp_t ToFrame[MLX_PIXNO]);
 void dumpIma(const fp_t im[MLX_PIXNO]);
+void drawIma(const fp_t im[MLX_PIXNO]);

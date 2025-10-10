@@ -17,24 +17,6 @@
 
 #pragma once
 
-#include <stdint.h>
+#include "sensor.h"
 
-#ifndef FALSE
-#define FALSE 0
-#endif
-#ifndef TRUE
-#define TRUE 1
-#endif
-
-int i2c_open(const char *path);
-void i2c_close();
-int i2c_set_slave_address(uint8_t addr);
-int i2c_write_raw(uint8_t *data, int len);
-int i2c_read_raw(uint8_t *data, int len);
-int i2c_read_reg8(uint8_t regaddr, uint8_t *data);
-int i2c_write_reg8(uint8_t regaddr, uint8_t data);
-int i2c_read_data8(uint8_t regaddr, uint16_t N, uint8_t *array);
-int i2c_read_reg16(uint16_t regaddr, uint16_t *data);
-int i2c_write_reg16(uint16_t regaddr, uint16_t data);
-int i2c_read_data16(uint16_t regaddr, uint16_t N, uint8_t *array);
-
+extern sensor_t AHT10;

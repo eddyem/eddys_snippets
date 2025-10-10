@@ -147,6 +147,7 @@ static int BMP180_init(){
         DBG("B1=%d, B2=%d", CaliData.B1, CaliData.B2);
         DBG("MB=%d, MC=%d, MD=%d", CaliData.MB, CaliData.MC, CaliData.MD);
     }
+    bmpstatus = SENS_RELAX;
     return TRUE;
 }
 
@@ -245,7 +246,7 @@ ret:
 
 // read data & convert it
 static int BMP180_getdata(sensor_data_t *d){
-    if(!d) return FALSE;
+    if(!d || bmpstatus != SENS_RDY) return FALSE;
     d->T = Tmeasured;
     d->P = Pmeasured / 100.; // convert Pa to hPa
     bmpstatus = SENS_RELAX;

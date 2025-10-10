@@ -19,12 +19,13 @@
 #include <string.h>
 #include <usefull_macros.h>
 
+#include "aht.h"
 #include "BMP180.h"
 #include "i2c.h"
 #include "sensor.h"
 
 // NULL-terminated list of all supported sensors
-static const sensor_t* supported_sensors[] = {&BMP180, NULL};
+static const sensor_t* supported_sensors[] = {&AHT10, &BMP180, NULL};
 
 // just two stupid wrappers
 int sensors_open(const char *dev){

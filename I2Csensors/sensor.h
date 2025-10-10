@@ -44,6 +44,7 @@ typedef struct{
 
 typedef struct{
     const char *name;               // name
+    uint32_t private;               // private information (e.g. for almost similar sensors with some slight differences)
     uint8_t (*address)(uint8_t new);// set/get sensor's address (get - if `new`==0)
     int (*init)();                  // init device - only @ start after POR
     int (*start)();                 // start measuring

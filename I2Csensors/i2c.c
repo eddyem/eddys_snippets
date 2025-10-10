@@ -28,6 +28,29 @@
 static uint8_t lastaddr = 0;
 static int I2Cfd = -1;
 
+static int i2c_rw(uint8_t *data, int len, uint16_t flags){
+    struct i2c_msg m;
+    struct i2c_rdwr_ioctl_data x = {.msgs = &m, .nmsgs = 1};
+    m.addr = lastaddr;
+    m.flags = flags; // 0 for w and I2C_M_RD for read
+    m.len = len;
+    m.buf = data;
+    if(ioctl(I2Cfd, I2C_RDWR, &x) < 0){
+        WARN("i2c_read_reg16, ioctl()");
+        return FALSE;
+    }
+    return TRUE;
+}
+
+int i2c_write_raw(uint8_t *data, int len){
+    if(!data || I2Cfd < 1 || len < 1) return FALSE;
+    return i2c_rw(data, len, 0);
+}
+int i2c_read_raw(uint8_t *data, int len){
+    if(!data || I2Cfd < 1 || len < 1) return FALSE;
+    return i2c_rw(data, len, I2C_M_RD);
+}
+
 /**
  * @brief i2c_read_reg8 - read 8-bit addressed register (8 bit)
  * @param regaddr - register address

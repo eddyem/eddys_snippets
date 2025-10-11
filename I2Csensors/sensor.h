@@ -43,21 +43,17 @@ typedef struct{
     double P;
 } sensor_data_t;
 
-typedef struct{
-    const char *name;               // name
-    uint32_t private;               // private information (e.g. for almost similar sensors with some slight differences)
-    uint8_t (*address)(uint8_t new);// set/get sensor's address (get - if `new`==0)
-    int (*init)();                  // init device - only @ start after POR
-    int (*start)();                 // start measuring
-    int (*heater)(int);             // turn heater on/off (1/0)
-    sensor_status_t (*process)();   // main polling process
-    sensor_props_t (*properties)(); // get properties
-    int (*get_data)(sensor_data_t*);// read data
-} sensor_t;
+//struct sensor_struct;
+typedef struct sensor_struct sensor_t;
 
 int sensors_open(const char *dev);
 void sensors_close();
-int sensor_init(const sensor_t *s, uint8_t address);
 void sensors_list();
-const sensor_t* sensor_find(const char *name);
-int sensor_start(const sensor_t *s);
+sensor_t* sensor_new(const char *name);
+void sensor_delete(sensor_t **s);
+sensor_props_t sensor_properties(sensor_t *s);
+int sensor_init(sensor_t *s, uint8_t address);
+int sensor_heater(sensor_t *s, int on);
+int sensor_start(sensor_t *s);
+sensor_status_t sensor_process(sensor_t *s);
+int sensor_getdata(sensor_t *s, sensor_data_t *d);

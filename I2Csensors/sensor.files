@@ -9,3 +9,4 @@ i2c.h
 main.c
 sensor.c
 sensor.h
+sensors_private.h

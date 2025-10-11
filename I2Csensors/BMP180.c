@@ -19,18 +19,18 @@
 #include <stdio.h>
 #include <usefull_macros.h>
 
-#include "i2c.h"
 #include "BMP180.h"
+#include "i2c.h"
+#include "sensors_private.h"
 
-static uint8_t addr = 0x77;
 
-typedef enum{
+enum{
     BMP180_OVERS_1 = 0, // oversampling is off
     BMP180_OVERS_2 = 1,
     BMP180_OVERS_4 = 2,
     BMP180_OVERS_8 = 3,
-    BMP180_OVERSMAX = 4
-} BMP180_oversampling;
+    BMP180_OVERSMAX = 3
+};
 
 #define BMP180_CHIP_ID  0x55
 
@@ -50,6 +50,8 @@ typedef enum{
 #define BMP180_CTRLM_OSS_SHIFT  (6)
 // start measurement
 #define BMP180_CTRLM_SCO        (1<<5)
+// measurements of P flag
+#define BMP180_CTRLM_PRES       (1<<4)
 // write it to BMP180_REG_SOFTRESET for soft reset
 #define BMP180_SOFTRESET_VAL    (0xB6)
 // start measurement of T/P
@@ -64,9 +66,10 @@ typedef enum{
 
 static waitmsr_t wait4 = WAIT_NONE;
 
-static BMP180_oversampling bmp180_os = BMP180_OVERSMAX;
+// mind that user can't change this
+static const uint8_t bmp180_os = BMP180_OVERSMAX;
 
-static struct {
+typedef struct {
     int16_t     AC1;
     int16_t     AC2;
     int16_t     AC3;
@@ -80,45 +83,35 @@ static struct {
     int16_t     MD;
     int32_t     MCfix;
     int32_t     AC1_fix;
-} __attribute__ ((packed)) CaliData = {0};
-
-static sensor_status_t bmpstatus = SENS_NOTINIT;
-static uint8_t calidata_rdy = 0;
-//static uint32_t milliseconds_start = 0; // time of measurement start
-//static uint32_t p_delay = 8; // delay for P measurement
-static uint8_t uncomp_data[3]; // raw uncompensated data
-static int32_t Tval; // uncompensated T value
-// compensated values:
-static uint32_t Pmeasured; // Pa
-static float  Tmeasured; // degC
-static uint8_t devID = 0;
+    int32_t     Tuncomp; // uncompensated T value
+} __attribute__ ((packed)) CaliData_t;
 
 /*
 static void BMP180_setOS(BMP180_oversampling os){
     bmp180_os = os & 0x03;
 }*/
-
 // get compensation data, return 1 if OK
-static int readcompdata(){
+static int readcompdata(sensor_t *s){
     FNAME();
-    if(!i2c_read_data8(BMP180_REG_CALIB, sizeof(CaliData), (uint8_t*)&CaliData)) return FALSE;
-    // convert big-endian into little-endian
-    uint8_t *arr = (uint8_t*)&CaliData;
-    for(int i = 0; i < (int)sizeof(CaliData); i+=2){
-        register uint8_t val = arr[i];
-        arr[i] = arr[i+1];
-        arr[i+1] = val;
+    if(!s->privdata){
+        s->privdata = malloc(sizeof(CaliData_t));
+        DBG("ALLOCA");
     }
+    if(!i2c_read_data8(BMP180_REG_CALIB, sizeof(CaliData_t), (uint8_t*)s->privdata)) return FALSE;
+    CaliData_t *CaliData = (CaliData_t*)s->privdata;
+    // convert big-endian into little-endian
+    uint16_t *arr = (uint16_t*)(s->privdata);
+    for(int i = 0; i < 11; ++i) arr[i] = __builtin_bswap16(arr[i]);
     // prepare for further calculations
-    CaliData.MCfix = CaliData.MC << 11;
-    CaliData.AC1_fix = CaliData.AC1 << 2;
-    calidata_rdy = 1;
+    CaliData->MCfix = CaliData->MC << 11;
+    CaliData->AC1_fix = CaliData->AC1 << 2;
+    s->private = 1; // use private for calibration ready flag
     DBG("Calibration rdy");
     return TRUE;
 }
 
 // do a soft-reset procedure
-static int BMP180_reset(){
+static int BMP180_reset(sensor_t _U_ *s){
     if(!i2c_write_reg8(BMP180_REG_SOFTRESET, BMP180_SOFTRESET_VAL)){
         DBG("Can't reset\n");
         return FALSE;
@@ -127,9 +120,10 @@ static int BMP180_reset(){
 }
 
 // read compensation data & write registers
-static int BMP180_init(){
-    bmpstatus = SENS_NOTINIT ;
-    if(!BMP180_reset()) return FALSE;
+static int BMP180_init(sensor_t *s){
+    s->status = SENS_NOTINIT;
+    if(!BMP180_reset(s)) return FALSE;
+    uint8_t devID;
     if(!i2c_read_reg8(BMP180_REG_ID, &devID)){
         DBG("Can't read BMP180_REG_ID");
         return FALSE;
@@ -139,50 +133,54 @@ static int BMP180_init(){
         DBG("Not BMP180\n");
         return FALSE;
     }
-    if(!readcompdata()){
+    if(!readcompdata(s)){
         DBG("Can't read calibration data\n");
         return FALSE;
     }else{
-        DBG("AC1=%d, AC2=%d, AC3=%d, AC4=%u, AC5=%u, AC6=%u", CaliData.AC1, CaliData.AC2, CaliData.AC3, CaliData.AC4, CaliData.AC5, CaliData.AC6);
-        DBG("B1=%d, B2=%d", CaliData.B1, CaliData.B2);
-        DBG("MB=%d, MC=%d, MD=%d", CaliData.MB, CaliData.MC, CaliData.MD);
+#ifdef EBUG
+        CaliData_t *CaliData = (CaliData_t*)s->privdata;
+#endif
+        DBG("AC1=%d, AC2=%d, AC3=%d, AC4=%u, AC5=%u, AC6=%u", CaliData->AC1, CaliData->AC2, CaliData->AC3, CaliData->AC4, CaliData->AC5, CaliData->AC6);
+        DBG("B1=%d, B2=%d", CaliData->B1, CaliData->B2);
+        DBG("MB=%d, MC=%d, MD=%d", CaliData->MB, CaliData->MC, CaliData->MD);
     }
-    bmpstatus = SENS_RELAX;
+    s->status = SENS_RELAX;
     return TRUE;
 }
 
 // start measurement, @return 1 if all OK
-static int BMP180_start(){
-    if(!calidata_rdy || bmpstatus == SENS_BUSY) return FALSE;
+static int BMP180_start(sensor_t *s){
+    if(!s->privdata || s->status == SENS_BUSY) return FALSE;
     uint8_t reg = BMP180_READ_T | BMP180_CTRLM_SCO;
     if(!i2c_write_reg8(BMP180_REG_CTRLMEAS, reg)){
-        bmpstatus = SENS_ERR;
+        s->status = SENS_ERR;
         DBG("Can't write CTRL reg\n");
         return FALSE;
     }
-    bmpstatus = SENS_BUSY;
+    s->status = SENS_BUSY;
     wait4 = WAIT_T;
     return TRUE;
 }
 
 
 // calculate T degC and P in Pa
-static inline void compens(uint32_t Pval){
+static inline void compens(sensor_t *s, uint32_t Pval){
+    CaliData_t *CaliData = (CaliData_t*)s->privdata;
     // T:
-    int32_t X1 = ((Tval - CaliData.AC6)*CaliData.AC5) >> 15;
-    int32_t X2 = CaliData.MCfix / (X1 + CaliData.MD);
+    int32_t X1 = ((CaliData->Tuncomp - CaliData->AC6)*CaliData->AC5) >> 15;
+    int32_t X2 = CaliData->MCfix / (X1 + CaliData->MD);
     int32_t B5 = X1 + X2;
-    Tmeasured = (B5 + 8.) / 160.;
+    s->data.T = (B5 + 8.) / 160.;
     // P:
     int32_t B6 = B5 - 4000;
-    X1 = (CaliData.B2 * ((B6*B6) >> 12)) >> 11;
-    X2 = (CaliData.AC2 * B6) >> 11;
+    X1 = (CaliData->B2 * ((B6*B6) >> 12)) >> 11;
+    X2 = (CaliData->AC2 * B6) >> 11;
     int32_t X3 = X1 + X2;
-    int32_t B3 = (((CaliData.AC1_fix + X3) << bmp180_os) + 2) >> 2;
-    X1 = (CaliData.AC3 * B6) >> 13;
-    X2 = (CaliData.B1 * ((B6 * B6) >> 12)) >> 16;
+    int32_t B3 = (((CaliData->AC1_fix + X3) << bmp180_os) + 2) >> 2;
+    X1 = (CaliData->AC3 * B6) >> 13;
+    X2 = (CaliData->B1 * ((B6 * B6) >> 12)) >> 16;
     X3 = ((X1 + X2) + 2) >> 2;
-    uint32_t B4 = (CaliData.AC4 * (uint32_t) (X3 + 32768)) >> 15;
+    uint32_t B4 = (CaliData->AC4 * (uint32_t) (X3 + 32768)) >> 15;
     uint32_t B7 = (uint32_t)((int32_t)Pval - B3) * (50000 >> bmp180_os);
     int32_t p = 0;
     if(B7 < 0x80000000){
@@ -194,86 +192,65 @@ static inline void compens(uint32_t Pval){
     X1 *= X1;
     X1 = (X1 * 3038) >> 16;
     X2 = (-7357 * p) / 65536;
-    Pmeasured = p + ((X1 + X2 + 3791) / 16);
+    s->data.P = (p + ((X1 + X2 + 3791) / 16)) / 100.; // convert to hPa
 }
 
-static int still_measuring(){
-    uint8_t reg;
-    if(!i2c_read_reg8(BMP180_REG_CTRLMEAS, &reg)) return TRUE;
-    if(reg & BMP180_CTRLM_SCO){
-        return TRUE;
-    }
-    return FALSE;
-}
-
-static sensor_status_t BMP180_process(){
-    uint8_t reg;
-    if(bmpstatus != SENS_BUSY) goto ret;
-    if(wait4 == WAIT_T){ // wait for temperature
-        if(still_measuring()) goto ret;
+static sensor_status_t BMP180_process(sensor_t *s){
+    uint8_t reg, stat;
+    uint8_t uncomp_data[3];
+    CaliData_t *CaliData = (CaliData_t*)s->privdata;
+    if(s->status != SENS_BUSY) goto ret;
+    if(!i2c_read_reg8(BMP180_REG_CTRLMEAS, &stat)){ s->status = SENS_ERR; goto ret; }
+    DBG("stat=0x%02X", stat);
+    if(stat & BMP180_CTRLM_SCO) goto ret; // still measure
+    if((stat & BMP180_CTRLM_PRES) == 0){ // wait for temperature
         // get uncompensated data
         DBG("Read uncompensated T\n");
         if(!i2c_read_data8(BMP180_REG_OUT, 2, uncomp_data)){
-            bmpstatus = SENS_ERR;
+            s->status = SENS_ERR;
             goto ret;
         }
-        Tval = uncomp_data[0] << 8 | uncomp_data[1];
-        DBG("Start P measuring\n");
+        CaliData->Tuncomp = uncomp_data[0] << 8 | uncomp_data[1];
+        DBG("Tuncomp=%d, Start P measuring\n", CaliData->Tuncomp);
         reg = BMP180_READ_P | BMP180_CTRLM_SCO | (bmp180_os << BMP180_CTRLM_OSS_SHIFT);
         if(!i2c_write_reg8(BMP180_REG_CTRLMEAS, reg)){
-            bmpstatus = SENS_ERR;
+            s->status = SENS_ERR;
             goto ret;
         }
-        wait4 = WAIT_P;
     }else{ // wait for pressure
-        if(still_measuring()) goto ret;
         DBG("Read uncompensated P\n");
         if(!i2c_read_data8(BMP180_REG_OUT, 3, uncomp_data)){
-            bmpstatus = SENS_ERR;
+            s->status = SENS_ERR;
             goto ret;
         }
         uint32_t Pval = uncomp_data[0] << 16 | uncomp_data[1] << 8 | uncomp_data[2];
         Pval >>= (8 - bmp180_os);
+        DBG("Puncomp=%d", Pval);
         // calculate compensated values
-        compens(Pval);
+        compens(s, Pval);
         DBG("All data ready\n");
-        bmpstatus = SENS_RDY; // data ready
-        wait4 = WAIT_NONE;
+        s->status = SENS_RDY; // data ready
     }
 ret:
-    return bmpstatus;
+    return s->status;
 }
 
-// read data & convert it
-static int BMP180_getdata(sensor_data_t *d){
-    if(!d || bmpstatus != SENS_RDY) return FALSE;
-    d->T = Tmeasured;
-    d->P = Pmeasured / 100.; // convert Pa to hPa
-    bmpstatus = SENS_RELAX;
-    return TRUE;
-}
-
-static sensor_props_t BMP180_props(){
+static sensor_props_t BMP180_props(sensor_t _U_ *s){
     sensor_props_t p = {.T = 1, .P = 1};
     return p;
 }
 
-static uint8_t address(uint8_t new){
-    if(new) addr = new;
-    return addr;
-}
-
-static int s_heater(int _U_ on){
+static int s_heater(sensor_t _U_ *s, int _U_ on){
     return FALSE;
 }
 
 sensor_t BMP180 = {
     .name = "BMP180",
-    .address = address,
+    .address = 0x77,
+    .status = SENS_NOTINIT,
     .init = BMP180_init,
     .start = BMP180_start,
     .heater = s_heater,
     .process = BMP180_process,
     .properties = BMP180_props,
-    .get_data = BMP180_getdata
 };

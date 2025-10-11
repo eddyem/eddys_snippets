@@ -19,11 +19,8 @@
 #include <usefull_macros.h>
 
 #include "i2c.h"
+#include "sensors_private.h"
 #include "SI7005.h"
-
-static uint8_t addr = 0x40;
-static double Tmeasured, Hmeasured;
-static sensor_status_t status = SENS_NOTINIT;
 
 #define SI7005_REGSTATUS    0
 #define SI7005_STATUSNRDY   1
@@ -37,9 +34,9 @@ static sensor_status_t status = SENS_NOTINIT;
 
 #define SI7005_ID           0x50
 
-static int s_init(){
+static int s_init(sensor_t *s){
     uint8_t ID;
-    status = SENS_NOTINIT;
+    s->status = SENS_NOTINIT;
     if(!i2c_read_reg8(SI7005_REGID, &ID)){
         DBG("Can't read SI_REG_ID");
         return FALSE;
@@ -49,16 +46,16 @@ static int s_init(){
         DBG("Not SI7005\n");
         return FALSE;
     }
-    status = SENS_RELAX;
+    s->status = SENS_RELAX;
     return TRUE;
 }
 
-static int s_start(){
-    if(status != SENS_RELAX) return FALSE;
-    status = SENS_BUSY;
+static int s_start(sensor_t *s){
+    if(s->status != SENS_RELAX) return FALSE;
+    s->status = SENS_BUSY;
     if(!i2c_write_reg8(SI7005_REGCONFIG, SI7005_CONFTEMP | SI7005_CONFSTART)){
         DBG("Can't write start Tmeas");
-        status = SENS_ERR;
+        s->status = SENS_ERR;
         return FALSE;
     }
     DBG("Wait for T\n");
@@ -66,64 +63,57 @@ static int s_start(){
 }
 
 // start humidity measurement
-static sensor_status_t si7005_cmdH(){
-    status = SENS_BUSY;
+static sensor_status_t si7005_cmdH(sensor_t *s){
+    s->status = SENS_BUSY;
     if(!i2c_write_reg8(SI7005_REGCONFIG, SI7005_CONFSTART)){
         DBG("Can't write start Hmeas");
-        return (status = SENS_ERR);
+        return (s->status = SENS_ERR);
     }
     DBG("Wait for H");
-    return status;
+    return s->status;
 }
 
-static sensor_status_t s_process(){
+static sensor_status_t s_process(sensor_t *s){
     uint8_t c, d[3];
-    if(status != SENS_BUSY) return status;
+    if(s->status != SENS_BUSY) return s->status;
     if(!i2c_read_raw(d, 3)){
         DBG("Can't read status");
-        return (status = SENS_ERR);
+        return (s->status = SENS_ERR);
     }
     //DBG("Status: 0x%02x, H: 0x%02x, L: 0x%02x", d[0], d[1], d[2]);
     if(!i2c_read_reg8(SI7005_REGCONFIG, &c)){
         DBG("Can't read config");
-        return (status = SENS_ERR);
+        return (s->status = SENS_ERR);
     }
     //DBG("Config: 0x%02x", c);
     if(d[0] & SI7005_STATUSNRDY){ // not ready yet
-        return status;
+        return s->status;
     }
     uint16_t TH = (uint16_t)((d[1]<<8) | d[2]);
     if(c & SI7005_CONFTEMP){ // temperature measured
         TH >>= 2;
-        Tmeasured = TH/32. - 50.;
+        double Tmeasured = TH/32. - 50.;
         DBG("T=%.2f", Tmeasured);
-        return si7005_cmdH();
+        s->data.T = Tmeasured;
+        return si7005_cmdH(s);
     }else{ // humidity measured
-        TH >>= 4;
-        Hmeasured = TH/16.f - 24.f;
-        DBG("H=%.1f", Hmeasured);
-        status = SENS_RDY;
-    }
-    return status;
-}
-
-static int s_getdata(sensor_data_t *d){
-    if(!d || status != SENS_RDY) return FALSE;
-    DBG("Measured T=%.1f, H=%.1f", Tmeasured, Hmeasured);
-    // correct T/H
+// correct T/H
 #define A0 (-4.7844)
 #define A1 (0.4008)
 #define A2 (-0.00393)
-    d->H = Hmeasured - (A2*Hmeasured*Hmeasured + A1*Hmeasured + A0);
-    d->T = Tmeasured;
-    status = SENS_RELAX;
-    return TRUE;
+        TH >>= 4;
+        double Hmeasured = TH/16.f - 24.f;
+        DBG("H=%.1f", Hmeasured);
+        s->data.H = Hmeasured - (A2*Hmeasured*Hmeasured + A1*Hmeasured + A0);
+        s->status = SENS_RDY;
+    }
+    return s->status;
 }
 
 // turn heater on/off (1/0)
-static int s_heater(int on){
-    DBG("status=%d", status);
-    if(status != SENS_RELAX) return FALSE;
+static int s_heater(sensor_t *s, int on){
+    DBG("status=%d", s->status);
+    if(s->status != SENS_RELAX) return FALSE;
     uint8_t reg = (on) ? SI7005_CONFHEAT : 0;
     if(!i2c_write_reg8(SI7005_REGCONFIG, reg)){
         DBG("Can't write regconfig");
@@ -132,23 +122,18 @@ static int s_heater(int on){
     return TRUE;
 }
 
-static sensor_props_t s_props(){
+static sensor_props_t s_props(sensor_t _U_ *s){
     sensor_props_t p = {.T = 1, .H = 1, .htr = 1};
     return p;
 }
 
-static uint8_t address(uint8_t new){
-    if(new) addr = new;
-    return addr;
-}
-
 sensor_t SI7005 = {
     .name = "SI7005",
-    .address = address,
+    .address = 0x40,
+    .status = SENS_NOTINIT,
     .init = s_init,
     .start = s_start,
     .heater = s_heater,
     .process = s_process,
     .properties = s_props,
-    .get_data = s_getdata
 };

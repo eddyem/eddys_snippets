@@ -47,7 +47,7 @@ static sl_option_t cmdlnopts[] = {
     end_option
 };
 
-static int start(const sensor_t *s, uint8_t addr){
+static int start(sensor_t *s, uint8_t addr){
     if(!sensor_init(s, addr)){
         WARNX("Can't init sensor");
         return FALSE;
@@ -59,14 +59,14 @@ static int start(const sensor_t *s, uint8_t addr){
     return TRUE;
 }
 
-static int printdata(const sensor_t *s){
+static int printdata(sensor_t *s){
     sensor_data_t D;
-    if(!s->get_data(&D)){
+    if(!sensor_getdata(s, &D)){
         WARNX("Can't read data, try again");
         if(!sensor_start(s)) WARNX("Oops: can't start");
         return FALSE;
     }
-    sensor_props_t props = s->properties();
+    sensor_props_t props = sensor_properties(s);
     if(props.T) printf("T=%.2f\n", D.T);
     if(props.H) printf("H=%.2f\n", D.H);
     if(props.P){
@@ -87,19 +87,20 @@ int main(int argc, char **argv){
     if(!G.sensor) ERRX("Point sensor's name");
     if(G.slaveaddr && (G.slaveaddr < 8 || G.slaveaddr > 0x77)) ERRX("I2C address should be 7-bit and not forbidden");
     if(!sensors_open(G.device)) ERR("Can't open %s", G.device);
-    const sensor_t* s = sensor_find(G.sensor);
+    sensor_t* s = sensor_new(G.sensor);
     if(!s){ WARNX("Can't find sensor `%s` in supported list", G.sensor); goto clo; }
     if(G.heater > -1){
-        if(s->properties().htr && s->heater){
+        sensor_props_t props = sensor_properties(s);
+        if(props.htr){
             if(!sensor_init(s, G.slaveaddr)) ERRX("Can't init device");
-            if(!s->heater(G.heater)) WARNX("Cant run heater command");
+            if(!sensor_heater(s, G.heater)) WARNX("Cant run heater command");
             else green("Heater is %s\n", G.heater ? "on" : "off");
         }else ERRX("The sensor have no heater");
         return 0;
     }
     if(!start(s, G.slaveaddr)) goto clo;
     while(1){
-        sensor_status_t status = s->process();
+        sensor_status_t status = sensor_process(s);
         if(status == SENS_RDY){ // data ready - get it
             if(!printdata(s)) continue;
             break;
@@ -109,6 +110,7 @@ int main(int argc, char **argv){
         }
         usleep(10000);
     }
+    sensor_delete(&s);
 
 clo:
     sensors_close();

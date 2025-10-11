@@ -20,7 +20,7 @@
 #include <stdint.h>
 
 // timeout of i2c waiting
-#define SENS_TIMEOUT    (2.)
+#define I2C_TIMEOUT     (2.)
 
 typedef enum{
     SENS_NOTINIT,   // wasn't inited
@@ -31,9 +31,10 @@ typedef enum{
 } sensor_status_t;
 
 typedef struct{
-    uint8_t T : 1; // can temperature (degC)
-    uint8_t H : 1; // can humidity (percent)
-    uint8_t P : 1; // can pressure (hPa)
+    uint8_t T   : 1; // can temperature (degC)
+    uint8_t H   : 1; // can humidity (percent)
+    uint8_t P   : 1; // can pressure (hPa)
+    uint8_t htr : 1; // have heater
 } sensor_props_t;
 
 typedef struct{
@@ -48,6 +49,7 @@ typedef struct{
     uint8_t (*address)(uint8_t new);// set/get sensor's address (get - if `new`==0)
     int (*init)();                  // init device - only @ start after POR
     int (*start)();                 // start measuring
+    int (*heater)(int);             // turn heater on/off (1/0)
     sensor_status_t (*process)();   // main polling process
     sensor_props_t (*properties)(); // get properties
     int (*get_data)(sensor_data_t*);// read data

@@ -16,8 +16,6 @@
  */
 
 #pragma once
-
 #include "sensor.h"
 
-extern sensor_t AHT10;
-extern sensor_t AHT15;
+extern sensor_t SI7005;

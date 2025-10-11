@@ -1,5 +1,7 @@
 BMP180.c
 BMP180.h
+SI7005.c
+SI7005.h
 aht.c
 aht.h
 i2c.c

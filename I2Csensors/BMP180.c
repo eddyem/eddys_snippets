@@ -254,7 +254,7 @@ static int BMP180_getdata(sensor_data_t *d){
 }
 
 static sensor_props_t BMP180_props(){
-    sensor_props_t p = {.T = 1, .H = 0, .P = 1};
+    sensor_props_t p = {.T = 1, .P = 1};
     return p;
 }
 
@@ -263,11 +263,16 @@ static uint8_t address(uint8_t new){
     return addr;
 }
 
+static int s_heater(int _U_ on){
+    return FALSE;
+}
+
 sensor_t BMP180 = {
     .name = "BMP180",
     .address = address,
     .init = BMP180_init,
     .start = BMP180_start,
+    .heater = s_heater,
     .process = BMP180_process,
     .properties = BMP180_props,
     .get_data = BMP180_getdata

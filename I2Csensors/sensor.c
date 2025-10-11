@@ -23,9 +23,10 @@
 #include "BMP180.h"
 #include "i2c.h"
 #include "sensor.h"
+#include "SI7005.h"
 
 // NULL-terminated list of all supported sensors
-static const sensor_t* supported_sensors[] = {&AHT10, &BMP180, NULL};
+static const sensor_t* supported_sensors[] = {&AHT10, &AHT15, &BMP180, &SI7005, NULL};
 
 // just two stupid wrappers
 int sensors_open(const char *dev){
@@ -49,7 +50,7 @@ int sensor_init(const sensor_t *s, uint8_t address){
     }
     double t0 = sl_dtime();
     int result = FALSE;
-    while(sl_dtime() - t0 < SENS_TIMEOUT && !(result = s->init())) usleep(10000);
+    while(sl_dtime() - t0 < I2C_TIMEOUT && !(result = s->init())) usleep(10000);
     return result;
 }
 
@@ -80,6 +81,6 @@ int sensor_start(const sensor_t *s){
     if(!s) return FALSE;
     double t0 = sl_dtime();
     int result = FALSE;
-    while(sl_dtime() - t0 < SENS_TIMEOUT && !(result = s->start())) usleep(10000);
+    while(sl_dtime() - t0 < I2C_TIMEOUT && !(result = s->start())) usleep(10000);
     return result;
 }

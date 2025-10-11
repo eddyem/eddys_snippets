@@ -28,10 +28,12 @@ typedef struct{
     int list;
     int presmm;     // pressure in mm instead of hPa
     int help;
+    int heater;     // turn on/off heater (if present)
 } glob_pars;
 
 static glob_pars G = {
     .device = "/dev/i2c-6",
+    .heater = -1,
 };
 
 static sl_option_t cmdlnopts[] = {
@@ -41,6 +43,7 @@ static sl_option_t cmdlnopts[] = {
     {"sensor",  NEED_ARG,   NULL,   's',    arg_string, APTR(&G.sensor),    "sensor's name"},
     {"list",    NO_ARGS,    NULL,   'l',    arg_int,    APTR(&G.list),      "list all supported sensors"},
     {"presmm",  NO_ARGS,    NULL,   'm',    arg_int,    APTR(&G.presmm),    "pressure in mmHg instead of hPa"},
+    {"heater",  NEED_ARG,   NULL,   'H',    arg_int,    APTR(&G.heater),    "turn on/off heater (if present)"},
     end_option
 };
 
@@ -86,6 +89,14 @@ int main(int argc, char **argv){
     if(!sensors_open(G.device)) ERR("Can't open %s", G.device);
     const sensor_t* s = sensor_find(G.sensor);
     if(!s){ WARNX("Can't find sensor `%s` in supported list", G.sensor); goto clo; }
+    if(G.heater > -1){
+        if(s->properties().htr && s->heater){
+            if(!sensor_init(s, G.slaveaddr)) ERRX("Can't init device");
+            if(!s->heater(G.heater)) WARNX("Cant run heater command");
+            else green("Heater is %s\n", G.heater ? "on" : "off");
+        }else ERRX("The sensor have no heater");
+        return 0;
+    }
     if(!start(s, G.slaveaddr)) goto clo;
     while(1){
         sensor_status_t status = s->process();
@@ -96,6 +107,7 @@ int main(int argc, char **argv){
             WARNX("Error in measurement, try again");
             if(!start(s, G.slaveaddr)) break;
         }
+        usleep(10000);
     }
 
 clo:

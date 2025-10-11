@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [[ $# != 1 || $((-(-$1))) != $1 ]]; then
+	echo "Usage: $0 cnannel" >&2
+	exit 1
+fi
+
+if [[ $1 < 0 || $1 > 7 ]]; then
+	echo "Channel number should be from 0 to 7" >&2
+	exit 1
+fi
+
+echo $((1 << $1))
+
+i2ctransfer -y 6 w1@0x70 $((1 << $1))
+i2cdetect -y -r 6

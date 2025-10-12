@@ -58,14 +58,6 @@ enum{
 #define BMP180_READ_T           (0x0E)
 #define BMP180_READ_P           (0x14)
 
-typedef enum{
-    WAIT_T,
-    WAIT_P,
-    WAIT_NONE
-} waitmsr_t;
-
-static waitmsr_t wait4 = WAIT_NONE;
-
 // mind that user can't change this
 static const uint8_t bmp180_os = BMP180_OVERSMAX;
 
@@ -84,6 +76,7 @@ typedef struct {
     int32_t     MCfix;
     int32_t     AC1_fix;
     int32_t     Tuncomp; // uncompensated T value
+    uint8_t     calibrated; // ==1 if calibration done
 } __attribute__ ((packed)) CaliData_t;
 
 /*
@@ -94,7 +87,7 @@ static void BMP180_setOS(BMP180_oversampling os){
 static int readcompdata(sensor_t *s){
     FNAME();
     if(!s->privdata){
-        s->privdata = malloc(sizeof(CaliData_t));
+        s->privdata = calloc(1, sizeof(CaliData_t));
         DBG("ALLOCA");
     }
     if(!i2c_read_data8(BMP180_REG_CALIB, sizeof(CaliData_t), (uint8_t*)s->privdata)) return FALSE;
@@ -105,7 +98,7 @@ static int readcompdata(sensor_t *s){
     // prepare for further calculations
     CaliData->MCfix = CaliData->MC << 11;
     CaliData->AC1_fix = CaliData->AC1 << 2;
-    s->private = 1; // use private for calibration ready flag
+    CaliData->calibrated = 1;
     DBG("Calibration rdy");
     return TRUE;
 }
@@ -150,7 +143,7 @@ static int BMP180_init(sensor_t *s){
 
 // start measurement, @return 1 if all OK
 static int BMP180_start(sensor_t *s){
-    if(!s->privdata || s->status == SENS_BUSY) return FALSE;
+    if(!s->privdata || s->status == SENS_BUSY || ((CaliData_t*)s->privdata)->calibrated == 0) return FALSE;
     uint8_t reg = BMP180_READ_T | BMP180_CTRLM_SCO;
     if(!i2c_write_reg8(BMP180_REG_CTRLMEAS, reg)){
         s->status = SENS_ERR;
@@ -158,7 +151,6 @@ static int BMP180_start(sensor_t *s){
         return FALSE;
     }
     s->status = SENS_BUSY;
-    wait4 = WAIT_T;
     return TRUE;
 }
 

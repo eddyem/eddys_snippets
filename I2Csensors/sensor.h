@@ -20,7 +20,7 @@
 #include <stdint.h>
 
 // timeout of i2c waiting
-#define I2C_TIMEOUT     (2.)
+#define I2C_TIMEOUT     (.5)
 
 typedef enum{
     SENS_NOTINIT,   // wasn't inited

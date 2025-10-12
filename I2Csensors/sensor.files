@@ -1,5 +1,9 @@
 BMP180.c
 BMP180.h
+BMP280.c
+BMP280.h
+SHT3x.c
+SHT3x.h
 SI7005.c
 SI7005.h
 aht.c

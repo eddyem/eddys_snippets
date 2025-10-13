@@ -17,7 +17,7 @@
  */
 
 #pragma once
-#include "sensor.h"
+#include "i2csensorsPTH.h"
 
 extern sensor_t BMP280;
 extern sensor_t BME280;

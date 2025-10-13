@@ -79,20 +79,36 @@ void sensor_delete(sensor_t **s){
     FREE((*s));
 }
 
-// list all supported sensors
-void sensors_list(){
+// list all supported sensors, return allocated string - should be free'd later
+char *sensors_list(){
     const sensor_t **p = supported_sensors;
-    green("Supported sensors:\n");
+    int L = 0, rest = 0, idx = 0;
+    char *list = NULL;
+#define PORTIONSZ 256
     while(*p){
-        printf("%s", (*p)->name);
-        if(*(++p)) printf(", ");
+        int l = strlen((*p)->name);
+        if(rest < l+2){
+            int add = PORTIONSZ * ((PORTIONSZ + 2 + l - rest) / PORTIONSZ);
+            rest += add; L += add;
+            list = realloc(list, L);
+        }
+        if(idx == 0) l = sprintf(list, "%s", (*p)->name);
+        else l = sprintf(list+idx, ",%s", (*p)->name);
+        rest -= l; idx += l;
+        //DBG("L=%d, rest=%d, idx=%d, list='%s'", L, rest, idx, list);
+        ++p;
     }
-    printf("\n");
+#undef PORTIONSZ
+    return list;
 }
 
 // wrapper with timeout
 int sensor_start(sensor_t *s){
     if(!s) return FALSE;
+    if(!i2c_set_slave_address(s->address)){
+        DBG("Can't set slave address 0x%02x", s->address);
+        return FALSE;
+    }
     double t0 = sl_dtime();
     int result = FALSE;
     while(sl_dtime() - t0 < I2C_TIMEOUT && !(result = s->start(s))) usleep(10000);
@@ -109,6 +125,10 @@ int sensor_getdata(sensor_t *s, sensor_data_t *d){
 
 sensor_status_t sensor_process(sensor_t *s){
     if(!s) return FALSE;
+    if(!i2c_set_slave_address(s->address)){
+        DBG("Can't set slave address 0x%02x", s->address);
+        return FALSE;
+    }
     return s->process(s);
 }
 
@@ -120,5 +140,42 @@ sensor_props_t sensor_properties(sensor_t *s){
 
 int sensor_heater(sensor_t *s, int on){
     if(!s || !s->properties(s).htr || !s->heater) return FALSE;
+    if(!i2c_set_slave_address(s->address)){
+        DBG("Can't set slave address 0x%02x", s->address);
+        return FALSE;
+    }
     return s->heater(s, on);
+}
+
+
+int sensor_writeI2C(uint8_t addr, uint8_t *data, int len){
+    if(!data || len < 1) return FALSE;
+    if(!i2c_set_slave_address(addr)){
+        DBG("Can't set slave address 0x%02x", addr);
+        return FALSE;
+    }
+    return i2c_write_raw(data, len);
+}
+int sensor_readI2C(uint8_t addr, uint8_t *data, int len){
+    if(!data || len < 1) return FALSE;
+    if(!i2c_set_slave_address(addr)){
+        DBG("Can't set slave address 0x%02x", addr);
+        return FALSE;
+    }
+    return i2c_read_raw(data, len);
+}
+int sensor_readI2Cregs(uint8_t addr, uint8_t regaddr, uint16_t N, uint8_t *data){
+    if(!data || N < 1) return FALSE;
+    if(!i2c_set_slave_address(addr)){
+        DBG("Can't set slave address 0x%02x", addr);
+        return FALSE;
+    }
+    return i2c_read_data8(regaddr, N, data);
+}
+int sensor_writeI2Creg(uint8_t addr, uint8_t regaddr, uint8_t data){
+    if(!i2c_set_slave_address(addr)){
+        DBG("Can't set slave address 0x%02x", addr);
+        return FALSE;
+    }
+    return i2c_write_reg8(regaddr, data);
 }

@@ -30,11 +30,14 @@ typedef enum{
     SENS_RDY,       // data ready - can get it
 } sensor_status_t;
 
-typedef struct{
-    uint8_t T   : 1; // can temperature (degC)
-    uint8_t H   : 1; // can humidity (percent)
-    uint8_t P   : 1; // can pressure (hPa)
-    uint8_t htr : 1; // have heater
+typedef union{
+    struct{
+        uint8_t T   : 1; // can temperature (degC)
+        uint8_t H   : 1; // can humidity (percent)
+        uint8_t P   : 1; // can pressure (hPa)
+        uint8_t htr : 1; // have heater
+    };
+    uint32_t flags;
 } sensor_props_t;
 
 typedef struct{
@@ -48,7 +51,7 @@ typedef struct sensor_struct sensor_t;
 
 int sensors_open(const char *dev);
 void sensors_close();
-void sensors_list();
+char *sensors_list();
 sensor_t* sensor_new(const char *name);
 void sensor_delete(sensor_t **s);
 sensor_props_t sensor_properties(sensor_t *s);
@@ -57,3 +60,9 @@ int sensor_heater(sensor_t *s, int on);
 int sensor_start(sensor_t *s);
 sensor_status_t sensor_process(sensor_t *s);
 int sensor_getdata(sensor_t *s, sensor_data_t *d);
+
+// I2C functions for client usage
+int sensor_writeI2C(uint8_t addr, uint8_t *data, int len);
+int sensor_readI2C(uint8_t addr, uint8_t *data, int len);
+int sensor_readI2Cregs(uint8_t addr, uint8_t regaddr, uint16_t N, uint8_t *data);
+int sensor_writeI2Creg(uint8_t addr, uint8_t regaddr, uint8_t data);

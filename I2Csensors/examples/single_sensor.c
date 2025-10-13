@@ -19,7 +19,7 @@
 #include <unistd.h>
 #include <usefull_macros.h>
 
-#include "sensor.h"
+#include "i2csensorsPTH.h"
 
 typedef struct{
     char *device;
@@ -81,7 +81,10 @@ int main(int argc, char **argv){
     sl_parseargs(&argc, &argv, cmdlnopts);
     if(G.help) sl_showhelp(-1, cmdlnopts);
     if(G.list){
-        sensors_list();
+        char *l = sensors_list();
+        green("\nSupported sensors:\n");
+        printf(l); printf("\n\n");
+        FREE(l);
         return 0;
     }
     if(!G.sensor) ERRX("Point sensor's name");

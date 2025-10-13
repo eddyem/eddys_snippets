@@ -8,8 +8,12 @@ SI7005.c
 SI7005.h
 aht.c
 aht.h
+examples/CMakeLists.txt
+examples/logmany.c
+examples/single_sensor.c
 i2c.c
 i2c.h
+i2csensorsPTH.h
 main.c
 sensor.c
 sensor.h

@@ -81,10 +81,14 @@ static uint8_t crc8(const uint8_t *data, int len){
 
 static sensor_status_t s_process(sensor_t *s){
     if(s->status != SENS_BUSY) return s->status;
-    if(sl_dtime() - *((double*)s->privdata) < MEASUREMENT_TIMEOUT) return s->status;
     uint8_t data[6];
-    if(!i2c_read_raw(data, 6)) return (s->status = SENS_ERR);
-    if(data[2] != crc8(data, 2) || data[5] != crc8(data + 3, 2)) return (s->status = SENS_ERR);
+    int ans = i2c_read_raw(data, 6);
+    if(sl_dtime() - *((double*)s->privdata) < MEASUREMENT_TIMEOUT){
+       if(!ans) return s->status; // poll ACK
+    }
+    if(!ans) return (s->status = SENS_ERR); // timeout!
+    i2c_write_raw(cmd_clear_status_reg, 2); // need to write any command or sensor will widthraw into itself
+    if(data[2] != crc8(data, 2) || data[5] != crc8(data + 3, 2)) return (s->status = SENS_ERR); // CRC error
     int32_t stemp = (int32_t)(((uint32_t)data[0] << 8) | data[1]);
     stemp = ((4375 * stemp) >> 14) - 4500;
     s->data.T = stemp / 100.;

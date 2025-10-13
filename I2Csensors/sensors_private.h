@@ -17,7 +17,7 @@
 
 #include <stdint.h>
 
-#include "sensor.h"
+#include "i2csensorsPTH.h"
 
 // unfortunately, we have no "self" pointer in C, so we should add this struct calling to each function for further purposes
 struct sensor_struct{

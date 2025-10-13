@@ -28,6 +28,7 @@
 static uint8_t lastaddr = 0;
 static int I2Cfd = -1;
 
+// common function for raw read or write
 static int i2c_rw(uint8_t *data, int len, uint16_t flags){
     struct i2c_msg m;
     struct i2c_rdwr_ioctl_data x = {.msgs = &m, .nmsgs = 1};
@@ -35,8 +36,9 @@ static int i2c_rw(uint8_t *data, int len, uint16_t flags){
     m.flags = flags; // 0 for w and I2C_M_RD for read
     m.len = len;
     m.buf = data;
+    DBG("write %d with len %d", *data, len);
     if(ioctl(I2Cfd, I2C_RDWR, &x) < 0){
-        WARN("i2c_read_reg16, ioctl()");
+        DBG("i2c_rw, ioctl()");
         return FALSE;
     }
     return TRUE;
@@ -143,9 +145,6 @@ int i2c_write_reg16(uint16_t regaddr, uint16_t data){
         WARN("i2c_write_reg16, ioctl()");
         return FALSE;
     }
-/*    printf("Block: ");
-    for(int i = 0; i < 4; ++i) printf("0x%02x ", d.block[i]);
-    printf("\n");*/
     return TRUE;
 }
 
@@ -156,6 +155,7 @@ int i2c_write_reg16(uint16_t regaddr, uint16_t data){
  */
 int i2c_set_slave_address(uint8_t addr){
     if(I2Cfd < 1) return FALSE;
+    DBG("Try to set slave addr 0x%02X", addr);
     if(ioctl(I2Cfd, I2C_SLAVE, addr) < 0){
         WARN("i2c_set_slave_address, ioctl()");
         return FALSE;
@@ -183,40 +183,10 @@ void i2c_close(){
     if(I2Cfd > 0) close(I2Cfd);
 }
 
-#if 0
-// Don't work :(
-/**
- * @brief read_regN8 - read up to I2C_SMBUS_BLOCK_MAX bytes from 8-bit addressed register
- * @param regaddr - address
- * @param data - data to read
- * @param N - amount of bytes
- * @return state
- */
-static int read_regN8(uint8_t regaddr, uint8_t *data, uint16_t N){
-    if(I2Cfd < 1 || N > I2C_SMBUS_BLOCK_MAX || N == 0 || !data) return FALSE;
-    struct i2c_smbus_ioctl_data args = {0};
-    union i2c_smbus_data sd = {0};
-    sd.block[0] = N;
-    DBG("block: %d, %d, %d", sd.block[0], sd.block[1], sd.block[2]);
-    DBG("Try to get %d bytes from 0x%02x", N, regaddr);
-    args.read_write = I2C_SMBUS_READ;
-    args.command    = regaddr;
-    args.size       = I2C_SMBUS_BLOCK_DATA;
-    args.data       = &sd;
-    if(ioctl(I2Cfd, I2C_SMBUS, &args) < 0){
-        WARN("read_regN8, ioctl()");
-        return FALSE;
-    }
-    DBG("block: %d, %d, %d", sd.block[0], sd.block[1], sd.block[2]);
-    memcpy(data, sd.block+1, N);
-    return TRUE;
-}
-#endif
-
 /**
  * @brief read_data16 - read data from 16-bit addressed register
  * @param regaddr - address
- * @param N - amount of bytes
+ * @param N - amount of BYTES!!!
  * @param array - data read
  * @return state
  */
@@ -248,24 +218,16 @@ int i2c_read_data16(uint16_t regaddr, uint16_t N, uint8_t *array){
  */
 int i2c_read_data8(uint8_t regaddr, uint16_t N, uint8_t *array){
     if(I2Cfd < 1 || N < 1 || N+regaddr > 0xff || !array) return FALSE;
-#if 0
-    uint16_t rest = N;
-    do{
-        uint8_t l = (rest > I2C_SMBUS_BLOCK_MAX) ? I2C_SMBUS_BLOCK_MAX : (uint8_t)rest;
-        if(!read_regN8(regaddr, array, l)){
-            DBG("can't read");
-            return FALSE;
-        }
-        rest -= l;
-        regaddr += l;
-        array += l;
-    }while(rest);
-#endif
-    for(uint16_t i = 0; i < N; ++i){
-        if(!i2c_read_reg8((uint8_t)(regaddr+i), array++)){
-            DBG("can't read @%dth byte", i);
-            return FALSE;
-        }
+    struct i2c_msg m[2];
+    struct i2c_rdwr_ioctl_data x = {.msgs = m, .nmsgs = 2};
+    m[0].addr = lastaddr; m[1].addr = lastaddr;
+    m[0].flags = 0; // write register address
+    m[1].flags = I2C_M_RD; // read contents
+    m[0].len = 1; m[1].len = N;
+    m[0].buf = &regaddr; m[1].buf = array;
+    if(ioctl(I2Cfd, I2C_RDWR, &x) < 0){
+        WARN("i2c_read_data8, ioctl()");
+        return FALSE;
     }
     return TRUE;
 }

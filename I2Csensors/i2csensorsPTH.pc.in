@@ -6,5 +6,5 @@ includedir=${prefix}/include
 Name: @PROJ@
 Description: I2C library working with pressure/temperature/humidity sensors
 Version: @VERSION@
-Libs: -L${libdir} -l@PROJLIB@
+Libs: -L${libdir} -l@PROJ@
 Cflags: -I${includedir}

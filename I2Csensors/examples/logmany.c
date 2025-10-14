@@ -79,7 +79,7 @@ typedef struct{
 } sd_t;
 
 // amount of all sensors connected
-#define SENSORS_AMOUNT  7
+#define SENSORS_AMOUNT  8
 
 // list of sensors - must be sorted by channel number
 static sd_t all_sensors[SENSORS_AMOUNT] = {
@@ -87,7 +87,8 @@ static sd_t all_sensors[SENSORS_AMOUNT] = {
     {.name = "SI7005", .type = "SI7005", .nch = 0},
     {.name = "AHT10", .type = "AHT10", .nch = 1},
     {.name = "BMP180", .type = "BMP180", .nch = 1},
-    {.name = "BME280", .type = "BME280", .nch = 1},
+    {.name = "BME280a", .type = "BME280", .nch = 1},
+    {.name = "BME280b", .type = "BME280", .nch = 2},
     {.name = "AHT21b", .type = "AHT21", .nch = 2},
     {.name = "SHT30", .type = "SHT3x", .nch = 2},
 };
@@ -154,9 +155,9 @@ static void writedata(uint8_t *got){
         if(sp.P){ ++NP; fprintf(plogf, "%.2f\t", got[i] ? (G.presmm ? D.P * 0.750062 : D.P) : nan); }
     }
     DBG("Measured: %d T, %d H and %d P", NT, NH, NP);
-    if(NT) fprintf(tlogf, "\n");
-    if(NH) fprintf(hlogf, "\n");
-    if(NP) fprintf(plogf, "\n");
+    if(NT){ fprintf(tlogf, "\n"); fflush(tlogf); }
+    if(NH){ fprintf(hlogf, "\n"); fflush(hlogf); }
+    if(NP){ fprintf(plogf, "\n"); fflush(plogf); }
 }
 
 static void startlogs(){

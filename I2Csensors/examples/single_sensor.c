@@ -83,7 +83,7 @@ int main(int argc, char **argv){
     if(G.list){
         char *l = sensors_list();
         green("\nSupported sensors:\n");
-        printf(l); printf("\n\n");
+        printf("%s\n\n", l);
         FREE(l);
         return 0;
     }

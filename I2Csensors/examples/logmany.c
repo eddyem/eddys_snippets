@@ -36,7 +36,7 @@ typedef struct{
 } glob_pars;
 
 static glob_pars G = {
-    .device = "/dev/i2c-6",
+    .device = "/dev/i2c-1",
     .mul_addr = 0x70,
     .interval = 10.,
 };
@@ -79,7 +79,7 @@ typedef struct{
 } sd_t;
 
 // amount of all sensors connected
-#define SENSORS_AMOUNT  8
+#define SENSORS_AMOUNT  17
 
 // list of sensors - must be sorted by channel number
 static sd_t all_sensors[SENSORS_AMOUNT] = {
@@ -87,10 +87,21 @@ static sd_t all_sensors[SENSORS_AMOUNT] = {
     {.name = "SI7005", .type = "SI7005", .nch = 0},
     {.name = "AHT10", .type = "AHT10", .nch = 1},
     {.name = "BMP180", .type = "BMP180", .nch = 1},
-    {.name = "BME280a", .type = "BME280", .nch = 1},
-    {.name = "BME280b", .type = "BME280", .nch = 2},
-    {.name = "AHT21b", .type = "AHT21", .nch = 2},
+    {.name = "BME280A", .type = "BME280", .nch = 1},
+    {.name = "BME280B", .type = "BME280", .nch = 2},
+    {.name = "AHT21", .type = "AHT21", .nch = 2},
     {.name = "SHT30", .type = "SHT3x", .nch = 2},
+    {.name = "AHT20A", .type = "AHT21", .nch = 3},
+    {.name = "BMP280A", .type = "BMP280", .nch = 3, .address = 0x77},
+    {.name = "AHT20B", .type = "AHT20", .nch = 4},
+    {.name = "BMP280B", .type = "BMP280", .nch = 4, .address = 0x77},
+    {.name = "AHT20C", .type = "AHT20", .nch = 5},
+    {.name = "BMP280C", .type = "BMP280", .nch = 5, .address = 0x77},
+    {.name = "BMP580A", .type = "BMP580", .nch = 5},
+   // {.name = "MTU31", .type = "MTU31", .nch = 6},
+    {.name = "BMP580B", .type = "BMP580", .nch = 6},
+    {.name = "BME280C", .type = "BME280", .nch = 6},
+    // {.name = "AM2320", .type = "AM2320", .nch = 7},
 };
 /*
 static int chsort(const void *v1, const void *v2){
@@ -175,12 +186,15 @@ static void startlogs(){
                 if(got[i]) continue;
                 uint8_t ch = all_sensors[i].nch;
                 if(ch != curch){
-                    if(!setchan(ch)) ERRX("Error selecting channel %d", ch);
-                    curch = ch;
+                    if(!setchan(ch)){
+                        WARNX("Error selecting channel %d", ch);
+                        break;
+                    }
+                    else curch = ch;
                 }
                 if(!started[i]){
                     if(sensor_start(all_sensors[i].sensor)) started[i] = 1;
-                    else DBG("Can't start %s", all_sensors[i].name);
+                    else WARNX("Can't start %s", all_sensors[i].name);
                 }
                 sensor_status_t sstat = sensor_process(all_sensors[i].sensor);
                 if(sstat == SENS_RDY){ got[i] = 1; ++Ngot; }

@@ -166,6 +166,18 @@ sensor_t AHT15 = {
     .properties = s_props,
 };
 
+sensor_t AHT20 = {
+    .name = "AHT20",
+    .private = ISAHT2x,
+    .address = 0x38,
+    .status = SENS_NOTINIT,
+    .init = s_init,
+    .start = s_start,
+    .heater = s_heater,
+    .process = s_process,
+    .properties = s_props,
+};
+
 sensor_t AHT21 = {
     .name = "AHT21",
     .private = ISAHT2x,

@@ -21,4 +21,5 @@
 
 extern sensor_t AHT10;
 extern sensor_t AHT15;
+extern sensor_t AHT20;
 extern sensor_t AHT21;

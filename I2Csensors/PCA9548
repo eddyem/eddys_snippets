@@ -10,5 +10,5 @@ CMD="0"
 
 echo "send $CMD"
 
-i2ctransfer -y 6 w1@0x70 $CMD
-i2cdetect -y -r 6
+i2ctransfer -y 1 w1@0x70 $CMD
+i2cdetect -y -r 1

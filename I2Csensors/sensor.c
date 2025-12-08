@@ -22,13 +22,14 @@
 #include "aht.h"
 #include "BMP180.h"
 #include "BMP280.h"
+#include "BMP580.h"
 #include "i2c.h"
 #include "sensors_private.h"
 #include "SHT3x.h"
 #include "SI7005.h"
 
 // NULL-terminated list of all supported sensors
-static const sensor_t* supported_sensors[] = {&AHT10, &AHT15, &AHT21, &BME280, &BMP180, &BMP280, &SHT3x, &SI7005, NULL};
+static const sensor_t* supported_sensors[] = {&AHT10, &AHT15, &AHT20, &AHT21, &BME280, &BMP180, &BMP280, &BMP580, &SHT3x, &SI7005, NULL};
 
 // just two stupid wrappers
 int sensors_open(const char *dev){
@@ -54,6 +55,7 @@ int sensor_init(sensor_t *s, uint8_t address){
     double t0 = sl_dtime();
     int result = FALSE;
     while(sl_dtime() - t0 < I2C_TIMEOUT && !(result = s->init(s))) usleep(10000);
+    DBG("INIT: %d", result);
     return result;
 }
 
@@ -105,6 +107,7 @@ char *sensors_list(){
 // wrapper with timeout
 int sensor_start(sensor_t *s){
     if(!s) return FALSE;
+    DBG("Start");
     if(!i2c_set_slave_address(s->address)){
         DBG("Can't set slave address 0x%02x", s->address);
         return FALSE;
@@ -112,6 +115,7 @@ int sensor_start(sensor_t *s){
     double t0 = sl_dtime();
     int result = FALSE;
     while(sl_dtime() - t0 < I2C_TIMEOUT && !(result = s->start(s))) usleep(10000);
+    DBG("result: %d", result);
     return result;
 }
 
@@ -125,6 +129,7 @@ int sensor_getdata(sensor_t *s, sensor_data_t *d){
 
 sensor_status_t sensor_process(sensor_t *s){
     if(!s) return FALSE;
+    DBG("Process");
     if(!i2c_set_slave_address(s->address)){
         DBG("Can't set slave address 0x%02x", s->address);
         return FALSE;

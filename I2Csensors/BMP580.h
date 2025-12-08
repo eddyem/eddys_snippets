@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Edward V. Emelianov <edward.emelianoff@gmail.com>.
+ * Copyright 2025 Edward V. Emelianov <edward.emelianoff@gmail.com>.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,4 +18,4 @@
 #pragma once
 #include "i2csensorsPTH.h"
 
-extern sensor_t BMP180;
+extern sensor_t BMP580;

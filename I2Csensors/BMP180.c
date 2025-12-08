@@ -1,5 +1,4 @@
 /*
- * This file is part of the bmp180 project.
  * Copyright 2022 Edward V. Emelianov <edward.emelianoff@gmail.com>.
  *
  * This program is free software: you can redistribute it and/or modify

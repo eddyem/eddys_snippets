@@ -1,8 +1,8 @@
-pos
-temp
-voltage
-time
-reboot
-stop
-goto
+abspos
 esw
+goto
+stop
+voltage 
+reset
+time
+mcut

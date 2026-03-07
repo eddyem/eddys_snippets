@@ -7,12 +7,12 @@
 
 static int noargs(uint32_t hash){
     switch(hash){
-        case CMD_REBOOT: printf("REBOOT\n"); break;
+        case CMD_RESET: printf("REBOOT\n"); break;
         case CMD_TIME: printf("TIME!\n"); break;
-        case CMD_TEMP: printf("Temp\n"); break;
-        default: printf("Unknown hash 0x%x\n", hash); return 0;
+        case CMD_MCUT: printf("Temp\n"); break;
+        default: printf("Unknown hash 0x%x\n", hash); return RET_BAD;
     }
-    return 1;
+    return RET_GOOD;
 }
 static int withparno(uint32_t hash, char *args){
     uint32_t N;
@@ -30,7 +30,7 @@ static int withparno(uint32_t hash, char *args){
     switch(hash){
         case CMD_ESW: fname = "ESW"; break;
         case CMD_GOTO: fname = "GOTO"; break;
-        case CMD_POS: fname = "POS"; break;
+        case CMD_ABSPOS: fname = "ABSPOS"; break;
         case CMD_STOP: fname = "STOP"; break;
         default: fname = "unknown";
     }
@@ -42,12 +42,12 @@ static int withparno(uint32_t hash, char *args){
 // these functions should be global to substitute weak aliases
 int fn_esw(uint32_t hash,  char *args){return withparno(hash, args);}
 int fn_goto(uint32_t hash,  char *args){return withparno(hash, args);}
-int fn_pos(uint32_t hash,  char *args){return withparno(hash, args);}
+int fn_abspos(uint32_t hash,  char *args){return withparno(hash, args);}
 int fn_stop(uint32_t hash,  char *args){return withparno(hash, args);}
 int fn_voltage(uint32_t hash,  char *args){return withparno(hash, args);}
-int fn_reboot(uint32_t hash,  _U_ char *args){return noargs(hash);}
+int fn_reset(uint32_t hash,  _U_ char *args){return noargs(hash);}
 int fn_time(uint32_t hash,  _U_ char *args){return noargs(hash);}
-int fn_temp(uint32_t hash,  _U_ char *args){return noargs(hash);}
+int fn_mcut(uint32_t hash,  _U_ char *args){return noargs(hash);}
 
 int main(int argc, char **argv){
     if(argc != 2) return 1;

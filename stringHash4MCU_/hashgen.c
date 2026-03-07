@@ -62,8 +62,7 @@ static uint32_t my(const char *str){
     memcpy(buf, str, len);
     len = (len + 3) / 4;
     for(int i = 0; i < len; ++i)
-        hash = (hash << 7) | c[i];
-    DBG("Hash for '%s' is %u", str, hash);
+        hash = (hash << 2) + c[i];
     return hash;
 }
 // djb2 & sdbm: http://www.cse.yorku.ca/~oz/hash.html
@@ -104,7 +103,7 @@ static const char *hashsources[HASHFNO] = {
     memcpy(buf, str, len);\n\
     len = (len + 3) / 4;\n\
     for(int i = 0; i < len; ++i)\n\
-        hash = (hash << 7) | c[i];\n\
+        hash = (hash << 2) + c[i];\n\
     return hash;\n\
 }\n",
 "static uint32_t hashf(const char *str){\n\
@@ -353,7 +352,11 @@ int main(int argc, char **argv){
         strhash *p = H;
         int nmatches = 0;
         for(int i = 0; i < imax1; ++i, ++p){ // test hash matches
-            if(p->hash == p[1].hash) ++nmatches;
+            if(p->hash == p[1].hash){
+                red("Found matched pair:");
+                printf(" '%s' and '%s'\n", p->str, p[1].str);
+                ++nmatches;
+            }
         }
         if(nmatches == 0){
             build(H, hno, idx);

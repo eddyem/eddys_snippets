@@ -5,3 +5,16 @@ another files used for test: use script ./run for it
 
 Compile: gcc -lusefull_macro file.c -o file
 gcc -lusefull_macro test.c hash.c -o test
+
+
+file helpcmds.in should be included into proto.c as help list:
+
+const char *helpstring =
+    "https://github.com/eddyem/stm32samples/tree/master/F3:F303/Multistepper build#" BUILD_NUMBER " @ " BUILD_DATE "\n"
+    "Format: cmd [N] - getter, cmd [N] = val - setter; N - optional index\n"
+    "* - command not supported yet, G - getter, S - setter\n\n"
+#include "hashgen/helpcmds.in"
+;
+
+
+helpcmds.in format: each string should be in quotes with '\n' @ its end. First word - command, next text - help.

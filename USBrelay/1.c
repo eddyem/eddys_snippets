@@ -58,7 +58,7 @@ int **set = NULL; // turn ON given relays
 int **reset = NULL; // turn OFF given relays
 int fd = 0;  // device file descriptor
 
-static myoption cmdlnopts[] = {
+static sl_option_t cmdlnopts[] = {
 // common options
     {"help",    NO_ARGS,    NULL,   'h',    arg_int,    APTR(&help),        _("show this help")},
     {"device",  NEED_ARG,   NULL,   'd',    arg_string, APTR(&device),      _("serial device name")},
@@ -72,14 +72,14 @@ static void parse_args(int argc, char **argv){
     int i;
     char helpstring[1024];
     snprintf(helpstring, 1024, "Usage: %%s [args]\n\n\tWhere args are:\n");
-    change_helpstring(helpstring);
-    parseargs(&argc, &argv, cmdlnopts);
-    if(help) showhelp(-1, cmdlnopts);
+    sl_helpstring(helpstring);
+    sl_parseargs(&argc, &argv, cmdlnopts);
+    if(help) sl_showhelp(-1, cmdlnopts);
     if(argc > 0){
         WARNX("Wrong parameters:");
         for (i = 0; i < argc; i++)
             fprintf(stderr, "\t%s\n", argv[i]);
-        showhelp(-1, cmdlnopts);
+        sl_showhelp(-1, cmdlnopts);
     }
 }
 
@@ -163,7 +163,7 @@ int main(int argc, char **argv){
 	struct hidraw_report_descriptor rpt_desc;
 	struct hidraw_devinfo info;
 
-	initial_setup();
+	sl_init();
 	parse_args(argc, argv);
 	if(!device){
 		fd = get_relay_fd();

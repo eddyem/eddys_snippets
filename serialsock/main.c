@@ -53,33 +53,34 @@ void signals(int sig){
 }
 
 int main(int argc, char **argv){
-    char *self = strdup(argv[0]);
     sl_init();
     parse_args(argc, argv);
-    if(GP->logfile){
-        int lvl = LOGLEVEL_WARN + GP->verbose;
+    if(!GP->path) ERRX("Point node to listen/connect");
+    int lvl = LOGLEVEL_WARN;
+    if(GP->client) server = 0;
+    else if(!GP->devpath) ERRX("You should point serial device path");
+    if(chdir("/")) ERR("chdir()");
+    if(GP->logfile && server){
+        lvl += GP->verbose;
         DBG("level = %d", lvl);
         if(lvl > LOGLEVEL_ANY) lvl = LOGLEVEL_ANY;
-        verbose(1, "Log file %s @ level %d\n", GP->logfile, lvl);
+        print_message(1, "Log file %s @ level %d\n", GP->logfile, lvl);
         OPENLOG(GP->logfile, lvl, 1);
-        if(!sl_globlog) WARNX("Can't create log file");
+        if(!sl_globlog) ERRX("Can't create log file");
+        sl_deletelog(&sl_globlog);
     }
-    if(GP->client) server = 0;
-    else if(!GP->devpath){
-        LOGERR("You should point serial device path");
-        ERRX("You should point serial device path");
-    }
-    if(server) sl_check4running(self, GP->pidfile);
-    // signal reactions:
-    signal(SIGTERM, signals); // kill (-15) - quit
-    signal(SIGHUP, SIG_IGN);  // hup - ignore
-    signal(SIGINT, signals);  // ctrl+C - quit
-    signal(SIGQUIT, signals); // ctrl+\ - quit
-    signal(SIGTSTP, SIG_IGN); // ignore ctrl+Z
-    LOGMSG("Started");
-#ifndef EBUG
     if(server){
-        unsigned int pause = 5;
+#ifndef EBUG
+        sl_check4running(NULL, GP->pidfile);
+        sl_daemonize();
+        if(GP->logfile) OPENLOG(GP->logfile, lvl, 1);
+        // signal reactions:
+        signal(SIGTERM, signals); // kill (-15) - quit
+        signal(SIGINT, signals);  // ctrl+C - quit
+        signal(SIGQUIT, signals); // ctrl+\ - quit
+        signal(SIGTSTP, SIG_IGN); // ignore ctrl+Z
+        LOGMSG("Started");
+        unsigned int pause = 1;
         while(1){
             childpid = fork();
             if(childpid){ // master
@@ -87,16 +88,16 @@ int main(int argc, char **argv){
                 LOGMSG("Created child with pid %d", childpid);
                 wait(NULL);
                 LOGWARN("Child %d died", childpid);
-                if(sl_dtime() - t0 < 1.) pause += 5;
+                if(sl_dtime() - t0 < 1.) ++pause;
                 else pause = 1;
-                if(pause > 60) pause = 60;
+                if(pause > 10) pause = 10;
                 sleep(pause); // wait a little before respawn
             }else{ // slave
                 prctl(PR_SET_PDEATHSIG, SIGTERM); // send SIGTERM to child when parent dies
                 break;
             }
         }
-    }
 #endif
+    }
     return start_socket(server, GP->path, &dev);
 }

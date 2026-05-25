@@ -25,13 +25,11 @@
 
 // default PID filename:
 #define DEFAULT_PIDFILE     "/tmp/usbsock.pid"
-#define DEFAULT_SOCKPATH    "\0canbus"
 
 static int help;
 static glob_pars G = {
     .pidfile = DEFAULT_PIDFILE,
     .speed = 9600,
-    .path = DEFAULT_SOCKPATH,
     .logfile = NULL // don't save logs
 };
 glob_pars *GP = &G;
@@ -47,8 +45,8 @@ static sl_option_t cmdlnopts[] = {
     {"logfile", NEED_ARG,   NULL,   'l',    arg_string, APTR(&G.logfile),   _("file to save logs (default: none)")},
     {"pidfile", NEED_ARG,   NULL,   'p',    arg_string, APTR(&G.pidfile),   _("pidfile (default: " DEFAULT_PIDFILE ")")},
     {"client",  NO_ARGS,    NULL,   'c',    arg_int,    APTR(&G.client),    _("run as client")},
-    {"sockpath",NEED_ARG,   NULL,   'f',    arg_string, APTR(&G.path),      _("socket path (start from \\0 for no files) or port")},
-    {"verbose", NO_ARGS,    NULL,   'v',    arg_none,   APTR(&G.verbose),   _("increase log verbose level (default: LOG_WARN) and messages (default: none)")},
+    {"node",    NEED_ARG,   NULL,   'n',    arg_string, APTR(&G.path),      _("socket node: 'localhost:port' or just ':port' for non-local socket")},
+    {"verbose", NO_ARGS,    NULL,   'v',    arg_none,   APTR(&G.verbose),   _("increase log print_message level (default: LOG_WARN) and messages (default: none)")},
    end_option
 };
 
@@ -74,11 +72,11 @@ void parse_args(int argc, char **argv){
 }
 
 /**
- * @brief verbose - print additional messages depending of G.verbose (add '\n' at end)
+ * @brief print_message - print additional messages depending of G.verbose (add '\n' at end)
  * @param levl - message level
  * @param fmt  - message
  */
-void verbose(int levl, const char *fmt, ...){
+void print_message(int levl, const char *fmt, ...){
     va_list ar;
     if(levl > G.verbose) return;
     //printf("%s: ", __progname);

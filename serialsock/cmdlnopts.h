@@ -17,8 +17,6 @@
  */
 
 #pragma once
-#ifndef CMDLNOPTS_H__
-#define CMDLNOPTS_H__
 
 /*
  * here are some typedef's for global data
@@ -29,13 +27,12 @@ typedef struct{
     char *logfile;          // logging to this file
     char *path;             // path to socket file
     int speed;              // connection speed
-    int verbose;            // verbose level: for messages & logging
+    int verbose;            // print_message level: for messages & logging
     int client;             // ==1 if application runs in client mode
 } glob_pars;
 
 extern glob_pars *GP;
 
 void parse_args(int argc, char **argv);
-void verbose(int levl, const char *fmt, ...);
+void print_message(int levl, const char *fmt, ...);
 
-#endif // CMDLNOPTS_H__

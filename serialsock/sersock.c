@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/ioctl.h>
-#include <sys/un.h>  // unix socket
 
 #include "cmdlnopts.h"
 #include "sersock.h"
@@ -49,37 +48,6 @@ static int handle_socket(int sock, sl_tty_t *d){
     return TRUE;
 }
 
-/**
- * check data from  fd
- * @param fd - file descriptor
- * @return 0 in case of timeout, 1 in case of fd have data, -1 if error
- */
-static int canberead(int fd){
-    fd_set fds;
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 100;
-    FD_ZERO(&fds);
-    FD_SET(fd, &fds);
-    do{
-        int rc = select(fd+1, &fds, NULL, NULL, &timeout);
-        if(rc < 0){
-            if(errno != EINTR){
-                LOGWARN("select()");
-                WARN("select()");
-                return -1;
-            }
-            continue;
-        }
-        break;
-    }while(1);
-    if(FD_ISSET(fd, &fds)){
-        DBG("FD_ISSET");
-        return 1;
-    }
-    return 0;
-}
-
 static void server_(int sock, sl_tty_t *d){
     if(listen(sock, MAXCLIENTS) == -1){
         WARN("listen");
@@ -98,22 +66,24 @@ static void server_(int sock, sl_tty_t *d){
     poll_set[0].fd = sock;
     poll_set[0].events = POLLIN;
     while(1){
-        poll(poll_set, nfd, 1); // max timeout - 1ms
+        if(-1 == poll(poll_set, nfd, 1)) continue; // max timeout - 1ms
         if(poll_set[0].revents & POLLIN){ // check main for accept()
             struct sockaddr_in addr;
             socklen_t len = sizeof(addr);
             int client = accept(sock, (struct sockaddr*)&addr, &len);
-            DBG("New connection");
-            LOGMSG("Connection, fd=%d", client);
-            if(nfd == MAXCLIENTS + 1){
-                LOGWARN("Max amount of connections, disconnect fd=%d", client);
-                WARNX("Limit of connections reached");
-                close(client);
-            }else{
-                memset(&poll_set[nfd], 0, sizeof(struct pollfd));
-                poll_set[nfd].fd = client;
-                poll_set[nfd].events = POLLIN;
-                ++nfd;
+            if(client > -1){
+                DBG("New connection");
+                LOGMSG("Connection, fd=%d", client);
+                if(nfd == MAXCLIENTS + 1){
+                    LOGWARN("Max amount of connections, disconnect fd=%d", client);
+                    WARNX("Limit of connections reached");
+                    close(client);
+                }else{
+                    memset(&poll_set[nfd], 0, sizeof(struct pollfd));
+                    poll_set[nfd].fd = client;
+                    poll_set[nfd].events = POLLIN;
+                    ++nfd;
+                }
             }
         }
         int l = sl_tty_read(d);
@@ -148,33 +118,16 @@ static void server_(int sock, sl_tty_t *d){
     }
 }
 
-// read console char - for client
-static int rc(){
-    int rb;
-    struct timeval tv;
-    int retval;
-    fd_set rfds;
-    FD_ZERO(&rfds);
-    FD_SET(STDIN_FILENO, &rfds);
-    tv.tv_sec = 0; tv.tv_usec = 100;
-    retval = select(1, &rfds, NULL, NULL, &tv);
-    if(!retval) rb = 0;
-    else {
-        if(FD_ISSET(STDIN_FILENO, &rfds)) rb = getchar();
-        else rb = 0;
-    }
-    return rb;
-}
-
 /**
  * @brief mygetline - silently and non-blocking getline
  * @return zero-terminated string with '\n' at end (or without in case of overflow)
  */
 static char *mygetline(){
-    static char buf[BUFLEN+1];
+    static char buf[BUFLEN+2];
     static int i = 0;
+    if(!sl_canread(STDIN_FILENO)) return NULL;
     while(i < BUFLEN){
-        char rd = rc();
+        char rd = sl_getchar();
         if(!rd) return NULL;
         if(rd == 0x7f && i){ // backspace
             buf[--i] = 0;
@@ -186,6 +139,7 @@ static char *mygetline(){
         fflush(stdout);
         if(rd == '\n') break;
     }
+    if(buf[i-1] != '\n') buf[i++] = '\n';
     buf[i] = 0;
     i = 0;
     return buf;
@@ -206,7 +160,12 @@ static void client_(int sock){
             if(msg[L-1] == '\n') msg[L-1] = 0;
             LOGMSG("TERMINAL: %s", msg);
         }
-        if(1 != canberead(sock)) continue;
+        int canread = sl_canread(sock);
+        if(canread == -1){
+            WARNX("Server disconnected!");
+            signals(0);
+        }
+        if(canread == 0) continue;
         int n = read(sock, recvBuff, Bufsiz-1);
         if(n == 0){
             WARNX("Server disconnected");
@@ -238,91 +197,23 @@ static sl_tty_t *openserialdev(char *path, int speed){
 }
 
 int start_socket(int server, char *path, sl_tty_t **dev){
-    char apath[128];
     DBG("path: %s", path);
-    char *eptr;
-    long port = strtol(path, &eptr, 0);
-    if(eptr && *eptr){
-        DBG("UNIX socket");
-        port = -1;
-        if(*path == 0){
-            DBG("convert name");
-            apath[0] = 0;
-            strncpy(apath+1, path+1, 126);
-        }else if(strncmp("\\0", path, 2) == 0){
-            DBG("convert name");
-            apath[0] = 0;
-            strncpy(apath+1, path+2, 126);
-        }else strcpy(apath, path);
-    }
     if(server){
         if(!dev) return 1;
         if(!(*dev = openserialdev(GP->devpath, GP->speed))){
             LOGERR("Can't open serial device %s", GP->devpath);
             ERR("Can't open serial device %s", GP->devpath);
         }
-        unlink(path); // remove old socket
     }
-    int sock = -1;
-    struct addrinfo hints = {0}, *res;
-    struct sockaddr_un unaddr = {0};
-    unaddr.sun_family = AF_UNIX;
-    if(port > 0){
-        hints.ai_family = AF_INET;
-        hints.ai_socktype = SOCK_STREAM;
-        hints.ai_flags = AI_PASSIVE;
-        if(getaddrinfo("127.0.0.1", path, &hints, &res) != 0){
-            ERR("getaddrinfo");
-        }
-    }else{
-        memcpy(unaddr.sun_path, apath, 106); // if sun_path[0] == 0 we don't create a file
-        hints.ai_addr = (struct sockaddr*) &unaddr;
-        hints.ai_addrlen = sizeof(unaddr);
-        hints.ai_family = AF_UNIX;
-        hints.ai_socktype = SOCK_SEQPACKET;
-        res = &hints;
-    }
-    for(struct addrinfo *p = res; p; p = p->ai_next){
-        if((sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0){ // or SOCK_STREAM?
-            LOGWARN("socket()");
-            WARN("socket()");
-            continue;
-        }
-        if(server){
-            int reuseaddr = 1;
-            if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(int)) == -1){
-                LOGWARN("setsockopt()");
-                WARN("setsockopt()");
-                close(sock); sock = -1;
-                continue;
-            }
-            if(bind(sock, p->ai_addr, p->ai_addrlen) == -1){
-                LOGWARN("bind()");
-                WARN("bind()");
-                close(sock); sock = -1;
-                continue;
-            }
-            int enable = 1;
-            if(ioctl(sock, FIONBIO, (void *)&enable) < 0){ // make socket nonblocking
-                LOGERR("Can't make socket nonblocking");
-                ERRX("ioctl()");
-            }
-        }else{
-            if(connect(sock, p->ai_addr, p->ai_addrlen) == -1){
-                LOGWARN("connect()");
-                WARN("connect()");
-                close(sock); sock = -1;
-            }
-        }
-        break;
-    }
-    if(sock < 0){
+    int fd = sl_sock_open(SOCKT_NET, path, server, 0);
+    if(fd < 0){
+        WARNX("Can't open socket");
         LOGERR("Can't open socket");
-        ERRX("Can't open socket");
+        return 1;
     }
-    if(server) server_(sock, *dev);
-    else client_(sock);
-    close(sock);
+    if(server) server_(fd, *dev);
+    else client_(fd);
+    close(fd);
     signals(0);
     return 0;
 }

@@ -17,8 +17,6 @@
  */
 
 #pragma once
-#ifndef SERSOCK_H__
-#define SERSOCK_H__
 
 #define BUFLEN      (1024)
 // Max amount of connections
@@ -28,4 +26,4 @@
 
 int start_socket(int server, char *path, sl_tty_t **dev);
 
-#endif // SERSOCK_H__
+

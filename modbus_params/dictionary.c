@@ -45,7 +45,7 @@ static char *dumpname = NULL; // it's name
 static dicentry_t *dumppars = NULL; // array with parameters to dump
 static int dumpsize = 0; // it's size
 static double dumpTime = 0.1; // period to dump
-static atomic_int stopdump = FALSE, isstopped = TRUE; // flags
+static atomic_int stopdump = 0, isstopped = 1; // flags
 
 /* aliases */
 // list of aliases sorted by name
@@ -121,12 +121,13 @@ int opendict(const char *dic){
         // DBG("Got line: '%s %" PRIu16 " %" PRIu16 " %" PRIu8, curentry.code, curentry.reg, curentry.value, curentry.readonly);
         if(++dictsize >= dicsz){
             dicsz += 50;
-            dictionary = realloc(dictionary, sizeof(dicentry_t) * dicsz);
-            if(!dictionary){
+            dicentry_t *newdic = realloc(dictionary, sizeof(dicentry_t) * dicsz);
+            if(!newdic){
                 WARN("Can't allocate memory for dictionary");
                 retcode = FALSE;
                 goto ret;
             }
+            dictionary = newdic;
         }
         dicentry_t *entry = &dictionary[dictsize-1];
         entry->code = strdup(curentry.code);
@@ -228,13 +229,20 @@ int setdumppars(char **pars){
         if(cursz <= N){
             cursz += 50;
             DBG("realloc list to %d", cursz);
-            dumppars = realloc(dumppars, sizeof(dicentry_t) * (cursz));
-            DBG("zero mem");
-            bzero(&dumppars[N], sizeof(dicentry_t)*(cursz-N));
+            dicentry_t *newpars = realloc(dumppars, sizeof(dicentry_t) * (cursz));
+            if(!newpars){
+                WARN("realloc()"); cursz -= 50;
+            }else{
+                dumppars = newpars;
+                DBG("zero mem");
+                bzero(&dumppars[N], sizeof(dicentry_t)*(cursz-N));
+            }
         }
         FREE(dumppars[N].code);
+        FREE(dumppars[N].help);
         dumppars[N] = *e;
         dumppars[N].code = strdup(e->code);
+        if(e->help) dumppars[N].help = strdup(e->help);
         DBG("Add %s", e->code);
         ++N; ++p;
     }
@@ -269,10 +277,11 @@ int opendumpfile(const char *name){
 char *getdumpname(){ return dumpname;}
 
 void closedumpfile(){
-    if(dumpfile && !isstopped){
-        if(!isstopped){
-            stopdump = TRUE;
-            while(!isstopped);
+    int stpd = atomic_load(&isstopped);
+    if(dumpfile && !stpd){
+        if(!stpd){
+            atomic_store(&stopdump, 1);
+            while(!atomic_load(&isstopped));
         }
         fclose(dumpfile);
         FREE(dumpname);
@@ -280,12 +289,12 @@ void closedumpfile(){
 }
 
 static void *dumpthread(void *p){
-    isstopped = FALSE;
-    stopdump = FALSE;
+    atomic_store(&isstopped, 0);
+    atomic_store(&stopdump, 0);
     double dT = *(double*)p;
     DBG("Dump thread started. Period: %gs", dT);
     double startT = sl_dtime();
-    while(!stopdump){
+    while(!atomic_load(&isstopped)){
         double t0 = sl_dtime();
         fprintf(dumpfile, "%10.3f ", t0 - startT);
         for(int i = 0; i < dumpsize; ++i){
@@ -295,7 +304,7 @@ static void *dumpthread(void *p){
         fprintf(dumpfile, "\n");
         while(sl_dtime() - t0 < dT) usleep(100);
     }
-    isstopped = TRUE;
+    atomic_store(&isstopped, 1);
     return NULL;
 }
 
@@ -431,12 +440,13 @@ int openaliases(const char *filename){
         }
         if(++aliasessize >= asz){
             asz += 50;
-            aliases = realloc(aliases, sizeof(alias_t) * asz);
-            if(!aliases){
+            alias_t *newaliases = realloc(aliases, sizeof(alias_t) * asz);
+            if(!newaliases){
                 WARNX("Can't allocate memory for aliases list");
                 retcode = FALSE;
                 goto ret;
             }
+            aliases = newaliases;
         }
         alias_t *cur = &aliases[aliasessize - 1];
         cur->name = strdup(name);

@@ -1,5 +1,5 @@
 # run `make DEF=...` to add extra defines
-PROGRAM := modbus_par
+PROGRAM := modbus_params
 LDFLAGS := -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,--discard-all
 LDFLAGS += -lusefull_macros -lmodbus
 SRCS := $(wildcard *.c)

@@ -1,0 +1,1 @@
+translate c into asm: gcc -S -fverbose-asm file.c

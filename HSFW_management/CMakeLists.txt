@@ -1,13 +1,10 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 4.0)
 set(PROJ HSFW_manage)
 set(MINOR_VERSION "1")
 set(MID_VERSION "0")
 set(MAJOR_VERSION "0")
 set(VERSION "${MAJOR_VERSION}.${MID_VERSION}.${MINOR_VERSION}")
-# new policy for version control
-if(POLICY CMP0048)
-	cmake_policy(SET CMP0048 OLD)
-endif(POLICY CMP0048)
+project(${PROJ})
 
 enable_language(C)
 
@@ -39,7 +36,6 @@ if(NOT USB_FOUND)
 	pkg_check_modules(USB REQUIRED libusb-1.0)
 endif()
 
-project(${PROJ})
 # change wrong behaviour with install prefix
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT AND CMAKE_INSTALL_PREFIX MATCHES "/usr/local")
 	message("Change default install path to /usr")
@@ -91,7 +87,7 @@ file(MAKE_DIRECTORY ${LCPATH}/LC_MESSAGES)
 add_custom_command(
 	OUTPUT ${PO_FILE}
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	COMMAND ${GETTEXT_XGETTEXT_EXECUTABLE} --from-code=utf-8 ${SOURCES} -c -k_ -kN_ -o ${PO_FILE}
+	COMMAND ${GETTEXT_XGETTEXT_EXECUTABLE} --from-code=koi8-r ${SOURCES} -c -k_ -kN_ -o ${PO_FILE}
 	COMMAND sed -i 's/charset=.*\\\\n/charset=koi8-r\\\\n/' ${PO_FILE}
 	COMMAND enconv ${PO_FILE}
 	DEPENDS ${SOURCES}

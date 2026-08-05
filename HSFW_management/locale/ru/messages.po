@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-05-05 16:16+0300\n"
+"POT-Creation-Date: 2026-08-05 12:02+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,320 +17,319 @@ msgstr ""
 "Content-Type: text/plain; charset=koi8-r\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#. / "отобразить эту справку"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/cmdlnopts.c:64
+#. / "п╬я┌п╬п╠я─п╟п╥п╦я┌я▄ я█я┌я┐ я│п©я─п╟п╡п╨я┐"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/cmdlnopts.c:64
 msgid "show this help"
 msgstr ""
 
-#. / "буквенный идентификатор колеса"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/cmdlnopts.c:66
+#. / "п╠я┐п╨п╡п╣п╫п╫я▀п╧ п╦п╢п╣п╫я┌п╦я└п╦п╨п╟я┌п╬я─ п╨п╬п╩п╣я│п╟"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/cmdlnopts.c:66
 msgid "letter wheel identificator"
 msgstr ""
 
-#. / "название колеса"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/cmdlnopts.c:68
+#. / "п╫п╟п╥п╡п╟п╫п╦п╣ п╨п╬п╩п╣я│п╟"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/cmdlnopts.c:68
 msgid "wheel name"
 msgstr ""
 
-#. / "серийный номер турели (с начальными нулями)"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/cmdlnopts.c:70
+#. / "я│п╣я─п╦п╧п╫я▀п╧ п╫п╬п╪п╣я─ я┌я┐я─п╣п╩п╦ (я│ п╫п╟я┤п╟п╩я▄п╫я▀п╪п╦ п╫я┐п╩я▐п╪п╦)"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/cmdlnopts.c:70
 msgid "turret serial (with leading zeros)"
 msgstr ""
 
-#. / "номер позиции фильтра"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/cmdlnopts.c:72
+#. / "п╫п╬п╪п╣я─ п©п╬п╥п╦я├п╦п╦ я└п╦п╩я▄я┌я─п╟"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/cmdlnopts.c:72
 msgid "filter position number"
 msgstr ""
 
-#. / "название фильтра"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/cmdlnopts.c:74
+#. / "п╫п╟п╥п╡п╟п╫п╦п╣ я└п╦п╩я▄я┌я─п╟"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/cmdlnopts.c:74
 msgid "filter name"
 msgstr ""
 
-#. / "идентификатор фильтра, например, \"A3\""
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/cmdlnopts.c:76
+#. / "п╦п╢п╣п╫я┌п╦я└п╦п╨п╟я┌п╬я─ я└п╦п╩я▄я┌я─п╟, п╫п╟п©я─п╦п╪п╣я─, \"A3\""
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/cmdlnopts.c:76
 msgid "filter identificator like \"A3\""
 msgstr ""
 
-#. / "список всех сохраненных имен"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/cmdlnopts.c:78
+#. / "я│п©п╦я│п╬п╨ п╡я│п╣я┘ я│п╬я┘я─п╟п╫п╣п╫п╫я▀я┘ п╦п╪п╣п╫"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/cmdlnopts.c:78
 msgid "list all stored names"
 msgstr ""
 
-#. / "список имен только присутствующих устройств"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/cmdlnopts.c:80
+#. / "я│п©п╦я│п╬п╨ п╦п╪п╣п╫ я┌п╬п╩я▄п╨п╬ п©я─п╦я│я┐я┌я│я┌п╡я┐я▌я┴п╦я┘ я┐я│я┌я─п╬п╧я│я┌п╡"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/cmdlnopts.c:80
 msgid "list only present devices' names"
 msgstr ""
 
-#. / "переместиться в стартовую позицию"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/cmdlnopts.c:82
+#. / "п©п╣я─п╣п╪п╣я│я┌п╦я┌я▄я│я▐ п╡ я│я┌п╟я─я┌п╬п╡я┐я▌ п©п╬п╥п╦я├п╦я▌"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/cmdlnopts.c:82
 msgid "move to home position"
 msgstr ""
 
-#. / "переименовать сохраненные имена колес/фильтров"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/cmdlnopts.c:84
+#. / "п©п╣я─п╣п╦п╪п╣п╫п╬п╡п╟я┌я▄ я│п╬я┘я─п╟п╫п╣п╫п╫я▀п╣ п╦п╪п╣п╫п╟ п╨п╬п╩п╣я│/я└п╦п╩я▄я┌я─п╬п╡"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/cmdlnopts.c:84
 msgid "rename stored wheels/filters names"
 msgstr ""
 
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/cmdlnopts.c:85
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/cmdlnopts.c:85
 msgid "reset all names to default values"
 msgstr ""
 
-#. / "Неправильный формат числа double!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/cmdlnopts.c:103
+#. / "п²п╣п©я─п╟п╡п╦п╩я▄п╫я▀п╧ я└п╬я─п╪п╟я┌ я┤п╦я│п╩п╟ double!"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/cmdlnopts.c:103
 msgid "Wrong double number format!"
 msgstr ""
 
-#. / "Игнорируются параметры: "
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/cmdlnopts.c:128
+#. / "п≤пЁп╫п╬я─п╦я─я┐я▌я┌я│я▐ п©п╟я─п╟п╪п╣я┌я─я▀: "
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/cmdlnopts.c:128
 msgid "Ignore parameters:"
 msgstr ""
 
-#. / "Не могу открыть %s"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hidmanage.c:80
+#. / "п²п╣ п╪п╬пЁя┐ п╬я┌п╨я─я▀я┌я▄ %s"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hidmanage.c:80
 #, c-format
 msgid "Can't open %s"
 msgstr ""
 
-#. / "Обнаружено более одной турели с серийным номером '%s'!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:79
+#. / "п·п╠п╫п╟я─я┐п╤п╣п╫п╬ п╠п╬п╩п╣п╣ п╬п╢п╫п╬п╧ я┌я┐я─п╣п╩п╦ я│ я│п╣я─п╦п╧п╫я▀п╪ п╫п╬п╪п╣я─п╬п╪ '%s'!"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:80
 #, c-format
 msgid "More than one turret with serial '%s' found!"
 msgstr ""
 
-#. / "Турель с серийным номером '%s' не найдена"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:86
+#. / "п╒я┐я─п╣п╩я▄ я│ я│п╣я─п╦п╧п╫я▀п╪ п╫п╬п╪п╣я─п╬п╪ '%s' п╫п╣ п╫п╟п╧п╢п╣п╫п╟"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:87
 #, c-format
 msgid "Turret with serial '%s' not found"
 msgstr ""
 
-#. / "Идентификатор колеса должен быть буквой от \"A\" до \"H\"!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:94
+#. / "п≤п╢п╣п╫я┌п╦я└п╦п╨п╟я┌п╬я─ п╨п╬п╩п╣я│п╟ п╢п╬п╩п╤п╣п╫ п╠я▀я┌я▄ п╠я┐п╨п╡п╬п╧ п╬я┌ \"A\" п╢п╬ \"H\"!"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:95
 msgid "Wheel ID should be a letter from \"A\" to \"H\"!"
 msgstr ""
 
-#. / "Идентификатор фильтра должен состоять из двух символов: идентификатора колеса и номера позиции"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:97
+#. / "п≤п╢п╣п╫я┌п╦я└п╦п╨п╟я┌п╬я─ я└п╦п╩я▄я┌я─п╟ п╢п╬п╩п╤п╣п╫ я│п╬я│я┌п╬я▐я┌я▄ п╦п╥ п╢п╡я┐я┘ я│п╦п╪п╡п╬п╩п╬п╡: п╦п╢п╣п╫я┌п╦я└п╦п╨п╟я┌п╬я─п╟ п╨п╬п╩п╣я│п╟ п╦ п╫п╬п╪п╣я─п╟ п©п╬п╥п╦я├п╦п╦"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:98
 msgid "Filter ID should have two symbols: wheel ID and filter position"
 msgstr ""
 
-#. / "Обнаружено более одного колеса с идентификатором '%c'!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:105
+#. / "п·п╠п╫п╟я─я┐п╤п╣п╫п╬ п╠п╬п╩п╣п╣ п╬п╢п╫п╬пЁп╬ п╨п╬п╩п╣я│п╟ я│ п╦п╢п╣п╫я┌п╦я└п╦п╨п╟я┌п╬я─п╬п╪ '%c'!"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:106
 #, c-format
 msgid "More than one wheel with ID '%c' found!"
 msgstr ""
 
-#. / "Колесо с идентификатором '%c' не найдено"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:113
+#. / "п п╬п╩п╣я│п╬ я│ п╦п╢п╣п╫я┌п╦я└п╦п╨п╟я┌п╬я─п╬п╪ '%c' п╫п╣ п╫п╟п╧п╢п╣п╫п╬"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:114
 #, c-format
 msgid "Wheel with ID '%c' not found"
 msgstr ""
 
-#. / "Обнаружено более одного колеса с именем '%s'!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:120
+#. / "п·п╠п╫п╟я─я┐п╤п╣п╫п╬ п╠п╬п╩п╣п╣ п╬п╢п╫п╬пЁп╬ п╨п╬п╩п╣я│п╟ я│ п╦п╪п╣п╫п╣п╪ '%s'!"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:121
 #, c-format
 msgid "More than one wheel with name '%s' found!"
 msgstr ""
 
-#. / "Колесо с именем '%s' не найдено"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:127
+#. / "п п╬п╩п╣я│п╬ я│ п╦п╪п╣п╫п╣п╪ '%s' п╫п╣ п╫п╟п╧п╢п╣п╫п╬"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:128
 #, c-format
 msgid "Wheel with name '%s' not found"
 msgstr ""
 
-#. / "Обнаружено больше одного колеса с именем фильтра '%s'!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:160
+#. / "п·п╠п╫п╟я─я┐п╤п╣п╫п╬ п╠п╬п╩я▄я┬п╣ п╬п╢п╫п╬пЁп╬ п╨п╬п╩п╣я│п╟ я│ п╦п╪п╣п╫п╣п╪ я└п╦п╩я▄я┌я─п╟ '%s'!"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:161
 #, c-format
 msgid "More than one wheel with filter name '%s' found!"
 msgstr ""
 
-#. / "Фильтр %s не обнаружен"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:166
+#. / "п╓п╦п╩я▄я┌я─ %s п╫п╣ п╬п╠п╫п╟я─я┐п╤п╣п╫"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:167
 #, c-format
 msgid "Filter %s not found!"
 msgstr ""
 
-#. / "Заданное колесо не обнаружено!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:171
+#. / "п≈п╟п╢п╟п╫п╫п╬п╣ п╨п╬п╩п╣я│п╬ п╫п╣ п╬п╠п╫п╟я─я┐п╤п╣п╫п╬!"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:172
 msgid "Given wheel not found!"
 msgstr ""
 
-#. / "Позиция фильтра должна быть числом от 1 до %d!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:183
+#. / "п÷п╬п╥п╦я├п╦я▐ я└п╦п╩я▄я┌я─п╟ п╢п╬п╩п╤п╫п╟ п╠я▀я┌я▄ я┤п╦я│п╩п╬п╪ п╬я┌ 1 п╢п╬ %d!"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:185
 #, c-format
 msgid "Filter position should be a number from 1 to %d!"
 msgstr ""
 
-#. / "Ошибка отправки данных"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:203
+#. / "п·я┬п╦п╠п╨п╟ п╬я┌п©я─п╟п╡п╨п╦ п╢п╟п╫п╫я▀я┘"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:205
 msgid "Error sending data"
 msgstr ""
 
-#. / "Ошибка чтения данных"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:218
+#. / "п·я┬п╦п╠п╨п╟ я┤я┌п╣п╫п╦я▐ п╢п╟п╫п╫я▀я┘"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:220
 msgid "Error reading data"
 msgstr ""
 
-#. / "Ошибка, количество попыток истекло"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:242
+#. / "п·я┬п╦п╠п╨п╟, п╨п╬п╩п╦я┤п╣я│я┌п╡п╬ п©п╬п©я▀я┌п╬п╨ п╦я│я┌п╣п╨п╩п╬"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:244
 msgid "Error, tries amount exceed"
 msgstr ""
 
-#. / "Турель не инициализирована, движение в \"дом\""
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:260
+#. / "п╒я┐я─п╣п╩я▄ п╫п╣ п╦п╫п╦я├п╦п╟п╩п╦п╥п╦я─п╬п╡п╟п╫п╟, п╢п╡п╦п╤п╣п╫п╦п╣ п╡ \"п╢п╬п╪\""
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:262
 msgid "Turret isn't initialized, move home..."
 msgstr ""
 
-#. / "Ожидание окончания движения"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:277
+#. / "п·п╤п╦п╢п╟п╫п╦п╣ п╬п╨п╬п╫я┤п╟п╫п╦я▐ п╢п╡п╦п╤п╣п╫п╦я▐"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:279
 #, c-format
 msgid "Wait for end of moving "
 msgstr ""
 
-#. / "Произошла ошибка, повторите запуск"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:286
+#. / "п÷я─п╬п╦п╥п╬я┬п╩п╟ п╬я┬п╦п╠п╨п╟, п©п╬п╡я┌п╬я─п╦я┌п╣ п╥п╟п©я┐я│п╨"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:288
 msgid "Error ocured, repeat again"
 msgstr ""
 
-#. / "Заданная позиция вне диапазона 1..%d"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:306
+#. / "п≈п╟п╢п╟п╫п╫п╟я▐ п©п╬п╥п╦я├п╦я▐ п╡п╫п╣ п╢п╦п╟п©п╟п╥п╬п╫п╟ 1..%d"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:308
 #, c-format
 msgid "Given position out of range 1..%d"
 msgstr ""
 
-#. / "Не могу открыть устройство"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:333
+#. / "п²п╣ п╪п╬пЁя┐ п╬я┌п╨я─я▀я┌я▄ я┐я│я┌я─п╬п╧я│я┌п╡п╬"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:335
 msgid "Can't open device"
 msgstr ""
 
-#. / "\nСвойства подключенного колеса\n"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:359
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:364
 msgid ""
 "\n"
 "Connected wheel properties\n"
 msgstr ""
 
-#. / "\nВсе записи EEPROM\n"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:388
+#. / "\nп▓я│п╣ п╥п╟п©п╦я│п╦ EEPROM\n"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:398
 msgid ""
 "\n"
 "All records from EEPROM\n"
 msgstr ""
 
-#. / "Турели не обнаружены"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:426
+#. / "п╒я┐я─п╣п╩п╦ п╫п╣ п╬п╠п╫п╟я─я┐п╤п╣п╫я▀"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:436
 msgid "No turrets found"
 msgstr ""
 
-#. / "Обнаружено %d турелей, но ни к одной нет прав доступа"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:432
+#. / "п·п╠п╫п╟я─я┐п╤п╣п╫п╬ %d я┌я┐я─п╣п╩п╣п╧, п╫п╬ п╫п╦ п╨ п╬п╢п╫п╬п╧ п╫п╣я┌ п©я─п╟п╡ п╢п╬я│я┌я┐п©п╟"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:442
 #, c-format
 msgid "Found %d turrets but have no access rights to any"
 msgstr ""
 
-#. / "Название не должно превышать восьми символов"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:452
+#. / "п²п╟п╥п╡п╟п╫п╦п╣ п╫п╣ п╢п╬п╩п╤п╫п╬ п©я─п╣п╡я▀я┬п╟я┌я▄ п╡п╬я│я▄п╪п╦ я│п╦п╪п╡п╬п╩п╬п╡"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:462
 msgid "Name should be not longer than 8 symbols"
 msgstr ""
 
-#. / "Чтобы переименовать, необходимо указать новое название фильтра/колеса и его позицию/идентификатор!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:471
+#. / "п╖я┌п╬п╠я▀ п©п╣я─п╣п╦п╪п╣п╫п╬п╡п╟я┌я▄, п╫п╣п╬п╠я┘п╬п╢п╦п╪п╬ я┐п╨п╟п╥п╟я┌я▄ п╫п╬п╡п╬п╣ п╫п╟п╥п╡п╟п╫п╦п╣ я└п╦п╩я▄я┌я─п╟/п╨п╬п╩п╣я│п╟ п╦ п╣пЁп╬ п©п╬п╥п╦я├п╦я▌/п╦п╢п╣п╫я┌п╦я└п╦п╨п╟я┌п╬я─!"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:481
 msgid "You should give new filter/wheel name and its POS/ID to rename!"
 msgstr ""
 
-#. / "Не удалось переименовать"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:498
+#. / "п²п╣ я┐п╢п╟п╩п╬я│я▄ п©п╣я─п╣п╦п╪п╣п╫п╬п╡п╟я┌я▄"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:508
 msgid "Can't rename"
 msgstr ""
 
-#. / "Переименовано удачно!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:500
+#. / "п÷п╣я─п╣п╦п╪п╣п╫п╬п╡п╟п╫п╬ я┐п╢п╟я┤п╫п╬!"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:510
 msgid "Succesfully renamed!\n"
 msgstr ""
 
-#. / "Зацикливание, попробуйте еще раз"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:509
+#. / "п≈п╟я├п╦п╨п╩п╦п╡п╟п╫п╦п╣, п©п╬п©я─п╬п╠я┐п╧я┌п╣ п╣я┴п╣ я─п╟п╥"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:519
 msgid "Cycling detected, try again"
 msgstr ""
 
-#. / "Уже в заданной позиции"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/hsfw.c:542
+#. / "пёп╤п╣ п╡ п╥п╟п╢п╟п╫п╫п╬п╧ п©п╬п╥п╦я├п╦п╦"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/hsfw.c:552
 msgid "Already at position"
 msgstr ""
 
 #. amount of pcount and/or scount wrong
-#. / "Неправильный формат строки помощи"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/parseargs.c:56
+#. / "п²п╣п©я─п╟п╡п╦п╩я▄п╫я▀п╧ я└п╬я─п╪п╟я┌ я│я┌я─п╬п╨п╦ п©п╬п╪п╬я┴п╦"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/parseargs.c:56
 msgid "Wrong helpstring!"
 msgstr ""
 
-#. / "Целое вне допустимого диапазона"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/parseargs.c:86
+#. / "п╕п╣п╩п╬п╣ п╡п╫п╣ п╢п╬п©я┐я│я┌п╦п╪п╬пЁп╬ п╢п╦п╟п©п╟п╥п╬п╫п╟"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/parseargs.c:86
 msgid "Integer out of range"
 msgstr ""
 
-#. / "Неправильный параметр: %s"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/parseargs.c:480
+#. / "п²п╣п©я─п╟п╡п╦п╩я▄п╫я▀п╧ п©п╟я─п╟п╪п╣я┌я─: %s"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/parseargs.c:480
 #, c-format
 msgid "Wrong parameter: %s"
 msgstr ""
 
-#. / "%s: необходим аргумент!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/parseargs.c:485
+#. / "%s: п╫п╣п╬п╠я┘п╬п╢п╦п╪ п╟я─пЁя┐п╪п╣п╫я┌!"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/parseargs.c:485
 #, c-format
 msgid "%s: argument needed!"
 msgstr ""
 
-#. / "Неправильный аргумент \"%s\" параметра \"%s\""
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/parseargs.c:490
+#. / "п²п╣п©я─п╟п╡п╦п╩я▄п╫я▀п╧ п╟я─пЁя┐п╪п╣п╫я┌ \"%s\" п©п╟я─п╟п╪п╣я┌я─п╟ \"%s\""
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/parseargs.c:490
 #, c-format
 msgid "Wrong argument \"%s\" of parameter \"%s\""
 msgstr ""
 
-#. / "Не задано имя файла!"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:174
+#. / "п²п╣ п╥п╟п╢п╟п╫п╬ п╦п╪я▐ я└п╟п╧п╩п╟!"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/usefull_macros.c:176
 msgid "No filename given!"
 msgstr ""
 
-#. / "Не могу открыть %s для чтения"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:177
+#. / "п²п╣ п╪п╬пЁя┐ п╬я┌п╨я─я▀я┌я▄ %s п╢п╩я▐ я┤я┌п╣п╫п╦я▐"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/usefull_macros.c:179
 #, c-format
 msgid "Can't open %s for reading"
 msgstr ""
 
-#. / "Не могу выполнить stat %s"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:180
+#. / "п²п╣ п╪п╬пЁя┐ п╡я▀п©п╬п╩п╫п╦я┌я▄ stat %s"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/usefull_macros.c:182
 #, c-format
 msgid "Can't stat %s"
 msgstr ""
 
-#. / "Ошибка mmap"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:184
+#. / "п·я┬п╦п╠п╨п╟ mmap"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/usefull_macros.c:186
 msgid "Mmap error for input"
 msgstr ""
 
-#. / "Не могу закрыть mmap'нутый файл"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:186
+#. / "п²п╣ п╪п╬пЁя┐ п╥п╟п╨я─я▀я┌я▄ mmap'п╫я┐я┌я▀п╧ я└п╟п╧п╩"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/usefull_macros.c:188
 msgid "Can't close mmap'ed file"
 msgstr ""
 
-#. / "Не могу munmap"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:196
+#. / "п²п╣ п╪п╬пЁя┐ munmap"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/usefull_macros.c:198
 msgid "Can't munmap"
 msgstr ""
 
-#. / "Не могу настроить консоль"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:221
+#. / "п²п╣ п╪п╬пЁя┐ п╫п╟я│я┌я─п╬п╦я┌я▄ п╨п╬п╫я│п╬п╩я▄"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/usefull_macros.c:223
 msgid "Can't setup console"
 msgstr ""
 
 #. Get settings
-#. / "Не могу получить настройки"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:291
+#. / "п²п╣ п╪п╬пЁя┐ п©п╬п╩я┐я┤п╦я┌я▄ п╫п╟я│я┌я─п╬п╧п╨п╦"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/usefull_macros.c:293
 msgid "Can't get settings"
 msgstr ""
 
-#. / "Не могу установить настройки"
-#: /home/eddy/Docs/SAO/Edmund_optics/HSFW_management/usefull_macros.c:302
+#. / "п²п╣ п╪п╬пЁя┐ я┐я│я┌п╟п╫п╬п╡п╦я┌я▄ п╫п╟я│я┌я─п╬п╧п╨п╦"
+#: /home/eddy/Docs/SAO/C_diff/Edmund_optics/HSFW_management/usefull_macros.c:304
 msgid "Can't set settings"
 msgstr ""

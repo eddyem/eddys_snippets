@@ -21,6 +21,8 @@
 
 #include "usefull_macros.h"
 
+#include <sys/ioctl.h>
+
 /**
  * function for different purposes that need to know time intervals
  * @return double value: time in seconds
@@ -262,7 +264,7 @@ int mygetchar(){ // getchar() without need of pressing ENTER
 /******************************************************************************\
  *                              TTY with select()
 \******************************************************************************/
-static struct termio oldtty, tty; // TTY flags
+static struct termios oldtty, tty; // TTY flags
 static int comfd = -1; // TTY fd
 
 // run on exit:

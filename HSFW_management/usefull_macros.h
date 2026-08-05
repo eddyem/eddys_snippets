@@ -47,7 +47,6 @@
 #endif
 #include <stdlib.h>
 #include <termios.h>
-#include <termio.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <stdint.h>

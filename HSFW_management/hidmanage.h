@@ -29,7 +29,7 @@ typedef struct{
     int fd;
     char *serial;
     char ID;
-    char name[9];
+    char name[10];
     int maxpos;
 } wheel_descr;
 

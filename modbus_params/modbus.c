@@ -26,26 +26,34 @@
 #include "modbus.h"
 #include "verbose.h"
 
+#define MAX_READ_BITS   64
+#define MAX_WRITE_BITS  64
+
 static modbus_t *modbus_ctx = NULL;
 static pthread_mutex_t modbus_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void close_modbus(){
+    closedumpfile();
     if(modbus_ctx){
-        closedumpfile();
+        pthread_mutex_lock(&modbus_mutex);
         modbus_close(modbus_ctx);
         modbus_free(modbus_ctx);
+        modbus_ctx = NULL;
+        pthread_mutex_unlock(&modbus_mutex);
     }
 }
 
 // read register and modify entry->reg; return FALSE if failed
 int read_entry(dicentry_t *entry){
+    if(!modbus_ctx) return FALSE;
     if(!entry){
         WARNX("NULL instead of entry");
         return FALSE;
     }
     int ret = TRUE;
     pthread_mutex_lock(&modbus_mutex);
-    if(modbus_read_registers(modbus_ctx, entry->reg, 1, &entry->value) < 0){
+    if(modbus_read_registers(modbus_ctx, entry->reg, 1, &entry->value) < 0 &&
+        modbus_read_input_registers(modbus_ctx, entry->reg, 1, &entry->value) < 0){
         WARNX("Can't read entry by reg %u", entry->reg);
         ret = FALSE;
     }
@@ -54,6 +62,7 @@ int read_entry(dicentry_t *entry){
 }
 // write register value; FALSE - if failed or read-only
 int write_entry(dicentry_t *entry){
+    if(!modbus_ctx) return FALSE;
     if(!entry || entry->readonly){
         if(!entry) WARNX("NULL instead of entry");
         else WARNX("Can't write readonly entry %u", entry->reg);
@@ -105,7 +114,7 @@ int write_codeval(char **codeval){
     while(*codeval){
         char key[SL_KEY_LEN], value[SL_VAL_LEN];
         if(2 != sl_get_keyval(*codeval, key, value)){
-            WARNX("%s isn't in format keycode=val");
+            WARNX("%s isn't in format keycode=val", *codeval);
         }else{
             int v=-1;
             if(!sl_str2i(&v, value) || v < 0 || v > UINT16_MAX){
@@ -158,6 +167,7 @@ rtn:
 
 int set_slave(int ID){
     int ret = TRUE;
+    if(!modbus_ctx) return FALSE;
     pthread_mutex_lock(&modbus_mutex);
     if(modbus_set_slave(modbus_ctx, ID)){
         WARNX("Can't set slave ID to %d", ID);
@@ -201,4 +211,65 @@ void read_keycodes(char **keycodes){
         ++keycodes;
     }
     printf("\n");
+}
+
+int read_coils(int nbytes, uint8_t *dest){
+    if(!modbus_ctx || !dest || nbytes < 1 || nbytes > MAX_READ_BITS / 8){
+        WARNX("Bad coils read request");
+        return FALSE;
+    }
+    int ret = TRUE;
+    DBG("Try to read %d bits", nbytes * 8);
+    pthread_mutex_lock(&modbus_mutex);
+    if(modbus_read_bits(modbus_ctx, 0, nbytes * 8, dest) < 0){
+        WARNX("Can't read coils");
+        ret = FALSE;
+    }
+    pthread_mutex_unlock(&modbus_mutex);
+    return ret;
+}
+
+int read_inputs(int nbytes, uint8_t *dest){
+    if(!modbus_ctx || !dest || nbytes < 1 || nbytes > MAX_READ_BITS / 8){
+        WARNX("Bad inputs read request");
+        return FALSE;
+    }
+    int ret = TRUE;
+    pthread_mutex_lock(&modbus_mutex);
+    if(modbus_read_input_bits(modbus_ctx, 0, nbytes * 8, dest) < 0){
+        WARNX("Can't read discrete inputs");
+        ret = FALSE;
+    }
+    pthread_mutex_unlock(&modbus_mutex);
+    return ret;
+}
+
+int write_coils(int nbytes, const uint8_t *src){
+    if(!modbus_ctx || !src || nbytes < 1 || nbytes > MAX_WRITE_BITS / 8){
+        WARNX("Bad coils write request");
+        return FALSE;
+    }
+    int ret = TRUE;
+    pthread_mutex_lock(&modbus_mutex);
+    if(modbus_write_bits(modbus_ctx, 0, nbytes * 8, src) < 0){
+        WARNX("Can't write coils");
+        ret = FALSE;
+    }
+    pthread_mutex_unlock(&modbus_mutex);
+    return ret;
+}
+
+int write_coil(int index, int value){
+    if(!modbus_ctx || index < 0 || index > MAX_WRITE_BITS - 1){
+        WARNX("Bad coil write request");
+        return FALSE;
+    }
+    int ret = TRUE;
+    pthread_mutex_lock(&modbus_mutex);
+    if(modbus_write_bit(modbus_ctx, index, value) < 0){
+        ret = FALSE;
+        WARNX("Can't set coil %d to %d", index, value);
+    }
+    pthread_mutex_unlock(&modbus_mutex);
+    return ret;
 }

@@ -30,11 +30,13 @@ typedef struct{
     int verbose;        // verbose level (not used yet)
     int slave;          // slave ID
     int isunix;         // Unix-socket
+    int inputs;         // number of bytes for discrete inputs
+    int coils;          // number of bytes for coils
     char **read_keycodes;   // keycodes to dump into file
     char **writeregs;   // reg=val to write
     char **writecodes;  // keycode=val to write
-    int **readregs;     // regs to write
-    char **readcodes;   // keycodes to write
+    int **readregs;     // regs to read
+    char **readcodes;   // keycodes to read
     char *dumpfile;     // dump file name
     char *outdic;       // output dictionary to save everything read from slave
     char *dicfile;      // file with dictionary
@@ -50,6 +52,8 @@ static parameters G = {
     .device = "/dev/ttyUSB0",
     .baudrate = 9600,
     .dTdump = 0.1,
+    .inputs = 1,
+    .coils = 1,
 };
 
 static sl_option_t cmdlnopts[] = {
@@ -70,6 +74,8 @@ static sl_option_t cmdlnopts[] = {
     {"node",        NEED_ARG,   NULL,   'N',    arg_string, APTR(&G.node),      "node \"IP\", or path (could be \"\\0path\" for anonymous UNIX-socket)"},
     {"unixsock",    NO_ARGS,    NULL,   'U',    arg_int,    APTR(&G.isunix),    "UNIX socket instead of INET"},
     {"alias",       NEED_ARG,   NULL,   'a',    arg_string, APTR(&G.aliasesfile),"file with aliases in format 'name : command to run'"},
+    {"inputs",      NEED_ARG,   NULL,   'i',    arg_int,    APTR(&G.inputs),    "number of bytes for discrete inputs"},
+    {"coils",       NEED_ARG,   NULL,   'c',    arg_int,    APTR(&G.coils),     "number of bytes for coils (outputs)"},
     end_option
 };
 
@@ -90,10 +96,12 @@ int main(int argc, char **argv){
     if(lvl >= LOGLEVEL_AMOUNT) lvl = LOGLEVEL_AMOUNT - 1;
     if(!G.dicfile) WARNX("Dictionary is absent");
     else if(!opendict(G.dicfile)) signals(-1);
+    DBG("dictionary %s opened", G.dicfile);
     if(G.aliasesfile){
         if(!openaliases(G.aliasesfile)) WARNX("No aliases found in '%s'", G.aliasesfile);
     }
     if(G.read_keycodes && !setdumppars(G.read_keycodes)) signals(-1);
+    if(G.dumpfile) DBG("Dump file: %s", G.dumpfile);
     if(G.dumpfile && !opendumpfile(G.dumpfile)) signals(-1);
     if(!open_modbus(G.device, G.baudrate)) signals(-1);
     if(!set_slave(G.slave)) signals(-1);
@@ -118,7 +126,7 @@ int main(int argc, char **argv){
         DBG("outdic");
         int N = read_dict_entries(G.outdic);
         if(N < 1) WARNX("Dump full dictionary failed");
-        else green("Read %N registers, dump to %s\n", N, G.outdic);
+        else green("Read %d registers, dump to %s\n", N, G.outdic);
         fflush(stdout);
     }
     if(G.readregs) read_registers(G.readregs);
@@ -129,12 +137,13 @@ int main(int argc, char **argv){
         if(!rundump()) signals(-1);
     }
     if(G.node){
+        set_io_sizes(G.inputs, G.coils);
         DBG("Create server");
         if(!runserver(G.node, G.isunix)) signals(-1); // this function exits only after server death
     }
     if(G.dumpfile){
         DBG("Done, wait for ctrl+C");
-        while(1);
+        while(1) usleep(100000);
     }
     return 0;
 }

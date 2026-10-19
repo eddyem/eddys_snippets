@@ -24,6 +24,11 @@ int  open_modbus(const char *path, int baudrate);
 void close_modbus();
 int  set_slave(int ID);
 
+int read_coils(int nbytes, uint8_t *dest);
+int read_inputs(int nbytes, uint8_t *dest);
+int write_coils(int nbytes, const uint8_t *src);
+int write_coil(int index, int value);
+
 int read_entry(dicentry_t *entry);
 int write_entry(dicentry_t *entry);
 int write_regval(char **regval);

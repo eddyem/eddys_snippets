@@ -21,3 +21,4 @@
 #include <usefull_macros.h>
 
 int runserver(const char *node, int isunix);
+void set_io_sizes(int inputs, int coils);

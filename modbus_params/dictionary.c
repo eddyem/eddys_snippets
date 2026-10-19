@@ -93,6 +93,8 @@ static char *getcomment(char *str){
 // dictionary format: "'code' 'register' 'value' 'readonly flag'\n", e.g.
 // "F00.09 61444 5000 1"
 int opendict(const char *dic){
+    if(!dic) return FALSE;
+    DBG("Open %s", dic);
     closedict(); // close early opened dictionary to prevent problems
     FILE *f = fopen(dic, "r");
     if(!f){
@@ -106,28 +108,33 @@ int opendict(const char *dic){
     curentry.code = MALLOC(char, BUFSIZ);
     // `help` field of `curentry` isn't used here
     int retcode = TRUE;
+    char formatbuf[64];
+    snprintf(formatbuf, 64,  "%%%ds %%" SCNu16 " %%" SCNu16 " %%" SCNu8, BUFSIZ-1);
     while(1){
         if(getline(&line, &linesz, f) < 0) break;
-        // DBG("Original LINE: '%s'", line);
+        //DBG("Original LINE: '%s'", line);
         char *comment = getcomment(line);
         char *newline = strchr(line, '\n');
         if(newline) *newline = 0;
-        // DBG("LINE: '%s'", line);
+        //DBG("LINE: '%s'", line);
         if(*line == 0) continue;
-        if(4 != sscanf(line, "%s %" SCNu16 " %" SCNu16 " %" SCNu8, curentry.code, &curentry.reg, &curentry.value, &curentry.readonly)){
+
+        if(4 != sscanf(line, formatbuf, curentry.code, &curentry.reg, &curentry.value, &curentry.readonly)){
             WARNX("Can't understand this line: '%s'", line);
             continue;
         }
-        // DBG("Got line: '%s %" PRIu16 " %" PRIu16 " %" PRIu8, curentry.code, curentry.reg, curentry.value, curentry.readonly);
+         DBG("Got line: '%s %" PRIu16 " %" PRIu16 " %" PRIu8, curentry.code, curentry.reg, curentry.value, curentry.readonly);
         if(++dictsize >= dicsz){
-            dicsz += 50;
-            dicentry_t *newdic = realloc(dictionary, sizeof(dicentry_t) * dicsz);
+            size_t newsize = dicsz + 50;
+            dicentry_t *newdic = realloc(dictionary, sizeof(dicentry_t) * newsize);
             if(!newdic){
                 WARN("Can't allocate memory for dictionary");
                 retcode = FALSE;
+                --dictsize;
                 goto ret;
             }
             dictionary = newdic;
+            dicsz = newsize;
         }
         dicentry_t *entry = &dictionary[dictsize-1];
         entry->code = strdup(curentry.code);
@@ -223,17 +230,21 @@ int setdumppars(char **pars){
         if(!e){
             WARNX("Can't find entry with code %s", *p);
             pthread_mutex_unlock(&mutex);
+            dumpsize = 0;
             return FALSE;
         }
         DBG("found entry do dump, reg=%d", e->reg);
         if(cursz <= N){
-            cursz += 50;
+            int newsz = cursz + 50;
             DBG("realloc list to %d", cursz);
-            dicentry_t *newpars = realloc(dumppars, sizeof(dicentry_t) * (cursz));
+            dicentry_t *newpars = realloc(dumppars, sizeof(dicentry_t) * newsz);
             if(!newpars){
-                WARN("realloc()"); cursz -= 50;
+                WARN("realloc()");
+                pthread_mutex_unlock(&mutex);
+                return FALSE;
             }else{
                 dumppars = newpars;
+                cursz = newsz;
                 DBG("zero mem");
                 bzero(&dumppars[N], sizeof(dicentry_t)*(cursz-N));
             }
@@ -278,12 +289,13 @@ char *getdumpname(){ return dumpname;}
 
 void closedumpfile(){
     int stpd = atomic_load(&isstopped);
-    if(dumpfile && !stpd){
+    if(dumpfile){
         if(!stpd){
             atomic_store(&stopdump, 1);
             while(!atomic_load(&isstopped));
         }
         fclose(dumpfile);
+        dumpfile = NULL;
         FREE(dumpname);
     }
 }
@@ -294,7 +306,7 @@ static void *dumpthread(void *p){
     double dT = *(double*)p;
     DBG("Dump thread started. Period: %gs", dT);
     double startT = sl_dtime();
-    while(!atomic_load(&isstopped)){
+    while(!atomic_load(&stopdump)){
         double t0 = sl_dtime();
         fprintf(dumpfile, "%10.3f ", t0 - startT);
         for(int i = 0; i < dumpsize; ++i){
@@ -344,13 +356,15 @@ int rundump(){
 char *dicentry_descr(dicentry_t *entry, char *buf, size_t bufsize){
     //DBG("descr of %s", entry->code);
     if(!entry || !buf || !bufsize) return NULL;
+    size_t L;
     if(entry->help){
-        snprintf(buf, bufsize-1, "%s %4" PRIu16 " %4" PRIu16 " %" PRIu8 " # %s\n",
+        L = snprintf(buf, bufsize, "%s %4" PRIu16 " %4" PRIu16 " %" PRIu8 " # %s\n",
                  entry->code, entry->reg, entry->value, entry->readonly, entry->help);
     }else{
-        snprintf(buf, bufsize-1, "%s %4" PRIu16 " %4" PRIu16 " %" PRIu8 "\n",
+        L = snprintf(buf, bufsize, "%s %4" PRIu16 " %4" PRIu16 " %" PRIu8 "\n",
                  entry->code, entry->reg, entry->value, entry->readonly);
     }
+    if(L >= bufsize) buf[bufsize-1] = 0;
     return buf;
 }
 
@@ -439,14 +453,16 @@ int openaliases(const char *filename){
             continue;
         }
         if(++aliasessize >= asz){
-            asz += 50;
-            alias_t *newaliases = realloc(aliases, sizeof(alias_t) * asz);
+            size_t newsize = asz + 50;
+            alias_t *newaliases = realloc(aliases, sizeof(alias_t) * newsize);
             if(!newaliases){
                 WARNX("Can't allocate memory for aliases list");
                 retcode = FALSE;
+                --aliasessize;
                 goto ret;
             }
             aliases = newaliases;
+            asz = newsize;
         }
         alias_t *cur = &aliases[aliasessize - 1];
         cur->name = strdup(name);

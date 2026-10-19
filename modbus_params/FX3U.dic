@@ -1,0 +1,6 @@
+# name   register   default  readonly
+reset   0   0   0
+time    1   0   0
+led     2   0   0
+inputs  3   0   1
+outputs 4   0   1

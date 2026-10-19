@@ -12,9 +12,11 @@ The project is hosted at:
 
 - Read and write Modbus holding registers by **address** or **mnemonic code**.
 - Define a dictionary (`code → register`) with optional comments and read‑only flags.
+- Read discrete inputs and coils (all at once or one bit), write coils (all at once or one bit).
 - Dump selected registers periodically to a TSV file.
 - Start a **TCP or UNIX socket server** that accepts commands to:
   - Read/write registers (by code or address).
+  - Read discrete inputs / coils; write coils.
   - List dictionary entries or aliases.
   - Start/stop and rename the dump file.
 - Define **aliases** – macros that expand to other commands or expressions.
@@ -76,6 +78,13 @@ modbus_params [options]
 | `-w`, `--writer` *addr=val* | Write value to register by address (multiply) |
 | `-W`, `--writec` *code=val* | Write value to register by dictionary code (multiply) |
 | `-O`, `--outdic` *file* | Read **all** registers listed in the dictionary and save them (with current values) into a new dictionary file |
+
+### Discrete I/O sizes
+
+| Option | Argument          | Description |
+|--------|-------------------|-------------|
+| `-i`, `--inputs` | N | Number of bytes for discrete inputs (default: 1) |
+| `-c`, `--coils`  | N | Number of bytes for coils/outputs (default: 1)   |
 
 ### Dumping (periodic TSV output)
 
@@ -176,6 +185,9 @@ Each command is a key‑value pair: `key[=value]`.
 | `alias` | Getter: prints all aliases. Setter (e.g. `alias=myalias`): prints that specific alias. |
 | `newdump` | Getter: returns current dump file name. Setter (e.g. `newdump=/path/file.dump`): closes current dump file (if any), opens a new one and starts dumping. |
 | `clodump` | Stops the dump thread and closes the dump file. No value expected. |
+| `readcoils` | Getter: read **all** coils as HEX (uses `--coils` bytes, e.g. `readcoils = 0x00FF`). With `[N]` (e.g. `readcoils[0]`): read a **single** coil (returns 0 or 1). |
+| `readinputs` | Getter: read **all** discrete inputs as HEX (uses --inputs bytes). With [N]: read a **single** discrete input. |
+| `writecoils` | Setter: write **all** coils from a number (e.g. `writecoils = 0` to clear all, `writecoils = 0x0F` to set several). With `[N]` (e.g. `writecoils[4] = 1`): write a **single** coil. |
 
 ### Default handler (register access)
 
@@ -187,8 +199,8 @@ If the key is **not** a built‑in handler, the program tries to interpret it as
 
 Then:
 
-- **Getter** (only key) → reads the register and replies `key=value`.
-- **Setter** (`key=value`) → writes the value to the register (if not read‑only) and replies `OK`.
+- **Getter** (only key) → reads the register and replies `key = value`.
+- **Setter** (`key = value`) → writes the value to the register (if not read‑only) and replies `OK`.
 
 ### Examples (using `netcat`, `telnet` or `socat`)
 
@@ -214,6 +226,33 @@ OK
 $ socat - UNIX-CONNECT:/tmp/mb_sock
 F00.11
 F00.11=5000
+```
+
+**Discrete I/O** (assuming `-c 2 -i 1`):
+
+```
+readcoils
+readcoils = 0x0000
+writecoils = 0x000F
+OK
+readcoils
+readcoils = 0x000F
+readcoils[0]
+readcoils[0] = 1
+readcoils[1]
+readcoils[1] = 1
+writecoils[4] = 1
+OK
+readcoils[4]
+readcoils[4] = 1
+writecoils = 0
+OK
+readcoils
+readcoils = 0x0000
+readinputs
+readinputs = 0x05
+readinputs[0]
+readinputs[0] = 1
 ```
 
 ## Examples
@@ -251,6 +290,14 @@ Now you can connect to port 5020 and use `newdump` to change the output file, or
 ```bash
 modbus_params -D dictionary.dic -O current_state.dic
 ```
+
+### 6. Server with discrete I/O
+
+```bash
+modbus_params -D dictionary.dic -c 2 -i 1 -N :5020
+```
+
+Now readcoils/writecoils operate on 16 coils, readinputs on 8 inputs.
 
 ## Signals
 

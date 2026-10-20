@@ -1,0 +1,16 @@
+# aliases.txt for ESQ-770
+# Note: ESQ770.txt has no direct control/virtual-output registers.
+# ControlRegister_2000H and VirtualOutput_3009H are special Modbus registers from the manual.
+
+getspeed : A02.05   # read current motor speed in rpm
+getcurrent : A02.04 # read output current, value x10 A
+cw : 0x2000 = 1     # forward/CW run at existing frequency reference
+ccw : 0x2000 = 2    # reverse/CCW run at existing frequency reference
+stop : 0x2000 = 5   # stop by deceleration ramp
+emstop : 0x2000 = 6 # emergency stop
+getinputs : A02.12  # read discrete input terminal state
+getoutputs : A02.13 # read discrete output terminal state
+setoutputs : 0x300A # write virtual discrete outputs bitmask
+state1 : 0x6000     # 1 - cw, 2 - ccw, 3 - stop, 4 - damage, 5 - low voltage
+state2 :            # bits: 0 - ready (0), 1,2 - motor No, 3 - async (0), 4 - alarm overloading (0), 5,6 - keypad (0), 485 (10)
+errcode : 0x6002    # last error code

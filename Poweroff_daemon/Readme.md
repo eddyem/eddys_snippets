@@ -1,0 +1,3 @@
+Simple daemon checking voltage & button0 state of my 'fan controller'.
+
+Under development, wait pre-release...

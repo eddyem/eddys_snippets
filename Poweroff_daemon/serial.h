@@ -23,6 +23,8 @@
 
 #define CMD_GETVOLTAGE      "V\n"
 #define ANS_V12             "V12"
+#define LOG_V12             1150
+#define LOG_VOLTAGE_DT      60
 #define LOWEST_V12          970
 
 #define MAX_WERR_CNT        5

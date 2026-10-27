@@ -119,10 +119,20 @@ bool check_buttons(){
 /* Check voltage: returns 1 if V12 < 9700 */
 bool check_voltage(){
     int voltage = 0;
+    static double tlog = -1.;
     if(!get_int(CMD_GETVOLTAGE, ANS_V12, &voltage)) return false;
     if(voltage < LOWEST_V12){
         LOGERR("V12 low: %d (%.2f V)", voltage, (double)voltage / 100.);
         return true;
+    }else if(voltage < LOG_V12){ // log once per minute
+        double tnow = sl_dtime();
+        if(tnow - tlog > LOG_VOLTAGE_DT){
+            LOGMSG("Voltage now: %d (%.2f V)", voltage, (double)voltage / 100.);
+            tlog = tnow;
+        }
+    }else if(tlog > 0.){
+        LOGMSG("Power restored, now: %d (%.2f V)", voltage, (double)voltage / 100.);
+        tlog = -1.;
     }
     return false;
 }
@@ -130,11 +140,31 @@ bool check_voltage(){
 bool send_custom_command(const char *command, char *answer, size_t anslen){
     if(!tty || !command) return false;
     bool ret = false;
+    size_t L = anslen;
     pthread_mutex_lock(&serial_mutex);
-    if(sl_tty_write(tty->comfd, command, strlen(command)) && sl_tty_read(tty) > 0){
-        if(answer && anslen > 1) strncpy(answer, tty->buf, anslen-1);
-        ret = true;
-    }
+    DBG("Send command '%s'", command);
+    if(0 == sl_tty_write(tty->comfd, command, strlen(command))){
+        sl_tty_write(tty->comfd, "\n", 1); // fix for newline
+        int got = sl_tty_read(tty);
+        if(got < 0) WARNX("Can't read");
+        else while(got > 0){
+            DBG("got: %d", got);
+            ret = true;
+            DBG("Got ans: %s", tty->buf);
+            if(answer && anslen > 1){
+                size_t len = tty->buflen;
+                if(tty->buflen > anslen) len = anslen;
+                strncpy(answer, tty->buf, len);
+                answer += len;
+                anslen -= len;
+            }else break;
+            got = sl_tty_read(tty);
+        }
+    }else WARNX("Can't write to TTY");
     pthread_mutex_unlock(&serial_mutex);
+    if(L > 0){
+        if(anslen < 1) answer[-1] = 0;
+        else *answer = 0;
+    }
     return ret;
 }

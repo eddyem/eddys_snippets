@@ -19,6 +19,7 @@
 #pragma once
 
 #define DEFAULT_PIDFILE     "/tmp/powerdaemon.pid"
+#define DEFAULT_SOCKPATH    "@poweroffdaemon"
 #define DEFAULT_DEV         "/dev/ttyUSB0"
 #define DEFAULT_BAUDRATE    115200
 #define DEFAULT_INTERVAL    1.0
@@ -28,6 +29,7 @@ typedef struct{
     char *pidfile;
     char *logfile;
     char *serialdev;
+    char *sockpath;
     double poll_interval;
     double timeout_us;
     int verbose;

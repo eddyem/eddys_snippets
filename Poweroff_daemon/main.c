@@ -23,9 +23,10 @@
 
 #include "cmdlnopts.h"
 #include "serial.h"
+#include "server.h"
 
 static cmdln_t *G = NULL;
-static bool isrunning = false;
+bool isrunning = false;
 static pid_t childpid = 0;
 
 void signals(int sig){
@@ -62,10 +63,9 @@ int main(int argc, char **argv){
     }
 
     /* Daemonize */
-/*    if (sl_daemonize() != 0) {
+    if(sl_daemonize() != 0){
         ERR("daemonize failed");
     }
-*/
 
     /* Set global timeout for sl_tty_read() */
     sl_tty_tmout(G->timeout_us);
@@ -94,7 +94,7 @@ int main(int argc, char **argv){
             }
             lastd = t;
             WARNX("Child %d died\n", childpid);
-            sleep(1);
+            sleep(5);
         }else{
             prctl(PR_SET_PDEATHSIG, SIGTERM); // send SIGTERM to child when parent dies
             break; // go out to normal functional
@@ -110,23 +110,32 @@ int main(int argc, char **argv){
 
     isrunning = true;
 
+    if(!run_server(G->sockpath)){
+        LOGERR("Can't run server @ %s", G->sockpath);
+        ERRX("Can't run server @ %s", G->sockpath);
+    }
+
     while(isrunning){
         bool trigger = false;
         if(check_buttons()) trigger = true;
         if(check_voltage()) trigger = true;
 
         if(trigger){
-            LOGERR("Trigger condition met, executing poweroff");
+            LOGWARN("Trigger condition met, executing poweroff");
             DBG("poweroff");
-        /*          int ret = system("poweroff");
-            if (ret == -1) {
+            int ret = system("/sbin/poweroff");
+            if(ret == -1){
                 LOGERR("Failed to execute poweroff: %s", strerror(errno));
+            }else{
+                LOGWARN("Poweroff called");
+                break;
             }
-            break;
-*/        }
+        }
 
         usleep((useconds_t)(G->poll_interval * 1e6)); // seconds -> useconds
     }
+
+    kill_server();
 
     close_serial();
 

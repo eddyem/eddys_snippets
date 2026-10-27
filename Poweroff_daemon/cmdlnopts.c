@@ -32,6 +32,7 @@ static cmdln_t G = {
     .poll_interval = DEFAULT_INTERVAL,
     .timeout_us = READ_TIMEOUT_US,
     .baudrate = DEFAULT_BAUDRATE,
+    .sockpath = DEFAULT_SOCKPATH,
 };
 
 static int help = 0;
@@ -43,8 +44,9 @@ static sl_option_t options[] = {
     {"timeout", NEED_ARG,   NULL,   't',    arg_double, &G.timeout_us,      "serial in timeout (useconds), default: " STR(READ_TIMEOUT_US)},
     {"verbose", NO_ARGS,    NULL,   'v',    arg_none,   &G.verbose,         "verbose output (each -v adds level), default: WARN"},
     {"device",  NEED_ARG,   NULL,   'd',    arg_string, &G.serialdev,       "serial device, default: " STR(DEFAULT_DEV)},
-    {"baudrate",NEED_ARG,   NULL,   'b',    arg_int,    &G.baudrate,        "default serial baudrate, default: " STR(DEFAULT_BAUDRATE)},
-    {"help",    NO_ARGS,    &help,  'h',    arg_none,   NULL,               "show this help"},
+    {"baudrate",NEED_ARG,   NULL,   'b',    arg_int,    &G.baudrate,        "serial baudrate, default: " STR(DEFAULT_BAUDRATE)},
+    {"sockpath",NEED_ARG,   NULL,   's',    arg_string, &G.sockpath,        "UNIX-socket path, default: " STR(DEFAULT_SOCKPATH)},
+    {"help",    NO_ARGS,    NULL,   'h',    arg_none,   &help,               "show this help"},
     end_option
 };
 

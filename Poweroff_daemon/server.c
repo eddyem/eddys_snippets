@@ -21,7 +21,6 @@
 #include "serial.h"
 #include "server.h"
 
-extern bool isrunning;
 static sl_sock_t *s = NULL;
 
 static sl_sock_hresult_e defhandler(struct sl_sock *s, const char *str){

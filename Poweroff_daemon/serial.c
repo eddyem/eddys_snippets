@@ -30,13 +30,15 @@ bool open_serial(const char *path, int baudrate){
     tty = sl_tty_new((char*)path, baudrate, 1024);
     if(!tty) return false;
     /* Do not call sl_tty_setformat: default 8N1 is fine. */
-    if(!sl_tty_open(tty, 1)) return false;
+    if(!sl_tty_open(tty, 1)){
+        if(tty) sl_tty_close(&tty);
+        return false;
+    }
     return true;
 }
 
 void close_serial(){
     sl_tty_close(&tty);
-    tty = NULL;
 }
 
 /*
@@ -52,14 +54,18 @@ static bool parse_int_from_response(const char *buf, const char *key, int *val) 
         char k[SL_KEY_LEN], v[SL_VAL_LEN];
         int res = sl_get_keyval(line, k, v);
         if(res == 2 && strcmp(k, key) == 0){
-            *val = atoi(v);
+            int I;
+            if(!sl_str2i(&I, v)) continue;
             free(copy);
-            DBG("Buf: %s, key: %s, val: %d", buf, key, *val);
+            if(val){
+                *val = I;
+                DBG("Buf: %s, key: %s, val: %d", buf, key, *val);
+            }
             return true;
         }
         line = strtok(NULL, "\n");
     }
-    DBG("Buf: %s, key: %s, val: %d", buf, key, *val);
+    if(val) DBG("Buf: %s, key: %s, val: %d", buf, key, *val);
     free(copy);
     return false;
 }
@@ -67,8 +73,10 @@ static bool parse_int_from_response(const char *buf, const char *key, int *val) 
 static bool get_int(const char *cmdstring, const char *key, int *answer){
     if(!tty || !cmdstring || !key) return false;
     static int errcnt = 0;
+    char buf[BUFSIZ];
     DBG("Ask parameter '%s' from command %s", key, cmdstring);
     pthread_mutex_lock(&serial_mutex);
+    while(sl_tty_read(tty) > 0); // clear incoming buffer
     if(sl_tty_write(tty->comfd, cmdstring, strlen(cmdstring))){
         WARNX("Write error");
         LOGERR("Serial writing error");
@@ -81,25 +89,25 @@ static bool get_int(const char *cmdstring, const char *key, int *answer){
     }
     int n = sl_tty_read(tty);
     if(n <= 0){
-        char buf[BUFSIZ];
         strncpy(buf, cmdstring, BUFSIZ-1);
+        buf[BUFSIZ-1] = 0;
         char *n = strchr(buf, '\n');
         if(n) *n = 0;
         WARNX("No response");
         LOGERR("No response to command '%s'", buf);
         pthread_mutex_unlock(&serial_mutex);
         if(++errcnt > MAX_RERR_CNT){
-            LOGERR("No answers -> go off");
-            ERRX("No answers -> go off");
+            LOGERR("No answers -> die");
+            ERRX("No answers -> die");
         }
         return false;
     }
-    errcnt = 0;
     int i = 0;
     bool gotint = parse_int_from_response(tty->buf, key, &i);
     if(!gotint) DBG("Didn't get int from %s", tty->buf);
     pthread_mutex_unlock(&serial_mutex);
     if(!gotint) return false;
+    errcnt = 0;
     DBG("Got int: %d", i);
     if(answer) *answer = i;
     return true;
@@ -116,11 +124,12 @@ bool check_buttons(){
     return false;
 }
 
-/* Check voltage: returns 1 if V12 < 9700 */
+/* Check voltage: returns 1 if V12 < 970 */
 bool check_voltage(){
     int voltage = 0;
     static double tlog = -1.;
     if(!get_int(CMD_GETVOLTAGE, ANS_V12, &voltage)) return false;
+    if(voltage < 0 || voltage > LOG_V12*2) return false; // trash in answer
     if(voltage < LOWEST_V12){
         LOGERR("V12 low: %d (%.2f V)", voltage, (double)voltage / 100.);
         return true;
@@ -162,7 +171,7 @@ bool send_custom_command(const char *command, char *answer, size_t anslen){
         }
     }else WARNX("Can't write to TTY");
     pthread_mutex_unlock(&serial_mutex);
-    if(L > 0){
+    if(L > 0 && answer){
         if(anslen < 1) answer[-1] = 0;
         else *answer = 0;
     }

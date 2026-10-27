@@ -1,7 +1,25 @@
 /*
+ * This file is part of the poweroff_daemon project.
+ * Copyright 2026 Edward V. Emelianov <edward.emelianoff@gmail.com>.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
  * monitor_daemon.c - daemon that monitors serial device /dev/ttyUSB0.
  * It sends commands "B\n" and "V\n", parses responses, and triggers poweroff
- * if BUTTON0 is pressed or V12 is below 9700.
+ * if BUTTON0 is pressed or V12 is below 970.
  *
  * Protocol uses only '\n' as line separator (no '\r').
  * USB CDC device: port settings (baudrate, format) are irrelevant.
@@ -26,7 +44,7 @@
 #include "server.h"
 
 static cmdln_t *G = NULL;
-bool isrunning = false;
+static bool isrunning = false;
 static pid_t childpid = 0;
 
 void signals(int sig){
@@ -38,11 +56,10 @@ void signals(int sig){
         LOGERR("Main process exits with status %d", sig);
         if(G->pidfile) // remove unnesessary PID file
             unlink(G->pidfile);
+        exit(sig);
     }else{
         isrunning = false;
-        sleep(2); // let child to graceful out
     }
-    exit(sig);
 }
 
 int main(int argc, char **argv){
@@ -124,7 +141,7 @@ int main(int argc, char **argv){
             LOGWARN("Trigger condition met, executing poweroff");
             DBG("poweroff");
             int ret = system("/sbin/poweroff");
-            if(ret == -1){
+            if(ret){
                 LOGERR("Failed to execute poweroff: %s", strerror(errno));
             }else{
                 LOGWARN("Poweroff called");

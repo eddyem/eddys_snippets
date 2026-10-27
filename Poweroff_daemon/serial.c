@@ -124,6 +124,8 @@ bool check_buttons(){
     return false;
 }
 
+#define VOLTAGE(v)      (((double)(v)) * 0.01432)
+
 /* Check voltage: returns 1 if V12 < 970 */
 bool check_voltage(){
     int voltage = 0;
@@ -131,16 +133,16 @@ bool check_voltage(){
     if(!get_int(CMD_GETVOLTAGE, ANS_V12, &voltage)) return false;
     if(voltage < 0 || voltage > LOG_V12*2) return false; // trash in answer
     if(voltage < LOWEST_V12){
-        LOGERR("V12 low: %d (%.2f V)", voltage, (double)voltage / 100.);
+        LOGERR("V12 low: %d (%.2f V)", voltage, VOLTAGE(voltage));
         return true;
     }else if(voltage < LOG_V12){ // log once per minute
         double tnow = sl_dtime();
         if(tnow - tlog > LOG_VOLTAGE_DT){
-            LOGMSG("Voltage now: %d (%.2f V)", voltage, (double)voltage / 100.);
+            LOGMSG("Voltage now: %d (%.2f V)", voltage, VOLTAGE(voltage));
             tlog = tnow;
         }
     }else if(tlog > 0.){
-        LOGMSG("Power restored, now: %d (%.2f V)", voltage, (double)voltage / 100.);
+        LOGMSG("Power restored, now: %d (%.2f V)", voltage, VOLTAGE(voltage));
         tlog = -1.;
     }
     return false;
